@@ -59,6 +59,19 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [backendStatus, setBackendStatus] = useState<'idle' | 'testing' | 'connected' | 'failed'>('idle');
   const [backendVersion, setBackendVersion] = useState('');
 
+  // Auto-verify and connect on mount if backendUrl is configured
+  React.useEffect(() => {
+    const url = backendUrl || backendInput;
+    if (url) {
+      BackendService.checkHealth(url).then((health) => {
+        if (health && health.status === 'healthy') {
+          setBackendStatus('connected');
+          setBackendVersion(health.version || '1.0.0');
+        }
+      });
+    }
+  }, [backendUrl]);
+
   const handleTestBackend = async () => {
     if (!backendInput.trim()) {
       onUpdateBackendUrl('');

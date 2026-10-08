@@ -23,12 +23,28 @@ const DEFAULT_DEVICE: Perangkat = {
   deteksiBerkepanjanganMs: 60000,
 };
 
+export function getDefaultBackendUrl(): string {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // If on staging preview or current vercel domain
+    if (host.includes('staging') || host.includes('rintik-self') || host.includes('preview')) {
+      return 'https://staging-43-133-136-149.sslip.io';
+    }
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'https://staging-43-133-136-149.sslip.io';
+    }
+    return 'https://43-133-136-149.sslip.io';
+  }
+  return 'https://staging-43-133-136-149.sslip.io';
+}
+
 const DEFAULT_SETTINGS: Pengaturan = {
   deviceIdActive: 'hs-8f3a1c9d2b70',
   tema: 'system',
   rentangGrafik: '1h',
   izinNotif: false,
   ambangPlotting: 60,
+  backendUrl: getDefaultBackendUrl(),
 };
 
 function safeSetItem(key: string, value: string): void {
@@ -85,6 +101,9 @@ export const StorageService = {
       const raw = localStorage.getItem(KEYS.SETTINGS);
       if (!raw) return DEFAULT_SETTINGS;
       const parsed = JSON.parse(raw);
+      if (!parsed.backendUrl) {
+        parsed.backendUrl = getDefaultBackendUrl();
+      }
       return { ...DEFAULT_SETTINGS, ...parsed };
     } catch {
       return DEFAULT_SETTINGS;
