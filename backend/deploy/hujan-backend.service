@@ -1,0 +1,20 @@
+[Unit]
+Description=HujanPantau IoT Go Backend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/wwwroot/hujan-backend
+ExecStart=/www/wwwroot/hujan-backend/hujan-backend-linux
+Restart=always
+RestartSec=5
+Environment=PORT=8080
+Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+Environment=DB_PATH=/www/wwwroot/hujan-backend/hujan.db
+# Opsional jika ingin bot Telegram dikirim via server backend:
+# Environment=TELEGRAM_BOT_TOKEN=7123456789:AAFlmQ9xAbCd...
+# Environment=TELEGRAM_CHAT_ID=123456789
+
+[Install]
+WantedBy=multi-user.target

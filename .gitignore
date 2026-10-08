@@ -47,3 +47,9 @@ firmware/**/.vscode/
 
 # OS
 Thumbs.db
+
+# Database & Go Binary
+*.db
+*.db-journal
+*.exe
+hujan-backend-windows

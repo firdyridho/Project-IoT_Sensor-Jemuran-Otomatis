@@ -25,6 +25,7 @@ import { mqttClient, MqttConnectionStatus } from './services/mqtt';
 import { fetchBmkgWeather } from './services/bmkg';
 import { Notifications } from './services/notifications';
 import { simulator } from './services/simulator';
+import { BackendService } from './services/api';
 
 export const App: React.FC = () => {
   // 1. Core State
@@ -46,7 +47,7 @@ export const App: React.FC = () => {
 
   const [brokerStatus, setBrokerStatus] = useState<MqttConnectionStatus>('connected');
   const [brokerError, setBrokerError] = useState<string>('');
-  const [isSimulating, setIsSimulating] = useState(true); // default true for instant live data experience
+  const [isSimulating, setIsSimulating] = useState(false); // default false: real ESP32 & MQTT hardware takes priority
   const [lastSeenTs, setLastSeenTs] = useState<number>(Date.now());
   const [secondsAgo, setSecondsAgo] = useState(0);
 
@@ -235,7 +236,44 @@ export const App: React.FC = () => {
   };
 
   // ---------------------------------------------------------------------------
-  // Simulator & MQTT Lifecycle Management
+  // Load Historical Data from Golang Backend (Tencent Lighthouse VPS)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const backendUrl = settings.backendUrl;
+    if (!backendUrl || isSimulating) return;
+
+    let isMounted = true;
+    BackendService.getTelemetry(backendUrl, activeDevice.deviceId, '24h')
+      .then((dbReadings) => {
+        if (!isMounted || !dbReadings.length) return;
+        setReadings((prev) => {
+          const map = new Map<number, PembacaanHujan>();
+          dbReadings.forEach((r) => map.set(r.ts, r));
+          prev.forEach((r) => map.set(r.ts, r));
+          return Array.from(map.values()).sort((a, b) => a.ts - b.ts).slice(-1000);
+        });
+      })
+      .catch(() => {});
+
+    BackendService.getEvents(backendUrl, activeDevice.deviceId)
+      .then((dbEvents) => {
+        if (!isMounted || !dbEvents.length) return;
+        setEvents((prev) => {
+          const map = new Map<number, Peristiwa>();
+          dbEvents.forEach((e) => map.set(e.ts, e));
+          prev.forEach((e) => map.set(e.ts, e));
+          return Array.from(map.values()).sort((a, b) => a.ts - b.ts).slice(-200);
+        });
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [settings.backendUrl, activeDevice.deviceId, isSimulating]);
+
+  // ---------------------------------------------------------------------------
+  // Simulator, Backend WebSocket & MQTT Lifecycle Management
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (isSimulating) {
@@ -246,25 +284,45 @@ export const App: React.FC = () => {
         onEvent: (ev) => handleIngestEvent(ev),
       });
       setBrokerStatus('connected');
-    } else {
-      simulator.stop();
-      // Connect to Real MQTT Broker over WSS
-      mqttClient.connect(activeDevice.brokerUrl, activeDevice.deviceId, {
-        onStatusChange: (status, errMsg) => {
-          setBrokerStatus(status);
-          if (errMsg) setBrokerError(errMsg);
+      return () => {
+        simulator.stop();
+      };
+    }
+
+    simulator.stop();
+
+    // 1. If backend URL is provided, connect to WebSocket for live broadcast from VPS
+    let closeWs: (() => void) | null = null;
+    if (settings.backendUrl) {
+      closeWs = BackendService.connectWebSocket(settings.backendUrl, {
+        onTelemetry: (telemetry) => handleIngestTelemetry(telemetry),
+        onState: (state) => handleIngestState(state),
+        onEvent: (ev) => handleIngestEvent(ev),
+        onStatusChange: (connected) => {
+          if (connected) {
+            setBrokerStatus('connected');
+            setBrokerError('');
+          }
         },
-        onStateMessage: (state) => handleIngestState(state),
-        onTelemetryMessage: (telemetry) => handleIngestTelemetry(telemetry),
-        onEventMessage: (ev) => handleIngestEvent(ev),
       });
     }
 
+    // 2. Connect to MQTT Broker over WSS (ensures realtime even without VPS backend)
+    mqttClient.connect(activeDevice.brokerUrl, activeDevice.deviceId, {
+      onStatusChange: (status, errMsg) => {
+        setBrokerStatus(status);
+        if (errMsg) setBrokerError(errMsg);
+      },
+      onStateMessage: (state) => handleIngestState(state),
+      onTelemetryMessage: (telemetry) => handleIngestTelemetry(telemetry),
+      onEventMessage: (ev) => handleIngestEvent(ev),
+    });
+
     return () => {
-      simulator.stop();
+      if (closeWs) closeWs();
       mqttClient.disconnect();
     };
-  }, [activeDevice.deviceId, activeDevice.brokerUrl, isSimulating]);
+  }, [activeDevice.deviceId, activeDevice.brokerUrl, isSimulating, settings.backendUrl]);
 
   // Request browser notifications
   const handleRequestNotification = async () => {
@@ -368,6 +426,20 @@ export const App: React.FC = () => {
       setEvents([]);
       window.location.reload();
     }
+  };
+
+  // Update backend VPS URL
+  const handleUpdateBackendUrl = (url: string) => {
+    const newSettings = { ...settings, backendUrl: url };
+    setSettings(newSettings);
+    StorageService.saveSettings(newSettings);
+    Notifications.addToast({
+      id: 'b-url-' + Date.now(),
+      type: 'success',
+      title: 'Backend VPS Disimpan',
+      message: url ? `Tersambung ke: ${url}` : 'URL backend dinonaktifkan.',
+      timestamp: Date.now(),
+    });
   };
 
   // Latest values for Dashboard
@@ -541,6 +613,8 @@ export const App: React.FC = () => {
                   onClearStorage={handleClearStorage}
                   isSimulating={isSimulating}
                   onToggleSimulator={() => setIsSimulating(!isSimulating)}
+                  backendUrl={settings.backendUrl || ''}
+                  onUpdateBackendUrl={handleUpdateBackendUrl}
                 />
               </div>
             )}

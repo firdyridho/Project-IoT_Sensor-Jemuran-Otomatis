@@ -25,6 +25,7 @@ import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
 import { simulator } from '../../services/simulator';
+import { BackendService } from '../../services/api';
 
 interface DeviceViewProps {
   devices: Perangkat[];
@@ -38,6 +39,8 @@ interface DeviceViewProps {
   onClearStorage: () => void;
   isSimulating: boolean;
   onToggleSimulator: () => void;
+  backendUrl?: string;
+  onUpdateBackendUrl: (url: string) => void;
 }
 
 export const DeviceView: React.FC<DeviceViewProps> = ({
@@ -52,9 +55,31 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   onClearStorage,
   isSimulating,
   onToggleSimulator,
+  backendUrl = '',
+  onUpdateBackendUrl,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [backendInput, setBackendInput] = useState(backendUrl);
+  const [backendStatus, setBackendStatus] = useState<'idle' | 'testing' | 'connected' | 'failed'>('idle');
+  const [backendVersion, setBackendVersion] = useState('');
+
+  const handleTestBackend = async () => {
+    if (!backendInput.trim()) {
+      onUpdateBackendUrl('');
+      setBackendStatus('idle');
+      return;
+    }
+    setBackendStatus('testing');
+    const health = await BackendService.checkHealth(backendInput.trim());
+    if (health && health.status === 'healthy') {
+      setBackendStatus('connected');
+      setBackendVersion(health.version || '1.0.0');
+      onUpdateBackendUrl(backendInput.trim());
+    } else {
+      setBackendStatus('failed');
+    }
+  };
 
   // Form states for Add Device
   const [formName, setFormName] = useState('');
@@ -604,6 +629,59 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Backend Golang VPS (Tencent Lighthouse / aaPanel) */}
+          <Card className="p-4 space-y-3 md:col-span-2 border-cyan-500/30">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Server className="w-4 h-4 text-cyan-500" />
+                <h4 className="font-bold text-sm text-teks-utama">
+                  Backend Server & Database (Tencent VPS aaPanel)
+                </h4>
+              </div>
+              <div>
+                {backendStatus === 'connected' ? (
+                  <Badge variant="sukses" dot>
+                    Terhubung ({backendVersion})
+                  </Badge>
+                ) : backendStatus === 'failed' ? (
+                  <Badge variant="bahaya" dot>
+                    Gagal Terhubung
+                  </Badge>
+                ) : backendUrl ? (
+                  <Badge variant="netral">Tersimpan</Badge>
+                ) : (
+                  <Badge variant="netral">Lokal / MQTT Langsung</Badge>
+                )}
+              </div>
+            </div>
+
+            <p className="text-xs text-teks-sekunder leading-relaxed">
+              Hubungkan web frontend (Vercel) ke backend Golang di Tencent Lighthouse VPS Anda untuk menyimpan data ke database 24/7 dan sinkronisasi lintas perangkat.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="url"
+                value={backendInput}
+                onChange={(e) => {
+                  setBackendInput(e.target.value);
+                  setBackendStatus('idle');
+                }}
+                placeholder="Contoh: http://124.xxx.xxx.xxx:8080 atau https://api.domain.com"
+                className="flex-1 bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleTestBackend}
+                disabled={backendStatus === 'testing'}
+                className="text-xs whitespace-nowrap"
+              >
+                {backendStatus === 'testing' ? 'Menguji...' : 'Tes & Simpan Koneksi'}
+              </Button>
+            </div>
+          </Card>
+
           {/* Theme switcher */}
           <Card className="p-4 space-y-3">
             <h4 className="font-bold text-sm text-teks-utama">Tema Tampilan</h4>

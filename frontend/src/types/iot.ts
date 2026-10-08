@@ -57,6 +57,7 @@ export interface Pengaturan {
   rentangGrafik: '5m' | '1h' | 'session';
   izinNotif: boolean;
   ambangPlotting: number;
+  backendUrl?: string;
 }
 
 // MQTT Payloads Schema v1

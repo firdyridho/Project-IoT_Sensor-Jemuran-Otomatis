@@ -1,0 +1,244 @@
+package handlers
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"hujan-backend/database"
+	"hujan-backend/models"
+)
+
+// GetDevices returns all registered devices
+func GetDevices(c *gin.Context) {
+	var devices []models.Device
+	database.DB.Order("created_at asc").Find(&devices)
+	c.JSON(http.StatusOK, devices)
+}
+
+// CreateDevice registers a new device
+func CreateDevice(c *gin.Context) {
+	var req models.Device
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.ID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceId wajib diisi"})
+		return
+	}
+
+	req.LastSeenAt = time.Now()
+	req.Status = "online"
+	if req.AmbangPct == 0 {
+		req.AmbangPct = 60
+	}
+
+	if err := database.DB.Create(&req).Error; err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "ID Perangkat sudah terdaftar"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, req)
+}
+
+// UpdateDevice updates an existing device
+func UpdateDevice(c *gin.Context) {
+	id := c.Param("id")
+	var req models.Device
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existing models.Device
+	if err := database.DB.First(&existing, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Perangkat tidak ditemukan"})
+		return
+	}
+
+	existing.Name = req.Name
+	existing.BrokerURL = req.BrokerURL
+	existing.LokasiADM4 = req.LokasiADM4
+	if req.AmbangPct > 0 {
+		existing.AmbangPct = req.AmbangPct
+	}
+
+	database.DB.Save(&existing)
+	c.JSON(http.StatusOK, existing)
+}
+
+// DeleteDevice deletes a device and its history
+func DeleteDevice(c *gin.Context) {
+	id := c.Param("id")
+	database.DB.Where("device_id = ?", id).Delete(&models.Telemetry{})
+	database.DB.Where("device_id = ?", id).Delete(&models.Event{})
+	result := database.DB.Delete(&models.Device{}, "id = ?", id)
+
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Perangkat tidak ditemukan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Perangkat dan riwayat berhasil dihapus"})
+}
+
+// GetTelemetry returns time-series readings with range filter
+func GetTelemetry(c *gin.Context) {
+	deviceID := c.Param("id")
+	rangeParam := c.DefaultQuery("range", "1h")
+	limitParam := c.DefaultQuery("limit", "1000")
+
+	limit, _ := strconv.Atoi(limitParam)
+	if limit <= 0 || limit > 5000 {
+		limit = 1000
+	}
+
+	query := database.DB.Where("device_id = ?", deviceID)
+
+	now := time.Now()
+	switch rangeParam {
+	case "5m":
+		cutoff := now.Add(-5 * time.Minute)
+		query = query.Where("created_at >= ?", cutoff)
+	case "1h":
+		cutoff := now.Add(-1 * time.Hour)
+		query = query.Where("created_at >= ?", cutoff)
+	case "24h":
+		cutoff := now.Add(-24 * time.Hour)
+		query = query.Where("created_at >= ?", cutoff)
+	}
+
+	var list []models.Telemetry
+	query.Order("timestamp asc").Limit(limit).Find(&list)
+
+	c.JSON(http.StatusOK, list)
+}
+
+// GetEvents returns historical events for a device
+func GetEvents(c *gin.Context) {
+	deviceID := c.Param("id")
+	limitParam := c.DefaultQuery("limit", "100")
+	limit, _ := strconv.Atoi(limitParam)
+	if limit <= 0 || limit > 500 {
+		limit = 100
+	}
+
+	var list []models.Event
+	database.DB.Where("device_id = ?", deviceID).Order("timestamp desc").Limit(limit).Find(&list)
+	c.JSON(http.StatusOK, list)
+}
+
+// GetLatest returns latest status and reading for a device
+func GetLatest(c *gin.Context) {
+	deviceID := c.Param("id")
+
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", deviceID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Perangkat tidak ditemukan"})
+		return
+	}
+
+	var latestTel models.Telemetry
+	database.DB.Where("device_id = ?", deviceID).Order("timestamp desc").First(&latestTel)
+
+	// Check staleness (> 90 seconds)
+	isStale := time.Since(dev.LastSeenAt) > 90*time.Second
+	status := dev.Status
+	if isStale {
+		status = "offline"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"device":     dev,
+		"status":     status,
+		"isStale":    isStale,
+		"telemetry":  latestTel,
+		"lastSeenAt": dev.LastSeenAt,
+	})
+}
+
+// IngestTelemetry handles direct HTTP POST ingestion from ESP32
+func IngestTelemetry(c *gin.Context) {
+	var p models.IngestPayload
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if p.DeviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceId wajib diisi"})
+		return
+	}
+
+	if p.TS == 0 {
+		p.TS = time.Now().UnixMilli()
+	}
+
+	reading := models.Telemetry{
+		DeviceID:  p.DeviceID,
+		Timestamp: p.TS,
+		Raw:       p.Raw,
+		Pct:       p.Pct,
+		Wet:       p.Wet,
+		TempC:     p.TempC,
+		Hum:       p.Hum,
+		Vbat:      p.Vbat,
+		RSSI:      p.RSSI,
+		CreatedAt: time.Now(),
+	}
+
+	database.DB.Create(&reading)
+	database.DB.Model(&models.Device{}).Where("id = ?", p.DeviceID).Updates(map[string]interface{}{
+		"status":       "online",
+		"last_seen_at": time.Now(),
+	})
+
+	Hub.Broadcast("telemetry", p)
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// TestTelegram sends a test alert to verify Telegram bot and chat ID
+func TestTelegram(c *gin.Context) {
+	var req struct {
+		BotToken string `json:"botToken"`
+		ChatID   string `json:"chatId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.BotToken == "" || req.ChatID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "BotToken dan ChatID wajib diisi"})
+		return
+	}
+
+	text := "🌧️ <b>Tes Notifikasi HujanPantau!</b>\nKoneksi bot Telegram dari backend berhasil aktif."
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", req.BotToken)
+	body, _ := json.Marshal(map[string]interface{}{
+		"chat_id":    req.ChatID,
+		"text":       text,
+		"parse_mode": "HTML",
+	})
+
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("Telegram merespons dengan status HTTP %d", resp.StatusCode)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Notifikasi Telegram berhasil terkirim!"})
+}
