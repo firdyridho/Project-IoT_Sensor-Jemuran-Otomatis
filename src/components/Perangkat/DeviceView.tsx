@@ -55,7 +55,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   // Form states
   const [formName, setFormName] = useState('');
   const [formId, setFormId] = useState('');
-  const [formBroker, setFormBroker] = useState('wss://broker.emqx.io:8884/mqtt');
+  const [formBroker, setFormBroker] = useState('wss://test.mosquitto.org:8081/mqtt');
   const [formAdm4, setFormAdm4] = useState('31.71.03.1001');
   const [formError, setFormError] = useState('');
 
@@ -306,7 +306,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                 <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-2 gap-2">
                   <div className="truncate">
                     <span>Broker: </span>
-                    <strong className="text-teks-utama">{device.brokerUrl.split('//')[1]?.split(':')[0] || 'EMQX'}</strong>
+                    <strong className="text-teks-utama">{device.brokerUrl.split('//')[1]?.split(':')[0] || 'Mosquitto'}</strong>
                   </div>
                   <div className="truncate text-right">
                     <span>ADM4: </span>

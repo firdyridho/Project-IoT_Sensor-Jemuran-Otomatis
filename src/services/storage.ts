@@ -14,7 +14,7 @@ const KEYS = {
 const DEFAULT_DEVICE: Perangkat = {
   deviceId: 'hs-8f3a1c9d2b70',
   nama: 'Jemuran Utama',
-  brokerUrl: 'wss://broker.emqx.io:8884/mqtt',
+  brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
   lokasiAdm4: '31.71.03.1001',
   fwVersi: '1.0.0',
   lastSeenTs: Date.now(),
