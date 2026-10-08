@@ -73,6 +73,11 @@ func main() {
 	// REST API Routes
 	api := r.Group("/api")
 	{
+		// Authentication endpoints (Multi-User)
+		api.POST("/auth/register", handlers.Register)
+		api.POST("/auth/login", handlers.Login)
+		api.GET("/auth/me", handlers.GetMe)
+
 		api.GET("/devices", handlers.GetDevices)
 		api.POST("/devices", handlers.CreateDevice)
 		api.PUT("/devices/:id", handlers.UpdateDevice)

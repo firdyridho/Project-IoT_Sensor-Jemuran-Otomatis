@@ -89,9 +89,10 @@ function safeSetItem(key: string, value: string): void {
 }
 
 export const StorageService = {
-  getDevices(): Perangkat[] {
+  getDevices(userId?: string): Perangkat[] {
     try {
-      const raw = localStorage.getItem(KEYS.DEVICES);
+      const key = userId ? `${KEYS.DEVICES}.${userId}` : KEYS.DEVICES;
+      const raw = localStorage.getItem(key);
       if (!raw) return [DEFAULT_DEVICE];
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) && parsed.length > 0 ? parsed : [DEFAULT_DEVICE];
@@ -100,9 +101,10 @@ export const StorageService = {
     }
   },
 
-  saveDevices(devices: Perangkat[]): void {
+  saveDevices(devices: Perangkat[], userId?: string): void {
+    const key = userId ? `${KEYS.DEVICES}.${userId}` : KEYS.DEVICES;
     const trimmed = devices.slice(0, 5); // Max 5 devices
-    safeSetItem(KEYS.DEVICES, JSON.stringify(trimmed));
+    safeSetItem(key, JSON.stringify(trimmed));
   },
 
   getSettings(): Pengaturan {

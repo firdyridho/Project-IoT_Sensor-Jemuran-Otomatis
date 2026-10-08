@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -78,8 +79,9 @@ func InitDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("gagal membuka database: %w", err)
 	}
 
-	// Auto-migrate tables (Devices, Telemetry, Events)
+	// Auto-migrate tables (User, Devices, Telemetry, Events)
 	err = db.AutoMigrate(
+		&models.User{},
 		&models.Device{},
 		&models.Telemetry{},
 		&models.Event{},
@@ -96,12 +98,30 @@ func InitDB() (*gorm.DB, error) {
 		sqlDB.SetConnMaxLifetime(time.Hour)
 	}
 
+	// Seed demo user if empty
+	var userCount int64
+	db.Model(&models.User{}).Count(&userCount)
+	if userCount == 0 {
+		hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+		demoUser := models.User{
+			ID:           "usr-demo-admin",
+			Email:        "admin@hujanpantau.id",
+			Name:         "Admin HujanPantau",
+			PasswordHash: string(hash),
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+		db.Create(&demoUser)
+		log.Println("[Database] Seeded demo user: admin@hujanpantau.id / admin123")
+	}
+
 	// Seed default device if empty
 	var count int64
 	db.Model(&models.Device{}).Count(&count)
 	if count == 0 {
 		defaultDev := models.Device{
 			ID:         "hs-8f3a1c9d2b70",
+			UserID:     "usr-demo-admin",
 			Name:       "Jemuran Utama",
 			BrokerURL:  "wss://test.mosquitto.org:8081/mqtt",
 			LokasiADM4: "31.71.03.1001",

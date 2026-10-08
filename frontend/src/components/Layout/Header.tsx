@@ -1,6 +1,7 @@
 import React from 'react';
-import { Sun, Moon, Laptop, Bell, BellOff, BellRing, Wifi, WifiOff, CloudRain } from 'lucide-react';
+import { Sun, Moon, Laptop, Bell, BellOff, BellRing, Wifi, WifiOff, CloudRain, LogOut } from 'lucide-react';
 import { Perangkat } from '../../types/iot';
+import { User } from '../../types/auth';
 import { Badge } from '../Common/Badge';
 
 interface HeaderProps {
@@ -14,6 +15,8 @@ interface HeaderProps {
   onToggleTheme: () => void;
   notifPermission: NotificationPermission;
   onRequestNotif: () => void;
+  user?: User;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -27,6 +30,8 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   notifPermission,
   onRequestNotif,
+  user,
+  onLogout,
 }) => {
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-kartu/90 backdrop-blur-md border-garis transition-colors">
@@ -133,6 +138,29 @@ export const Header: React.FC<HeaderProps> = ({
               <Laptop className="w-4 h-4 text-teks-sekunder" />
             )}
           </button>
+
+          {/* User profile & Logout */}
+          {user && (
+            <div className="flex items-center gap-1.5 pl-1.5 border-l border-garis">
+              <div
+                className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-kartu-muted border border-garis text-xs text-teks-utama"
+                title={`Masuk sebagai: ${user.email}`}
+              >
+                <div className="w-5 h-5 rounded-lg bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold flex items-center justify-center text-[10px]">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="font-semibold truncate max-w-[110px]">{user.name}</span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="min-h-11 min-w-11 p-2 rounded-xl text-teks-sekunder hover:text-red-500 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 flex items-center justify-center transition-all"
+                title="Keluar dari akun"
+                aria-label="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

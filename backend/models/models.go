@@ -4,9 +4,20 @@ import (
 	"time"
 )
 
+// User represents an authenticated account
+type User struct {
+	ID           string    `gorm:"primaryKey;size:64" json:"id"`
+	Email        string    `gorm:"size:128;uniqueIndex;not null" json:"email"`
+	Name         string    `gorm:"size:128;not null" json:"name"`
+	PasswordHash string    `gorm:"size:256;not null" json:"-"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
 // Device represents a registered ESP32 clothesline monitor unit
 type Device struct {
 	ID         string    `gorm:"primaryKey;size:64" json:"deviceId"`
+	UserID     string    `gorm:"size:64;index" json:"userId"`
 	Name       string    `gorm:"size:128;not null" json:"name"`
 	BrokerURL  string    `gorm:"size:256" json:"brokerUrl"`
 	LokasiADM4 string    `gorm:"size:32" json:"lokasiAdm4"`

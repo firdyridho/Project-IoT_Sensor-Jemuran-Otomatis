@@ -22,11 +22,14 @@ export const BackendService = {
     }
   },
 
-  async getDevices(baseUrl: string): Promise<Perangkat[]> {
+  async getDevices(baseUrl: string, userId?: string, token?: string): Promise<Perangkat[]> {
     if (!baseUrl) return [];
     try {
       const clean = baseUrl.replace(/\/+$/, '');
-      const res = await fetch(`${clean}/api/devices`);
+      const url = userId ? `${clean}/api/devices?userId=${encodeURIComponent(userId)}` : `${clean}/api/devices`;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(url, { headers });
       if (!res.ok) return [];
       const list = await res.json();
       return list.map((item: any) => ({
@@ -44,15 +47,18 @@ export const BackendService = {
     }
   },
 
-  async createDevice(baseUrl: string, device: Perangkat): Promise<boolean> {
+  async createDevice(baseUrl: string, device: Perangkat, userId?: string, token?: string): Promise<boolean> {
     if (!baseUrl) return false;
     try {
       const clean = baseUrl.replace(/\/+$/, '');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${clean}/api/devices`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           deviceId: device.deviceId,
+          userId: userId || undefined,
           name: device.nama,
           brokerUrl: device.brokerUrl,
           lokasiAdm4: device.lokasiAdm4,

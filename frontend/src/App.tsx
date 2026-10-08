@@ -11,6 +11,10 @@ import { WeatherView } from './components/Cuaca/WeatherView';
 import { HistoryView } from './components/Riwayat/HistoryView';
 import { DeviceView } from './components/Perangkat/DeviceView';
 import { ConfirmModal } from './components/Common/ConfirmModal';
+import { AuthModal } from './components/Auth/AuthModal';
+import { LandingPage } from './components/Landing/LandingPage';
+import { AuthService } from './services/auth';
+import { AuthSession } from './types/auth';
 
 import {
   Perangkat,
@@ -28,13 +32,38 @@ import { Notifications } from './services/notifications';
 import { BackendService } from './services/api';
 
 export const App: React.FC = () => {
+  // 0. Auth Session State ("Ingat Saya" & User Data Isolation)
+  const [session, setSession] = useState<AuthSession | null>(() => AuthService.getSession());
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+
   // 1. Core State
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
-  const [devices, setDevices] = useState<Perangkat[]>(() => StorageService.getDevices());
+  const [devices, setDevices] = useState<Perangkat[]>(() =>
+    StorageService.getDevices(session?.user?.id)
+  );
   const [settings, setSettings] = useState(() => StorageService.getSettings());
 
+  // Reload devices when user switches or logs in
+  useEffect(() => {
+    if (session?.user?.id) {
+      const userDevices = StorageService.getDevices(session.user.id);
+      setDevices(userDevices);
+    }
+  }, [session?.user?.id]);
+
   const activeDevice =
-    devices.find((d) => d.deviceId === settings.deviceIdActive) || devices[0];
+    devices.find((d) => d.deviceId === settings.deviceIdActive) ||
+    devices[0] || {
+      deviceId: 'hs-8f3a1c9d2b70',
+      nama: 'Jemuran Utama',
+      brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
+      lokasiAdm4: '31.71.03.1001',
+      fwVersi: '1.0.0',
+      lastSeenTs: Date.now(),
+      online: true,
+      ambangPct: 60,
+    };
 
   // 2. Realtime Telemetry & State
   const [latestState, setLatestState] = useState<StatePayload | null>(null);
@@ -112,6 +141,34 @@ export const App: React.FC = () => {
     const newSettings = { ...settings, tema: theme };
     setSettings(newSettings);
     StorageService.saveSettings(newSettings);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Auth Handlers (Login, Logout, Session Persistence)
+  // ---------------------------------------------------------------------------
+  const handleAuthSuccess = (newSession: AuthSession) => {
+    setSession(newSession);
+    const userDevices = StorageService.getDevices(newSession.user.id);
+    setDevices(userDevices);
+    Notifications.addToast({
+      id: 'auth-success-' + Date.now(),
+      type: 'success',
+      title: 'Selamat Datang!',
+      message: `Berhasil masuk sebagai ${newSession.user.name}. Data perangkat Anda siap digunakan.`,
+      timestamp: Date.now(),
+    });
+  };
+
+  const handleLogout = () => {
+    AuthService.clearSession();
+    setSession(null);
+    Notifications.addToast({
+      id: 'auth-logout-' + Date.now(),
+      type: 'info',
+      title: 'Telah Keluar',
+      message: 'Sesi Anda telah diakhiri. Silakan masuk kembali kapan saja.',
+      timestamp: Date.now(),
+    });
   };
 
   // ---------------------------------------------------------------------------
@@ -278,35 +335,48 @@ export const App: React.FC = () => {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const backendUrl = settings.backendUrl;
-    if (!backendUrl) return;
+    if (!backendUrl || !session) return;
 
     let isMounted = true;
     const syncDevices = async () => {
       try {
-        const remoteDevices = await BackendService.getDevices(backendUrl);
+        const remoteDevices = await BackendService.getDevices(
+          backendUrl,
+          session.user.id,
+          session.token
+        );
         if (!isMounted) return;
 
         if (remoteDevices && remoteDevices.length > 0) {
           // Check if user has local devices not yet saved to backend
-          const currentLocal = StorageService.getDevices();
+          const currentLocal = StorageService.getDevices(session.user.id);
           const missingOnRemote = currentLocal.filter(
             (localDev) => !remoteDevices.some((r) => r.deviceId === localDev.deviceId)
           );
 
           if (missingOnRemote.length > 0) {
             for (const missingDev of missingOnRemote) {
-              await BackendService.createDevice(backendUrl, missingDev);
+              await BackendService.createDevice(
+                backendUrl,
+                missingDev,
+                session.user.id,
+                session.token
+              );
             }
-            const updatedRemote = await BackendService.getDevices(backendUrl);
+            const updatedRemote = await BackendService.getDevices(
+              backendUrl,
+              session.user.id,
+              session.token
+            );
             if (isMounted && updatedRemote && updatedRemote.length > 0) {
               setDevices(updatedRemote);
-              StorageService.saveDevices(updatedRemote);
+              StorageService.saveDevices(updatedRemote, session.user.id);
               return;
             }
           }
 
           setDevices(remoteDevices);
-          StorageService.saveDevices(remoteDevices);
+          StorageService.saveDevices(remoteDevices, session.user.id);
 
           // Ensure active device exists
           setSettings((prevSettings) => {
@@ -318,10 +388,15 @@ export const App: React.FC = () => {
             return prevSettings;
           });
         } else {
-          // If remote database is empty, push existing local devices to backend
-          const localDevices = StorageService.getDevices();
+          // If remote database is empty for this user, push existing local devices to backend
+          const localDevices = StorageService.getDevices(session.user.id);
           for (const dev of localDevices) {
-            await BackendService.createDevice(backendUrl, dev);
+            await BackendService.createDevice(
+              backendUrl,
+              dev,
+              session.user.id,
+              session.token
+            );
           }
         }
       } catch (err) {
@@ -340,7 +415,7 @@ export const App: React.FC = () => {
       isMounted = false;
       window.removeEventListener('focus', handleFocus);
     };
-  }, [settings.backendUrl]);
+  }, [settings.backendUrl, session?.user?.id, session?.token]);
 
   // ---------------------------------------------------------------------------
   // Realtime Backend WebSocket & Direct MQTT Hardware Lifecycle
@@ -411,7 +486,7 @@ export const App: React.FC = () => {
   const handleAddDevice = (newDevice: Perangkat) => {
     const updated = [...devices, newDevice];
     setDevices(updated);
-    StorageService.saveDevices(updated);
+    StorageService.saveDevices(updated, session?.user?.id);
     handleSelectDevice(newDevice.deviceId);
 
     Notifications.addToast({
@@ -424,7 +499,12 @@ export const App: React.FC = () => {
 
     // Sync to MySQL Database on VPS
     if (settings.backendUrl) {
-      BackendService.createDevice(settings.backendUrl, newDevice).catch((err) => {
+      BackendService.createDevice(
+        settings.backendUrl,
+        newDevice,
+        session?.user?.id,
+        session?.token
+      ).catch((err) => {
         console.warn('Gagal menyimpan perangkat ke database backend:', err);
       });
     }
@@ -436,7 +516,7 @@ export const App: React.FC = () => {
       d.deviceId === updatedDevice.deviceId ? updatedDevice : d
     );
     setDevices(updated);
-    StorageService.saveDevices(updated);
+    StorageService.saveDevices(updated, session?.user?.id);
     if (settings.deviceIdActive === updatedDevice.deviceId) {
       loadWeather(updatedDevice.lokasiAdm4);
     }
@@ -482,15 +562,20 @@ export const App: React.FC = () => {
         ambangPct: 60,
       };
       setDevices([cleanDefault]);
-      StorageService.saveDevices([cleanDefault]);
+      StorageService.saveDevices([cleanDefault], session?.user?.id);
       handleSelectDevice(cleanDefault.deviceId);
       if (settings.backendUrl) {
-        BackendService.createDevice(settings.backendUrl, cleanDefault).catch(() => {});
+        BackendService.createDevice(
+          settings.backendUrl,
+          cleanDefault,
+          session?.user?.id,
+          session?.token
+        ).catch(() => {});
       }
     } else {
       const updated = devices.filter((d) => d.deviceId !== deviceId);
       setDevices(updated);
-      StorageService.saveDevices(updated);
+      StorageService.saveDevices(updated, session?.user?.id);
       if (settings.deviceIdActive === deviceId) {
         handleSelectDevice(updated[0].deviceId);
       }
@@ -550,6 +635,33 @@ export const App: React.FC = () => {
     ? 'hujan'
     : 'kering';
 
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
+        <ToastContainer />
+        <LandingPage
+          onOpenAuth={(mode) => {
+            setAuthModalMode(mode);
+            setShowAuthModal(true);
+          }}
+          onQuickDemo={() => {
+            const demoSession = AuthService.demoLogin(true);
+            handleAuthSuccess(demoSession);
+          }}
+          theme={settings.tema}
+          onToggleTheme={handleToggleTheme}
+        />
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
+          backendUrl={settings.backendUrl || ''}
+          initialMode={authModalMode}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
       {/* Toast Alert System */}
@@ -579,6 +691,8 @@ export const App: React.FC = () => {
           onToggleTheme={handleToggleTheme}
           notifPermission={notifPermission}
           onRequestNotif={handleRequestNotification}
+          user={session.user}
+          onLogout={handleLogout}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
@@ -600,10 +714,10 @@ export const App: React.FC = () => {
                       }`}
                     />
                     {isBrokerDisconnected
-                      ? 'Broker terputus'
+                      ? 'Server terputus'
                       : isDeviceOffline
                       ? 'Perangkat offline'
-                      : 'Terhubung live (MQTT)'}
+                      : 'Server Cloud Realtime (WebSocket)'}
                   </span>
                   <span>
                     Pembaruan: {secondsAgo < 5 ? 'Baru saja' : `${secondsAgo} dtk lalu`}

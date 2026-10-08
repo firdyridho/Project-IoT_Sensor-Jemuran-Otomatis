@@ -65,7 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             dot
           >
             {brokerStatus !== 'connected'
-              ? 'Broker Putus'
+              ? 'Server Putus'
               : !isOnline
               ? 'Offline'
               : isRaining
@@ -110,7 +110,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <p className="leading-relaxed opacity-80">
           Sumber data cuaca: <strong>Badan Meteorologi, Klimatologi, dan Geofisika (BMKG)</strong>
         </p>
-        <p className="text-[10px] text-teks-sekunder/70 pt-1">v1.0.0 • Tanpa Backend</p>
+        <p className="text-[10px] text-teks-sekunder/70 pt-1">v1.1.0 • Cloud IoT WebSocket</p>
       </div>
     </aside>
   );

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +15,24 @@ import (
 	"hujan-backend/models"
 )
 
-// GetDevices returns all registered devices
+// GetDevices returns all registered devices for the requesting user
 func GetDevices(c *gin.Context) {
+	userID := c.Query("userId")
+	if userID == "" {
+		if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			if uid, err := parseToken(token); err == nil {
+				userID = uid
+			}
+		}
+	}
+
 	var devices []models.Device
-	database.DB.Order("created_at asc").Find(&devices)
+	if userID != "" {
+		database.DB.Where("user_id = ? OR user_id = ''", userID).Order("created_at asc").Find(&devices)
+	} else {
+		database.DB.Order("created_at asc").Find(&devices)
+	}
 	c.JSON(http.StatusOK, devices)
 }
 
@@ -32,6 +47,16 @@ func CreateDevice(c *gin.Context) {
 	if req.ID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceId wajib diisi"})
 		return
+	}
+
+	// Associate with user if not set
+	if req.UserID == "" {
+		if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			if uid, err := parseToken(token); err == nil {
+				req.UserID = uid
+			}
+		}
 	}
 
 	req.LastSeenAt = time.Now()
