@@ -302,15 +302,62 @@ export const App: React.FC = () => {
     handleSelectDevice(newDevice.deviceId);
   };
 
-  // Delete Device
-  const handleDeleteDevice = (deviceId: string) => {
-    if (devices.length <= 1) return;
-    const updated = devices.filter((d) => d.deviceId !== deviceId);
+  // Update/Edit Device
+  const handleUpdateDevice = (updatedDevice: Perangkat) => {
+    const updated = devices.map((d) =>
+      d.deviceId === updatedDevice.deviceId ? updatedDevice : d
+    );
     setDevices(updated);
     StorageService.saveDevices(updated);
-    if (settings.deviceIdActive === deviceId) {
-      handleSelectDevice(updated[0].deviceId);
+    if (settings.deviceIdActive === updatedDevice.deviceId) {
+      loadWeather(updatedDevice.lokasiAdm4);
     }
+    Notifications.addToast({
+      id: 'dev-update-' + Date.now(),
+      type: 'success',
+      title: 'Perangkat Diperbarui',
+      message: `Pengaturan "${updatedDevice.nama}" berhasil disimpan.`,
+      timestamp: Date.now(),
+    });
+  };
+
+  // Delete Device
+  const handleDeleteDevice = (deviceId: string) => {
+    const dev = devices.find((d) => d.deviceId === deviceId);
+    if (!window.confirm(`Yakin ingin menghapus perangkat "${dev?.nama || deviceId}"?`)) {
+      return;
+    }
+
+    if (devices.length <= 1) {
+      const cleanDefault: Perangkat = {
+        deviceId: 'hs-' + Math.random().toString(16).slice(2, 14).padEnd(12, '0'),
+        nama: 'Jemuran Baru',
+        brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
+        lokasiAdm4: '31.71.03.1001',
+        fwVersi: '1.0.0',
+        lastSeenTs: Date.now(),
+        online: true,
+        ambangPct: 60,
+      };
+      setDevices([cleanDefault]);
+      StorageService.saveDevices([cleanDefault]);
+      handleSelectDevice(cleanDefault.deviceId);
+    } else {
+      const updated = devices.filter((d) => d.deviceId !== deviceId);
+      setDevices(updated);
+      StorageService.saveDevices(updated);
+      if (settings.deviceIdActive === deviceId) {
+        handleSelectDevice(updated[0].deviceId);
+      }
+    }
+
+    Notifications.addToast({
+      id: 'dev-del-' + Date.now(),
+      type: 'info',
+      title: 'Perangkat Dihapus',
+      message: `Perangkat "${dev?.nama || deviceId}" telah dihapus.`,
+      timestamp: Date.now(),
+    });
   };
 
   // Clear storage
@@ -487,6 +534,7 @@ export const App: React.FC = () => {
                   activeDevice={activeDevice}
                   onSelectDevice={handleSelectDevice}
                   onAddDevice={handleAddDevice}
+                  onUpdateDevice={handleUpdateDevice}
                   onDeleteDevice={handleDeleteDevice}
                   theme={settings.tema}
                   onChangeTheme={handleChangeTheme}

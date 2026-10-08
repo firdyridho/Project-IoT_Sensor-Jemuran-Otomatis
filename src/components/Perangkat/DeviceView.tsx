@@ -17,6 +17,8 @@ import {
   SunMedium,
   CloudDrizzle,
   Database,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
@@ -29,6 +31,7 @@ interface DeviceViewProps {
   activeDevice: Perangkat;
   onSelectDevice: (deviceId: string) => void;
   onAddDevice: (newDevice: Perangkat) => void;
+  onUpdateDevice: (updatedDevice: Perangkat) => void;
   onDeleteDevice: (deviceId: string) => void;
   theme: 'light' | 'dark' | 'system';
   onChangeTheme: (theme: 'light' | 'dark' | 'system') => void;
@@ -42,6 +45,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   activeDevice,
   onSelectDevice,
   onAddDevice,
+  onUpdateDevice,
   onDeleteDevice,
   theme,
   onChangeTheme,
@@ -52,12 +56,20 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  // Form states
+  // Form states for Add Device
   const [formName, setFormName] = useState('');
   const [formId, setFormId] = useState('');
   const [formBroker, setFormBroker] = useState('wss://test.mosquitto.org:8081/mqtt');
   const [formAdm4, setFormAdm4] = useState('31.71.03.1001');
   const [formError, setFormError] = useState('');
+
+  // Form states for Edit Device
+  const [editingDevice, setEditingDevice] = useState<Perangkat | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editBroker, setEditBroker] = useState('');
+  const [editAdm4, setEditAdm4] = useState('');
+  const [editAmbangPct, setEditAmbangPct] = useState(60);
+  const [editError, setEditError] = useState('');
 
   // Simulator controls
   const [simMode, setSimMode] = useState<'dry' | 'light_rain' | 'heavy_rain'>('dry');
@@ -109,6 +121,51 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
     setShowAddForm(false);
     setFormName('');
     setFormId('');
+  };
+
+  const handleStartEdit = (device: Perangkat) => {
+    setEditingDevice(device);
+    setEditName(device.nama);
+    setEditBroker(device.brokerUrl);
+    setEditAdm4(device.lokasiAdm4);
+    setEditAmbangPct(device.ambangPct || 60);
+    setEditError('');
+    setShowAddForm(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDevice(null);
+    setEditError('');
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDevice) return;
+    setEditError('');
+
+    if (!editName.trim()) {
+      setEditError('Nama perangkat tidak boleh kosong');
+      return;
+    }
+    if (!editBroker.trim()) {
+      setEditError('URL broker tidak boleh kosong');
+      return;
+    }
+    if (!editAdm4.trim()) {
+      setEditError('Kode ADM4 tidak boleh kosong');
+      return;
+    }
+
+    const updated: Perangkat = {
+      ...editingDevice,
+      nama: editName.trim(),
+      brokerUrl: editBroker.trim(),
+      lokasiAdm4: editAdm4.trim(),
+      ambangPct: Number(editAmbangPct) || 60,
+    };
+
+    onUpdateDevice(updated);
+    setEditingDevice(null);
   };
 
   return (
@@ -241,6 +298,117 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
         </Card>
       )}
 
+      {/* Edit Device Form */}
+      {editingDevice && (
+        <Card className="p-5 border-2 border-blue-500/50 bg-kartu space-y-4">
+          <div className="flex items-center justify-between border-b border-garis pb-2">
+            <div className="flex items-center gap-2">
+              <Pencil className="w-4 h-4 text-blue-500" />
+              <h3 className="font-bold text-sm text-teks-utama">
+                Edit Perangkat: <span className="font-mono text-blue-600 dark:text-blue-400">{editingDevice.deviceId}</span>
+              </h3>
+            </div>
+            <button
+              onClick={handleCancelEdit}
+              className="text-xs text-teks-sekunder hover:text-teks-utama p-1 rounded-lg"
+              aria-label="Tutup edit"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveEdit} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-teks-sekunder mb-1">
+                Nama Perangkat
+              </label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full bg-kartu-muted border border-garis rounded-xl text-xs px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-medium text-teks-sekunder">
+                    URL Broker WSS
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEditBroker('wss://test.mosquitto.org:8081/mqtt')}
+                    className="text-[10px] text-blue-500 hover:underline"
+                  >
+                    Set Mosquitto
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={editBroker}
+                  onChange={(e) => setEditBroker(e.target.value)}
+                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-teks-sekunder mb-1">
+                  Kode ADM4 Wilayah
+                </label>
+                <input
+                  type="text"
+                  value={editAdm4}
+                  onChange={(e) => setEditAdm4(e.target.value)}
+                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-teks-sekunder">
+                  Ambang Deteksi Hujan (% Basah)
+                </label>
+                <span className="text-xs font-bold font-mono text-cyan-600 dark:text-cyan-400">
+                  {editAmbangPct}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="20"
+                max="90"
+                step="5"
+                value={editAmbangPct}
+                onChange={(e) => setEditAmbangPct(Number(e.target.value))}
+                className="w-full accent-cyan-500"
+              />
+              <div className="flex justify-between text-[10px] text-teks-sekunder mt-0.5">
+                <span>Lebih Sensitif (20%)</span>
+                <span>Standar (60%)</span>
+                <span>Kurang Sensitif (90%)</span>
+              </div>
+            </div>
+
+            {editError && (
+              <p className="text-xs text-red-500 font-medium">{editError}</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="ghost" size="sm" onClick={handleCancelEdit}>
+                Batal
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Simpan Perubahan
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
       {/* 2. Device List Cards */}
       <section className="space-y-3">
         <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
@@ -289,24 +457,37 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                         Pilih
                       </Button>
                     )}
-                    {devices.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onDeleteDevice(device.deviceId)}
-                        className="text-red-500 hover:text-red-600 p-2 min-w-9 min-h-9"
-                        title="Hapus perangkat"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStartEdit(device)}
+                      className="text-blue-500 hover:text-blue-600 p-2 min-w-9 min-h-9"
+                      title="Edit perangkat"
+                      aria-label={`Edit ${device.nama}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteDevice(device.deviceId)}
+                      className="text-red-500 hover:text-red-600 p-2 min-w-9 min-h-9"
+                      title="Hapus perangkat"
+                      aria-label={`Hapus ${device.nama}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-2 gap-2">
+                <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-3 gap-2">
                   <div className="truncate">
                     <span>Broker: </span>
                     <strong className="text-teks-utama">{device.brokerUrl.split('//')[1]?.split(':')[0] || 'Mosquitto'}</strong>
+                  </div>
+                  <div className="truncate text-center">
+                    <span>Ambang: </span>
+                    <strong className="text-cyan-600 dark:text-cyan-400 font-mono">{device.ambangPct || 60}%</strong>
                   </div>
                   <div className="truncate text-right">
                     <span>ADM4: </span>
