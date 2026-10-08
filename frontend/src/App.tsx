@@ -10,6 +10,7 @@ import { RealtimeChart } from './components/Grafik/RealtimeChart';
 import { WeatherView } from './components/Cuaca/WeatherView';
 import { HistoryView } from './components/Riwayat/HistoryView';
 import { DeviceView } from './components/Perangkat/DeviceView';
+import { ConfirmModal } from './components/Common/ConfirmModal';
 
 import {
   Perangkat,
@@ -55,10 +56,12 @@ export const App: React.FC = () => {
   const [isWeatherStale, setIsWeatherStale] = useState(false);
   const [weatherError, setWeatherError] = useState<string | undefined>(undefined);
 
-  // 4. Notifications State
+  // 4. Notifications & Modals State
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
     Notifications.getPermission()
   );
+  const [deviceToDelete, setDeviceToDelete] = useState<Perangkat | null>(null);
+  const [showClearStorageModal, setShowClearStorageModal] = useState<boolean>(false);
 
   // Debounced storage save reference
   const debouncedReadingsRef = useRef<number | null>(null);
@@ -411,6 +414,14 @@ export const App: React.FC = () => {
     StorageService.saveDevices(updated);
     handleSelectDevice(newDevice.deviceId);
 
+    Notifications.addToast({
+      id: 'dev-add-' + Date.now(),
+      type: 'success',
+      title: 'Perangkat Berhasil Ditambahkan',
+      message: `Perangkat "${newDevice.nama}" (${newDevice.deviceId}) berhasil didaftarkan dan disinkronkan ke database MySQL VPS.`,
+      timestamp: Date.now(),
+    });
+
     // Sync to MySQL Database on VPS
     if (settings.backendUrl) {
       BackendService.createDevice(settings.backendUrl, newDevice).catch((err) => {
@@ -432,8 +443,8 @@ export const App: React.FC = () => {
     Notifications.addToast({
       id: 'dev-update-' + Date.now(),
       type: 'success',
-      title: 'Perangkat Diperbarui',
-      message: `Pengaturan "${updatedDevice.nama}" berhasil disimpan.`,
+      title: 'Perubahan Berhasil Disimpan',
+      message: `Pengaturan "${updatedDevice.nama}" berhasil diperbarui dan disinkronkan ke database MySQL VPS.`,
       timestamp: Date.now(),
     });
 
@@ -445,17 +456,24 @@ export const App: React.FC = () => {
     }
   };
 
-  // Delete Device
+  // Request Delete Device (Opens custom modal instead of window.confirm)
   const handleDeleteDevice = (deviceId: string) => {
     const dev = devices.find((d) => d.deviceId === deviceId);
-    if (!window.confirm(`Yakin ingin menghapus perangkat "${dev?.nama || deviceId}"?`)) {
-      return;
+    if (dev) {
+      setDeviceToDelete(dev);
     }
+  };
+
+  // Confirm Delete Device from Modal
+  const handleConfirmDelete = () => {
+    if (!deviceToDelete) return;
+    const deviceId = deviceToDelete.deviceId;
+    const devName = deviceToDelete.nama;
 
     if (devices.length <= 1) {
       const cleanDefault: Perangkat = {
         deviceId: 'hs-' + Math.random().toString(16).slice(2, 14).padEnd(12, '0'),
-        nama: 'Jemuran Baru',
+        nama: 'Jemuran Utama',
         brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
         lokasiAdm4: '31.71.03.1001',
         fwVersi: '1.0.0',
@@ -489,19 +507,34 @@ export const App: React.FC = () => {
       id: 'dev-del-' + Date.now(),
       type: 'info',
       title: 'Perangkat Dihapus',
-      message: `Perangkat "${dev?.nama || deviceId}" telah dihapus.`,
+      message: `Perangkat "${devName}" berhasil dihapus dari sistem dan database MySQL VPS.`,
       timestamp: Date.now(),
     });
+
+    setDeviceToDelete(null);
   };
 
-  // Clear storage
+  // Request Clear Storage (Opens custom modal instead of window.confirm)
   const handleClearStorage = () => {
-    if (window.confirm('Bersihkan seluruh cache lokal dan riwayat pembacaan?')) {
-      StorageService.clearAllData();
-      setReadings([]);
-      setEvents([]);
+    setShowClearStorageModal(true);
+  };
+
+  // Confirm Clear Storage from Modal
+  const handleConfirmClearStorage = () => {
+    StorageService.clearAllData();
+    setReadings([]);
+    setEvents([]);
+    setShowClearStorageModal(false);
+    Notifications.addToast({
+      id: 'clear-storage-' + Date.now(),
+      type: 'success',
+      title: 'Cache Lokal Dibersihkan',
+      message: 'Seluruh riwayat lokal telah direset. Memuat ulang halaman...',
+      timestamp: Date.now(),
+    });
+    setTimeout(() => {
       window.location.reload();
-    }
+    }, 600);
   };
 
   // Latest values for Dashboard
@@ -683,6 +716,29 @@ export const App: React.FC = () => {
         activeTab={activeTab}
         onChangeTab={setActiveTab}
         isRaining={currentWet}
+      />
+
+      {/* Custom Confirmation Modals */}
+      <ConfirmModal
+        isOpen={!!deviceToDelete}
+        title="Hapus Perangkat?"
+        message={`Apakah Anda yakin ingin menghapus perangkat "${deviceToDelete?.nama}" (${deviceToDelete?.deviceId})? Seluruh data riwayat dan telemetri terkait akan dihapus secara permanen dari database MySQL VPS.`}
+        confirmLabel="Ya, Hapus Perangkat"
+        cancelLabel="Batal"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeviceToDelete(null)}
+      />
+
+      <ConfirmModal
+        isOpen={showClearStorageModal}
+        title="Bersihkan Cache & Reset Data?"
+        message="Semua cache telemetri offline dan preferensi browser lokal akan dibersihkan. Halaman akan dimuat ulang secara otomatis."
+        confirmLabel="Ya, Bersihkan Cache"
+        cancelLabel="Batal"
+        variant="warning"
+        onConfirm={handleConfirmClearStorage}
+        onCancel={() => setShowClearStorageModal(false)}
       />
     </div>
   );
