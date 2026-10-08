@@ -1,223 +1,236 @@
-# Panduan Lengkap Deploy IoT Sensor Hujan & Jemuran Otomatis (MySQL + CI/CD)
+# Panduan Lengkap Deploy IoT Sensor Hujan dan Jemuran Otomatis
 
-Panduan ini berisi arsitektur lengkap untuk **Frontend (Vercel)**, **Backend (Golang + MySQL di VPS Tencent Cloud aaPanel)**, dan **CI/CD Otomatis via GitHub**.
+Panduan ini berisi dokumentasi arsitektur dan langkah deployment untuk Frontend (Vercel), Backend (Golang + MySQL di VPS Tencent Cloud aaPanel), dan CI/CD Otomatis via GitHub Actions.
 
 ---
 
-## 1. Arsitektur Folder Proyek & CI/CD
+## 1. Arsitektur Repositori dan Monorepo
 
-Semua file berada dalam 1 repository GitHub yang rapi (*Monorepo*):
+Seluruh komponen aplikasi dikelola dalam satu repositori terstruktur (Monorepo):
 
 ```
 Iot Sensor Hujan/
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml            <-- CI/CD: Otomatis compile & deploy ke VPS saat git push
-├── backend/                      <-- Golang Backend Service
-│   ├── database/                 <-- GORM MySQL Driver & Migrasi Skema
-│   ├── deploy/
-│   │   ├── build-linux.bat       <-- Script kompilasi Linux lokal
-│   │   ├── hujan-backend.service <-- Systemd service unit di VPS
-│   │   └── nginx-aapanel.conf    <-- Nginx Reverse Proxy + WebSocket (/ws)
-│   ├── handlers/                 <-- REST API & Hub WebSocket
-│   ├── models/                   <-- Model data (Device, Telemetry, Event)
-│   ├── mqtt/                     <-- Subscriber MQTT 24/7 (test.mosquitto.org)
-│   ├── hujan-backend-linux       <-- Binary Linux mandiri
+│       └── deploy.yml            # Pipeline CI/CD GitHub Actions
+├── backend/                      # Service Backend Golang
+│   ├── database/                 # Driver MySQL (GORM) dan Redis cache
+│   ├── deploy/                   # Service unit systemd dan konfigurasi Nginx
+│   ├── handlers/                 # Handler REST API dan WebSocket hub
+│   ├── models/                   # Definisi struktur entitas data
+│   ├── mqtt/                     # Background worker subscriber MQTT
+│   ├── hujan-backend-linux       # Binary executable Linux AMD64
 │   ├── go.mod
 │   └── main.go
-├── frontend/                     <-- React 19 + TypeScript + Vite + Tailwind CSS
-│   ├── src/
-│   ├── vercel.json               <-- Routing SPA & Security Header Vercel
+├── frontend/                     # Dashboard SPA React
+│   ├── src/                      # Source code aplikasi, hooks, dan state manager
+│   ├── public/                   # Asset statis, ikon, dan manifest PWA
+│   ├── vercel.json               # Konfigurasi routing SPA dan HTTP security headers
 │   └── package.json
 └── docs/
-    └── DEPLOYMENT_GUIDE.md       <-- Panduan ini
+    └── DEPLOYMENT_GUIDE.md       # Panduan infrastruktur server dan deployment
 ```
 
 ---
 
-## 2. Arsitektur Terpisah: Staging vs Production
+## 2. Pemisahan Lingkungan: Staging vs Production
 
-Sistem mendukung pemisahan lingkungan (*Environment Separation*) secara penuh:
+Sistem mendukung pemisahan lingkungan kerja secara penuh (Environment Separation) untuk menjamin stabilitas produksi:
 
-| Komponen | 🟡 Staging (Uji Coba) | 🟢 Production (Produksi) |
+| Komponen | Lingkungan Staging (Uji Coba) | Lingkungan Produksi (Live) |
 | :--- | :--- | :--- |
 | **Git Branch** | `staging` | `main` |
-| **Frontend Vercel** | `https://hujan-pantau-git-staging-xxx.vercel.app` (Preview otomatis) | `https://hujan-pantau.vercel.app` (Live Domain) |
+| **Frontend Vercel** | Vercel Preview Deployments (branch `staging`) | [https://rintik-self.vercel.app](https://rintik-self.vercel.app) |
 | **Backend Domain** | `https://staging-43-133-136-149.sslip.io` | `https://43-133-136-149.sslip.io` |
 | **Port Backend VPS** | Port `8080` | Port `8081` |
 | **Database MySQL** | `hujan_iot_staging` | `hujan_iot_prod` |
 | **Service Systemd** | `hujan-backend-staging.service` | `hujan-backend-prod.service` |
 | **Konsumsi RAM VPS** | ~15 MB RAM | ~15 MB RAM |
 
-*Kedua backend berjalan bersamaan di 1 VPS tanpa saling mengganggu, total RAM hanya ~30 MB!*
+Kedua backend berjalan bersamaan di 1 VPS tanpa saling mengganggu, dengan total konsumsi memori gabungan hanya sekitar ~30 MB RAM.
 
 ---
 
-### A. Apakah Redis Berat di VPS?
-* **Jawab:** **SANGAT RINGAN!** Redis hanya memakan RAM sekitar **15 – 25 MB**.
-* **Fungsi di IoT:**
-  1. **Cache Status Terkini:** Menyimpan status sensor terakhir (*Last Known State*) sehingga web tidak perlu terus-menerus melakukan query berat ke database disk.
-  2. **Cache BMKG:** Menyimpan prakiraan cuaca BMKG selama 1–2 jam agar server tidak bolak-balik menembak API BMKG.
-* **Cara Install di aaPanel:** Buka **App Store** di aaPanel -> Cari **Redis** -> Klik **Install** (Fast).
+### Informasi Komponen Pendukung di VPS
 
-### B. Apakah Semua File Di-push ke GitHub?
-* **YA**, semua kode di folder `frontend/`, `backend/`, `.github/`, dan `docs/` di-push ke GitHub.
-* Yang **TIDAK** di-push (otomatis diabaikan oleh `.gitignore`):
-  - `node_modules/` (library frontend)
-  - File rahasia berisi password database (`.env`)
+#### A. Redis Cache
+* Konsumsi RAM: Sangat ringan, berkisar antara 15 sampai 25 MB RAM.
+* Fungsi:
+  1. Cache Status Terkini: Menyimpan status sensor terakhir (Last Known State) sehingga pembacaan cepat tidak membebani query database disk.
+  2. Cache Cuaca BMKG: Menyimpan data respon BMKG selama 1 hingga 2 jam untuk menghindari rate limit API eksternal.
+* Instalasi di aaPanel: App Store -> Cari Redis -> Install.
 
----
-
-## 3. Langkah Setup Database MySQL di aaPanel
-
-Setelah paket **LNMP** (Nginx, MySQL 5.7, phpMyAdmin) selesai di-install di aaPanel:
-
-### Langkah 1: Buat Database di aaPanel
-1. Buka dashboard **aaPanel** (`http://43.133.136.149:7800/login`).
-2. Masuk ke menu **Database** di sebelah kiri.
-3. Klik tombol biru **Add Database**:
-   - **DBName:** `hujan_iot`
-   - **DBType:** `MySQL`
-   - **Username:** `hujan_user` (atau biarkan default)
-   - **Password:** Catat password yang dibuatkan aaPanel (misal: `Rahasia123!`)
-   - **Access Permission:** `Local server` (127.0.0.1)
-4. Klik **Submit**.
-5. Database `hujan_iot` sudah siap digunakan!
-
-### Langkah 2: Buka phpMyAdmin (Opsional)
-* Di menu **Database**, kamu bisa klik tombol **phpMyAdmin** untuk membuka tampilan visual database lewat browser.
+#### B. Pengelolaan File Sensitif
+* File yang di-push ke GitHub: Kode backend, frontend, konfigurasi deployment, dan dokumentasi.
+* File yang diabaikan (.gitignore): Direktori `node_modules/` dan file kredensial lokal `.env`.
 
 ---
 
-## 4. Langkah Deploy Backend Golang di VPS
+## 3. Konfigurasi Database MySQL di aaPanel
 
-### Langkah 1: Siapkan Folder Aplikasi
-Di aaPanel, masuk ke menu **Files** -> buat folder:
-`/www/wwwroot/hujan-backend`
+Setelah paket LNMP (Nginx, MySQL 5.7, phpMyAdmin) terpasang di aaPanel:
 
-### Langkah 2: Upload File Binary
-Upload file `hujan-backend-linux` dari folder `backend/` laptop kamu ke `/www/wwwroot/hujan-backend/`.
-Beri izin eksekusi:
+### Langkah Pembuatan Database
+1. Buka dashboard aaPanel (`http://43.133.136.149:7800/login`).
+2. Masuk ke menu **Database** pada bilah navigasi kiri.
+3. Klik tombol **Add Database**:
+   * **Database Staging**:
+     - DBName: `hujan_iot_staging`
+     - DBType: `MySQL`
+     - Username: `hujan_user`
+     - Access Permission: `Local server` (127.0.0.1)
+   * **Database Production**:
+     - DBName: `hujan_iot_prod`
+     - DBType: `MySQL`
+     - Username: `hujan_user`
+     - Access Permission: `Local server` (127.0.0.1)
+4. Klik **Submit**. Seluruh tabel (`devices`, `telemetries`, `events`) akan otomatis diinisialisasi oleh migrasi GORM saat service pertama kali dijalankan.
+
+---
+
+## 4. Konfigurasi Backend Golang di VPS
+
+### Langkah 1: Direktori Aplikasi
+Di aaPanel, buka menu **Files** dan pastikan kedua direktori berikut tersedia:
+* `/www/wwwroot/hujan-backend-staging`
+* `/www/wwwroot/hujan-backend-prod`
+
+### Langkah 2: Pemberian Izin Eksekusi Binary
+Pastikan binary memiliki izin eksekusi:
 ```bash
-chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
+chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
 ```
 
-### Langkah 3: Konfigurasi Service Systemd dengan MySQL
-Buka menu **Terminal** di aaPanel (atau OrcaTerm Tencent) dan jalankan perintah:
+### Langkah 3: Konfigurasi Service Systemd
 
-```bash
-cat << 'EOF' > /etc/systemd/system/hujan-backend.service
+#### Service Staging (`/etc/systemd/system/hujan-backend-staging.service`):
+```ini
 [Unit]
-Description=HujanPantau IoT Go Backend
+Description=HujanPantau IoT Go Backend (Staging)
 After=network.target mysql.service
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/www/wwwroot/hujan-backend
-ExecStart=/www/wwwroot/hujan-backend/hujan-backend-linux
+WorkingDirectory=/www/wwwroot/hujan-backend-staging
+ExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux
 Restart=always
 RestartSec=5
 Environment=PORT=8080
 Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
-
-# Konfigurasi Database MySQL aaPanel:
 Environment=DB_TYPE=mysql
 Environment=MYSQL_USER=hujan_user
 Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
-Environment=MYSQL_DATABASE=hujan_iot
+Environment=MYSQL_DATABASE=hujan_iot_staging
 Environment=MYSQL_HOST=127.0.0.1
 Environment=MYSQL_PORT=3306
-
-# Konfigurasi Cache Redis aaPanel:
 Environment=REDIS_ADDR=127.0.0.1:6379
 
 [Install]
 WantedBy=multi-user.target
-EOF
-
-# Reload dan jalankan service
-systemctl daemon-reload
-systemctl enable hujan-backend
-systemctl restart hujan-backend
-
-# Cek status (harus warna hijau 'active running')
-systemctl status hujan-backend
 ```
 
-*Begitu service berjalan, tabel `devices`, `telemetries`, dan `events` otomatis dibuatkan di dalam database MySQL `hujan_iot`!*
+#### Service Production (`/etc/systemd/system/hujan-backend-prod.service`):
+```ini
+[Unit]
+Description=HujanPantau IoT Go Backend (Production)
+After=network.target mysql.service
 
-### Langkah 4: Setup Domain Gratis & Reverse Proxy Nginx di aaPanel
-1. Masuk ke menu **Website** -> **Add site**.
-2. Masukkan domain gratis: **`43-133-136-149.sslip.io`**.
-3. Di tab **SSL**, pilih **Let's Encrypt** -> centang nama domain -> klik **Apply** -> aktifkan **Force HTTPS**.
-4. Klik tab **Reverse Proxy** -> **Add Reverse Proxy**:
-   - Name: `hujan-api`
-   - Target URL: `http://127.0.0.1:8080`
-   - Sent Domain: `$host`
-   - Pastikan **Enable cache** tetap **OFF (Mati)**!
-   ```nginx
-   location / {
-       proxy_pass http://127.0.0.1:8080;
-       proxy_set_header Host $host;
-       proxy_set_header X-Real-IP $remote_addr;
-       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-       proxy_set_header X-Forwarded-Proto $scheme;
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/wwwroot/hujan-backend-prod
+ExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux
+Restart=always
+RestartSec=5
+Environment=PORT=8081
+Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+Environment=DB_TYPE=mysql
+Environment=MYSQL_USER=hujan_user
+Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
+Environment=MYSQL_DATABASE=hujan_iot_prod
+Environment=MYSQL_HOST=127.0.0.1
+Environment=MYSQL_PORT=3306
+Environment=REDIS_ADDR=127.0.0.1:6379
 
-       proxy_http_version 1.1;
-       proxy_set_header Upgrade $http_upgrade;
-       proxy_set_header Connection "upgrade";
-       proxy_read_timeout 86400s;
-   }
-   ```
-5. Buka tab **SSL** di website aaPanel -> pilih **Let's Encrypt** -> klik **Apply** untuk SSL gratis.
+[Install]
+WantedBy=multi-user.target
+```
+
+Aktivasi kedua service:
+```bash
+systemctl daemon-reload
+systemctl enable hujan-backend-staging hujan-backend-prod
+systemctl restart hujan-backend-staging hujan-backend-prod
+```
+
+### Langkah 4: Setup Domain dan Reverse Proxy Nginx
+
+1. Tambahkan dua situs di menu **Website** aaPanel:
+   * Domain Staging: `staging-43-133-136-149.sslip.io`
+   * Domain Production: `43-133-136-149.sslip.io`
+2. Pasang sertifikat SSL Let's Encrypt dan aktifkan Force HTTPS pada masing-masing situs.
+3. Konfigurasikan Reverse Proxy pada masing-masing situs:
+   * Untuk Staging: target URL `http://127.0.0.1:8080`
+   * Untuk Production: target URL `http://127.0.0.1:8081`
+
+Pastikan proxy Nginx meneruskan header WebSocket:
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8080; # Ganti 8081 untuk production
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 86400s;
+}
+```
 
 ---
 
-## 5. Langkah Deploy Frontend ke Vercel
+## 5. Deployment Frontend ke Vercel
 
-1. Push repository ke akun [GitHub](https://github.com) Anda.
-2. Buka dashboard [vercel.com](https://vercel.com) -> **Add New...** -> **Project**.
-3. Import repo GitHub Anda.
-4. Pada form konfigurasi:
-   - **Root Directory:** pilih `frontend`
-   - **Framework Preset:** `Vite`
-5. Klik **Deploy**.
-6. Selesai! Web Anda langsung tayang secara global di domain Vercel.
-
----
+1. Hubungkan repositori GitHub ke akun Vercel.
+2. Buat project baru dengan memilih repositori ini.
+3. Konfigurasi build setting:
+   * **Root Directory**: `frontend`
+   * **Framework Preset**: `Vite`
+4. Klik **Deploy**.
+5. Lingkungan produksi otomatis dialokasikan ke: `https://rintik-self.vercel.app/`.
 
 ---
 
-## 6. Koneksi Otomatis Frontend ke Backend (Zero Configuration)
+## 6. Koneksi Otomatis Frontend ke Backend (Invisible Routing)
 
-Frontend secara otomatis mendeteksi environment dan terhubung ke backend yang tepat secara transparan (*invisible routing*) tanpa perlu input URL atau konfigurasi manual oleh pengguna:
+Frontend mengidentifikasi lingkungan secara transparan (Invisible Routing) tanpa mengharuskan pengguna mengisi URL server secara manual:
 
-1. **Staging Frontend** (domain staging, preview PR, localhost):
-   - Otomatis tersambung ke: `https://staging-43-133-136-149.sslip.io`
-   - Terhubung ke database: `hujan_iot_staging`
+1. **Staging Frontend** (domain staging, preview pull request, localhost):
+   * Terhubung otomatis ke: `https://staging-43-133-136-149.sslip.io`
+   * Menggunakan database: `hujan_iot_staging`
 2. **Production Frontend** (`https://rintik-self.vercel.app` atau custom domain produksi):
-   - Otomatis tersambung ke: `https://43-133-136-149.sslip.io`
-   - Terhubung ke database: `hujan_iot_prod`
-
-Pengguna awam cukup membuka website dan langsung melihat data sensor realtime tanpa perlu repot mengatur IP atau server.
+   * Terhubung otomatis ke: `https://43-133-136-149.sslip.io`
+   * Menggunakan database: `hujan_iot_prod`
 
 ---
 
-## 7. Setup CI/CD Otomatis Backend ke VPS (Setiap Git Push Langsung Update)
+## 7. Setup CI/CD Otomatis Backend ke VPS via GitHub Actions
 
-Agar binary backend Golang di VPS otomatis terupdate setiap kali kamu melakukan `git push` (tanpa perlu upload manual lewat aaPanel Files):
+Agar pembaruan kode backend otomatis dikompilasi dan dikirim ke VPS tanpa intervensi manual:
 
-### Tambahkan 3 GitHub Secrets di Repository:
-1. Buka Repository GitHub -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**.
-2. Masukkan secret berikut:
-   - `VPS_HOST`: `43.133.136.149`
-   - `VPS_USERNAME`: `root` (atau `ubuntu`)
-   - `VPS_PASSWORD`: Password SSH VPS Anda (atau isi `VPS_SSH_KEY` jika menggunakan Private Key SSH)
+### Penambahan GitHub Secrets
+Masuk ke menu **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret** pada repositori GitHub:
+* `VPS_HOST`: `43.133.136.149`
+* `VPS_USERNAME`: `root` (atau `ubuntu`)
+* `VPS_PASSWORD`: Password SSH VPS Anda (atau isi `VPS_SSH_KEY` jika menggunakan Private Key SSH)
 
-### Cara Kerja Otomatis:
-- Saat push ke branch **`staging`**:
-  GitHub Actions otomatis mengompilasi binary Linux, mengirimkannya ke `/www/wwwroot/hujan-backend-staging/hujan-backend-linux`, dan me-restart service `hujan-backend-staging`.
-- Saat push ke branch **`main`**:
-  GitHub Actions otomatis mengompilasi binary Linux, mengirimkannya ke `/www/wwwroot/hujan-backend-prod/hujan-backend-linux`, dan me-restart service `hujan-backend-prod`.
-- **Frontend Vercel**: Tetap otomatis deploy dalam hitungan detik setiap ada push ke GitHub.
+### Mekanisme Deployment Otomatis
+* **Push ke branch `staging`**:
+  GitHub Actions mengompilasi binary Linux, mentransfer file ke `/www/wwwroot/hujan-backend-staging/hujan-backend-linux`, dan me-restart service `hujan-backend-staging`.
+* **Push ke branch `main`**:
+  GitHub Actions mengompilasi binary Linux, mentransfer file ke `/www/wwwroot/hujan-backend-prod/hujan-backend-linux`, dan me-restart service `hujan-backend-prod`.
+* **Frontend**: Vercel melakukan build dan deployment otomatis setiap kali ada perubahan pada repositori.
