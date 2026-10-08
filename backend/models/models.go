@@ -7,7 +7,7 @@ import (
 // User represents an authenticated account
 type User struct {
 	ID           string    `gorm:"primaryKey;size:64" json:"id"`
-	Email        string    `gorm:"size:128;uniqueIndex;not null" json:"email"`
+	Username     string    `gorm:"size:64;uniqueIndex;not null" json:"username"`
 	Name         string    `gorm:"size:128;not null" json:"name"`
 	PasswordHash string    `gorm:"size:256;not null" json:"-"`
 	CreatedAt    time.Time `json:"createdAt"`

@@ -105,14 +105,17 @@ func InitDB() (*gorm.DB, error) {
 		hash, _ := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
 		demoUser := models.User{
 			ID:           "usr-demo-admin",
-			Email:        "admin@hujanpantau.id",
+			Username:     "admin",
 			Name:         "Admin HujanPantau",
 			PasswordHash: string(hash),
 			CreatedAt:    time.Now(),
 			UpdatedAt:    time.Now(),
 		}
 		db.Create(&demoUser)
-		log.Println("[Database] Seeded demo user: admin@hujanpantau.id / admin123")
+		log.Println("[Database] Seeded demo user: admin / admin123")
+	} else {
+		// Ensure demo user has username set if migrated from earlier schema
+		db.Model(&models.User{}).Where("id = ? AND (username = '' OR username IS NULL)", "usr-demo-admin").Update("username", "admin")
 	}
 
 	// Seed default device if empty

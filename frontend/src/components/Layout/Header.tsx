@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1.5 pl-1.5 border-l border-garis">
               <div
                 className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-kartu-muted border border-garis text-xs text-teks-utama"
-                title={`Masuk sebagai: ${user.email}`}
+                title={`Masuk sebagai: @${user.username}`}
               >
                 <div className="w-5 h-5 rounded-lg bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 font-bold flex items-center justify-center text-[10px]">
                   {user.name.charAt(0).toUpperCase()}

@@ -39,7 +39,7 @@ export const AuthService = {
 
   async login(
     baseUrl: string,
-    email: string,
+    username: string,
     password: string,
     rememberMe: boolean
   ): Promise<{ success: boolean; error?: string; session?: AuthSession }> {
@@ -52,19 +52,19 @@ export const AuthService = {
       const res = await fetch(`${clean}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        return { success: false, error: data.error || 'Email atau kata sandi tidak cocok' };
+        return { success: false, error: data.error || 'Username atau kata sandi tidak cocok' };
       }
 
       const session: AuthSession = {
         user: {
           id: data.user.id,
           name: data.user.name,
-          email: data.user.email,
+          username: data.user.username,
           createdAt: data.user.createdAt,
         },
         token: data.token,
@@ -84,7 +84,7 @@ export const AuthService = {
   async register(
     baseUrl: string,
     name: string,
-    email: string,
+    username: string,
     password: string,
     rememberMe: boolean
   ): Promise<{ success: boolean; error?: string; session?: AuthSession }> {
@@ -97,7 +97,7 @@ export const AuthService = {
       const res = await fetch(`${clean}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, username, password }),
       });
 
       const data = await res.json();
@@ -109,7 +109,7 @@ export const AuthService = {
         user: {
           id: data.user.id,
           name: data.user.name,
-          email: data.user.email,
+          username: data.user.username,
           createdAt: data.user.createdAt,
         },
         token: data.token,
@@ -131,7 +131,7 @@ export const AuthService = {
       user: {
         id: 'usr-demo-admin',
         name: 'Demo Pengguna',
-        email: 'demo@hujanpantau.id',
+        username: 'admin',
       },
       token: 'demo-token-bypass',
       rememberMe,

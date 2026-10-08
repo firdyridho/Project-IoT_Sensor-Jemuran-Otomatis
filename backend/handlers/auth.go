@@ -21,12 +21,12 @@ var jwtSecret = []byte("hujan-pantau-secret-key-2026")
 
 type RegisterReq struct {
 	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required,min=3"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
 type LoginReq struct {
-	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -35,9 +35,9 @@ type AuthResponse struct {
 	User  models.User `json:"user"`
 }
 
-func generateToken(userID, email string) string {
+func generateToken(userID, username string) string {
 	ts := time.Now().Add(30 * 24 * time.Hour).Unix() // 30 days valid
-	payload := fmt.Sprintf("%s:%s:%d", userID, email, ts)
+	payload := fmt.Sprintf("%s:%s:%d", userID, username, ts)
 	mac := hmac.New(sha256.New, jwtSecret)
 	mac.Write([]byte(payload))
 	sig := hex.EncodeToString(mac.Sum(nil))
@@ -76,15 +76,15 @@ func parseToken(tokenStr string) (string, error) {
 func Register(c *gin.Context) {
 	var req RegisterReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input tidak valid (password min 6 karakter): " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input tidak valid (username min 3, password min 6 karakter)"})
 		return
 	}
 
-	email := strings.ToLower(strings.TrimSpace(req.Email))
+	username := strings.ToLower(strings.TrimSpace(req.Username))
 
 	var existing models.User
-	if err := database.DB.Where("email = ?", email).First(&existing).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email sudah terdaftar. Silakan login."})
+	if err := database.DB.Where("username = ?", username).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Username sudah digunakan. Silakan pilih username lain."})
 		return
 	}
 
@@ -100,7 +100,7 @@ func Register(c *gin.Context) {
 
 	newUser := models.User{
 		ID:           userID,
-		Email:        email,
+		Username:     username,
 		Name:         strings.TrimSpace(req.Name),
 		PasswordHash: string(hash),
 		CreatedAt:    time.Now(),
@@ -112,7 +112,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	token := generateToken(newUser.ID, newUser.Email)
+	token := generateToken(newUser.ID, newUser.Username)
 	c.JSON(http.StatusCreated, AuthResponse{
 		Token: token,
 		User:  newUser,
@@ -123,24 +123,24 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var req LoginReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email dan password wajib diisi"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username dan password wajib diisi"})
 		return
 	}
 
-	email := strings.ToLower(strings.TrimSpace(req.Email))
+	username := strings.ToLower(strings.TrimSpace(req.Username))
 
 	var user models.User
-	if err := database.DB.Where("email = ?", email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau kata sandi salah"})
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau kata sandi salah"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau kata sandi salah"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau kata sandi salah"})
 		return
 	}
 
-	token := generateToken(user.ID, user.Email)
+	token := generateToken(user.ID, user.Username)
 	c.JSON(http.StatusOK, AuthResponse{
 		Token: token,
 		User:  user,

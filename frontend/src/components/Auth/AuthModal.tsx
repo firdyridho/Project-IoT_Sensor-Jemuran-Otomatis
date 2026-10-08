@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, X, Check, Eye, EyeOff, ShieldCheck, Sparkles, LogIn, UserPlus } from 'lucide-react';
+import { AtSign, Lock, User, X, Check, Eye, EyeOff, ShieldCheck, Sparkles, LogIn, UserPlus } from 'lucide-react';
 import { Button } from '../Common/Button';
 import { AuthService } from '../../services/auth';
 import { AuthSession } from '../../types/auth';
@@ -21,7 +21,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true); // Default true for user convenience
@@ -37,12 +37,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (mode === 'login') {
-        const res = await AuthService.login(backendUrl, email, password, rememberMe);
+        const res = await AuthService.login(backendUrl, username, password, rememberMe);
         if (res.success && res.session) {
           onSuccess(res.session);
           onClose();
         } else {
-          setErrorMsg(res.error || 'Email atau kata sandi tidak sesuai');
+          setErrorMsg(res.error || 'Username atau kata sandi tidak sesuai');
         }
       } else {
         if (!name.trim()) {
@@ -50,7 +50,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           setIsLoading(false);
           return;
         }
-        const res = await AuthService.register(backendUrl, name, email, password, rememberMe);
+        if (username.trim().length < 3) {
+          setErrorMsg('Username minimal 3 karakter');
+          setIsLoading(false);
+          return;
+        }
+        const res = await AuthService.register(backendUrl, name, username, password, rememberMe);
         if (res.success && res.session) {
           onSuccess(res.session);
           onClose();
@@ -168,17 +173,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="space-y-1">
             <label className="text-[11px] font-semibold text-teks-sekunder uppercase tracking-wider">
-              Alamat Email
+              Username
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-teks-sekunder absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <AtSign className="w-4 h-4 text-teks-sekunder absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="nama@email.com"
-                className="w-full bg-kartu-muted border border-garis rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-teks-utama focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                minLength={3}
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Contoh: alfadhilah"
+                className="w-full bg-kartu-muted border border-garis rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-teks-utama focus:outline-none focus:ring-2 focus:ring-cyan-500 lowercase"
               />
             </div>
           </div>
