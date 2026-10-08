@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-latar: #f8fafc;
+    --color-kartu: #ffffff;
+    --color-kartu-muted: #f1f5f9;
+    --color-teks-utama: #0f172a;
+    --color-teks-sekunder: #475569;
+    --color-garis: #e2e8f0;
+    --color-kering: #2563eb;
+    --color-kering-bg: #eff6ff;
+    --color-hujan: #0891b2;
+    --color-hujan-bg: #ecfeff;
+    --color-offline: #64748b;
+    --color-offline-bg: #f8fafc;
+    --color-peringatan: #d97706;
+    --color-peringatan-bg: #fffbeb;
+    --color-bahaya: #dc2626;
+    --color-bahaya-bg: #fef2f2;
+    --color-sukses: #16a34a;
+    --color-sukses-bg: #f0fdf4;
+    --color-fokus: #2563eb;
+  }
+
+  [data-tema="dark"] {
+    --color-latar: #0f172a;
+    --color-kartu: #1e293b;
+    --color-kartu-muted: #182234;
+    --color-teks-utama: #f1f5f9;
+    --color-teks-sekunder: #94a3b8;
+    --color-garis: #334155;
+    --color-kering: #60a5fa;
+    --color-kering-bg: rgba(96, 165, 250, 0.12);
+    --color-hujan: #22d3ee;
+    --color-hujan-bg: rgba(34, 211, 238, 0.12);
+    --color-offline: #94a3b8;
+    --color-offline-bg: rgba(148, 163, 184, 0.12);
+    --color-peringatan: #fbbf24;
+    --color-peringatan-bg: rgba(251, 191, 36, 0.12);
+    --color-bahaya: #f87171;
+    --color-bahaya-bg: rgba(248, 113, 113, 0.12);
+    --color-sukses: #4ade80;
+    --color-sukses-bg: rgba(74, 222, 128, 0.12);
+    --color-fokus: #60a5fa;
+  }
+
+  body {
+    background-color: var(--color-latar);
+    color: var(--color-teks-utama);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, .font-heading {
+    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  }
+}
+
+/* Custom Utility Classes for Tokens */
+.bg-latar { background-color: var(--color-latar); }
+.bg-kartu { background-color: var(--color-kartu); }
+.bg-kartu-muted { background-color: var(--color-kartu-muted); }
+.text-teks-utama { color: var(--color-teks-utama); }
+.text-teks-sekunder { color: var(--color-teks-sekunder); }
+.border-garis { border-color: var(--color-garis); }
+
+.text-kering { color: var(--color-kering); }
+.bg-kering { background-color: var(--color-kering); }
+.bg-kering-subtle { background-color: var(--color-kering-bg); }
+.border-kering { border-color: var(--color-kering); }
+
+.text-hujan { color: var(--color-hujan); }
+.bg-hujan { background-color: var(--color-hujan); }
+.bg-hujan-subtle { background-color: var(--color-hujan-bg); }
+.border-hujan { border-color: var(--color-hujan); }
+
+.text-offline { color: var(--color-offline); }
+.bg-offline { background-color: var(--color-offline); }
+.bg-offline-subtle { background-color: var(--color-offline-bg); }
+.border-offline { border-color: var(--color-offline); }
+
+.text-peringatan { color: var(--color-peringatan); }
+.bg-peringatan { background-color: var(--color-peringatan); }
+.bg-peringatan-subtle { background-color: var(--color-peringatan-bg); }
+.border-peringatan { border-color: var(--color-peringatan); }
+
+.text-bahaya { color: var(--color-bahaya); }
+.bg-bahaya { background-color: var(--color-bahaya); }
+.bg-bahaya-subtle { background-color: var(--color-bahaya-bg); }
+.border-bahaya { border-color: var(--color-bahaya); }
+
+.text-sukses { color: var(--color-sukses); }
+.bg-sukses { background-color: var(--color-sukses); }
+.bg-sukses-subtle { background-color: var(--color-sukses-bg); }
+.border-sukses { border-color: var(--color-sukses); }
+
+/* Safe Area Paddings */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+.pt-safe {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+/* Subtle rain animation */
+@keyframes rain-fall {
+  0% { transform: translateY(-10px); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(20px); opacity: 0; }
+}
+
+.animate-rain-drop-1 {
+  animation: rain-fall 1.1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.animate-rain-drop-2 {
+  animation: rain-fall 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.3s;
+}
+.animate-rain-drop-3 {
+  animation: rain-fall 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite 0.6s;
+}
+
+/* Pulse beacon */
+@keyframes beacon {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.6); opacity: 0; }
+}
+
+.animate-beacon {
+  animation: beacon 2s ease-out infinite;
+}
