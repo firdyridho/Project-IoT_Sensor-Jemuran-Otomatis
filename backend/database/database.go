@@ -1,10 +1,14 @@
 package database
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -13,34 +17,82 @@ import (
 
 var DB *gorm.DB
 
-// InitDB initializes SQLite database using pure-Go driver
-func InitDB(dbPath string) (*gorm.DB, error) {
-	if dbPath == "" {
-		dbPath = "./hujan.db"
+// InitDB initializes either MySQL or SQLite database depending on environment variables
+func InitDB() (*gorm.DB, error) {
+	dbType := strings.ToLower(os.Getenv("DB_TYPE"))
+	var dialector gorm.Dialector
+
+	if dbType == "mysql" {
+		user := os.Getenv("MYSQL_USER")
+		if user == "" {
+			user = "root"
+		}
+		pass := os.Getenv("MYSQL_PASSWORD")
+		host := os.Getenv("MYSQL_HOST")
+		if host == "" {
+			host = "127.0.0.1"
+		}
+		port := os.Getenv("MYSQL_PORT")
+		if port == "" {
+			port = "3306"
+		}
+		dbName := os.Getenv("MYSQL_DATABASE")
+		if dbName == "" {
+			dbName = "hujan_iot"
+		}
+
+		// 1. Otomatis cek & buat database jika belum ada di MySQL
+		rootDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local", user, pass, host, port)
+		if rootDB, err := gorm.Open(mysql.Open(rootDSN), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)}); err == nil {
+			createSql := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;", dbName)
+			if err := rootDB.Exec(createSql).Error; err == nil {
+				log.Printf("[Database] Database '%s' siap / dibuat otomatis di MySQL!", dbName)
+			}
+			if sqlDB, err := rootDB.DB(); err == nil {
+				_ = sqlDB.Close()
+			}
+		}
+
+		// 2. Hubungkan ke database tujuan
+		dsn := os.Getenv("MYSQL_DSN")
+		if dsn == "" {
+			dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+				user, pass, host, port, dbName)
+		}
+		log.Printf("[Database] Connecting to MySQL database '%s'...", dbName)
+		dialector = mysql.Open(dsn)
+	} else {
+		// Default: SQLite (Pure Go driver)
+		dbPath := os.Getenv("DB_PATH")
+		if dbPath == "" {
+			dbPath = "./hujan.db"
+		}
+		log.Printf("[Database] Using SQLite at: %s", dbPath)
+		dialector = sqlite.Open(dbPath)
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+	db, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gagal membuka database: %w", err)
 	}
 
-	// Auto-migrate tables
+	// Auto-migrate tables (Devices, Telemetry, Events)
 	err = db.AutoMigrate(
 		&models.Device{},
 		&models.Telemetry{},
 		&models.Event{},
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gagal migrasi tabel: %w", err)
 	}
 
-	// Configure connection pool
+	// Connection pool
 	sqlDB, err := db.DB()
 	if err == nil {
 		sqlDB.SetMaxIdleConns(5)
-		sqlDB.SetMaxOpenConns(20)
+		sqlDB.SetMaxOpenConns(25)
 		sqlDB.SetConnMaxLifetime(time.Hour)
 	}
 
@@ -62,6 +114,10 @@ func InitDB(dbPath string) (*gorm.DB, error) {
 	}
 
 	DB = db
-	log.Println("[Database] SQLite initialized successfully at:", dbPath)
+	if dbType == "mysql" {
+		log.Println("[Database] MySQL successfully connected & tables migrated!")
+	} else {
+		log.Println("[Database] SQLite successfully initialized & tables migrated!")
+	}
 	return db, nil
 }

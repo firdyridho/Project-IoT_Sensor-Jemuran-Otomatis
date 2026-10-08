@@ -1,0 +1,64 @@
+name: Build & Test CI/CD
+
+on:
+  push:
+    branches: [ "main", "staging" ]
+  pull_request:
+    branches: [ "main", "staging" ]
+
+jobs:
+  # 1. Validasi & Build Frontend
+  frontend-build:
+    name: Test & Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Typecheck TypeScript
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      - name: Build Production Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  # 2. Validasi & Kompilasi Backend Golang (Linux AMD64)
+  backend-build:
+    name: Build Go Backend for Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: 'backend/go.sum'
+
+      - name: Verify Go Modules
+        working-directory: ./backend
+        run: go mod verify
+
+      - name: Compile Linux Binary (Zero CGO)
+        working-directory: ./backend
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o hujan-backend-linux main.go
+
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hujan-backend-linux
+          path: backend/hujan-backend-linux

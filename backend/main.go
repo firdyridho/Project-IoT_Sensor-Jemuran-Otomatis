@@ -21,7 +21,6 @@ func getEnv(key, defaultVal string) string {
 
 func main() {
 	port := getEnv("PORT", "8080")
-	dbPath := getEnv("DB_PATH", "./hujan.db")
 	mqttBroker := getEnv("MQTT_BROKER", "tcp://test.mosquitto.org:1883")
 	tgBot := getEnv("TELEGRAM_BOT_TOKEN", "")
 	tgChat := getEnv("TELEGRAM_CHAT_ID", "")
@@ -31,11 +30,14 @@ func main() {
 	log.Println("  Ultra-Lightweight for Tencent Lighthouse / aaPanel")
 	log.Println("==================================================")
 
-	// 1. Inisialisasi Database SQLite (Pure Go / Tanpa CGO)
-	_, err := database.InitDB(dbPath)
+	// 1. Inisialisasi Database (MySQL / SQLite)
+	_, err := database.InitDB()
 	if err != nil {
 		log.Fatalf("[FATAL] Gagal inisialisasi database: %v", err)
 	}
+
+	// 2. Inisialisasi Redis (Opsional Cache Kilat)
+	database.InitRedis()
 
 	// 2. Jalankan MQTT Subscriber 24/7 di background
 	sub := mqtt.NewSubscriber(mqttBroker, tgBot, tgChat)

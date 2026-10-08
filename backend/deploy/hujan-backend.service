@@ -11,8 +11,19 @@ Restart=always
 RestartSec=5
 Environment=PORT=8080
 Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+
+# --- PILIHAN DATABASE (PILIH SALAH SATU) ---
+# Opsi 1: Pakai MySQL aaPanel (Hapus tanda '#' untuk mengaktifkan):
+# Environment=DB_TYPE=mysql
+# Environment=MYSQL_USER=root
+# Environment=MYSQL_PASSWORD=password_mysql_kamu
+# Environment=MYSQL_DATABASE=hujan_iot
+
+# Opsi 2: Pakai SQLite (Default jika MySQL tidak diisi):
+Environment=DB_TYPE=sqlite
 Environment=DB_PATH=/www/wwwroot/hujan-backend/hujan.db
-# Opsional jika ingin bot Telegram dikirim via server backend:
+
+# Opsional notifikasi Telegram:
 # Environment=TELEGRAM_BOT_TOKEN=7123456789:AAFlmQ9xAbCd...
 # Environment=TELEGRAM_CHAT_ID=123456789
 

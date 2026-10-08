@@ -115,6 +115,9 @@ func (s *MqttSubscriber) handleTelemetry(raw []byte) {
 
 	// 3. Broadcast to all active browser WebSockets
 	handlers.Hub.Broadcast("telemetry", p)
+
+	// 4. Cache latest telemetry in Redis (microsecond memory lookup)
+	database.CacheLatestTelemetry(p.DeviceID, p)
 }
 
 func (s *MqttSubscriber) handleState(raw []byte) {

@@ -24,7 +24,6 @@ import { StorageService } from './services/storage';
 import { mqttClient, MqttConnectionStatus } from './services/mqtt';
 import { fetchBmkgWeather } from './services/bmkg';
 import { Notifications } from './services/notifications';
-import { simulator } from './services/simulator';
 import { BackendService } from './services/api';
 
 export const App: React.FC = () => {
@@ -47,7 +46,6 @@ export const App: React.FC = () => {
 
   const [brokerStatus, setBrokerStatus] = useState<MqttConnectionStatus>('connected');
   const [brokerError, setBrokerError] = useState<string>('');
-  const [isSimulating, setIsSimulating] = useState(false); // default false: real ESP32 & MQTT hardware takes priority
   const [lastSeenTs, setLastSeenTs] = useState<number>(Date.now());
   const [secondsAgo, setSecondsAgo] = useState(0);
 
@@ -240,7 +238,7 @@ export const App: React.FC = () => {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const backendUrl = settings.backendUrl;
-    if (!backendUrl || isSimulating) return;
+    if (!backendUrl) return;
 
     let isMounted = true;
     BackendService.getTelemetry(backendUrl, activeDevice.deviceId, '24h')
@@ -270,27 +268,12 @@ export const App: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [settings.backendUrl, activeDevice.deviceId, isSimulating]);
+  }, [settings.backendUrl, activeDevice.deviceId]);
 
   // ---------------------------------------------------------------------------
-  // Simulator, Backend WebSocket & MQTT Lifecycle Management
+  // Realtime Backend WebSocket & Direct MQTT Hardware Lifecycle
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    if (isSimulating) {
-      // Connect to Simulator
-      simulator.init(activeDevice.deviceId, {
-        onState: (state) => handleIngestState(state),
-        onTelemetry: (telemetry) => handleIngestTelemetry(telemetry),
-        onEvent: (ev) => handleIngestEvent(ev),
-      });
-      setBrokerStatus('connected');
-      return () => {
-        simulator.stop();
-      };
-    }
-
-    simulator.stop();
-
     // 1. If backend URL is provided, connect to WebSocket for live broadcast from VPS
     let closeWs: (() => void) | null = null;
     if (settings.backendUrl) {
@@ -307,7 +290,7 @@ export const App: React.FC = () => {
       });
     }
 
-    // 2. Connect to MQTT Broker over WSS (ensures realtime even without VPS backend)
+    // 2. Connect to MQTT Broker over WSS (ensures realtime directly from ESP32 hardware)
     mqttClient.connect(activeDevice.brokerUrl, activeDevice.deviceId, {
       onStatusChange: (status, errMsg) => {
         setBrokerStatus(status);
@@ -322,7 +305,7 @@ export const App: React.FC = () => {
       if (closeWs) closeWs();
       mqttClient.disconnect();
     };
-  }, [activeDevice.deviceId, activeDevice.brokerUrl, isSimulating, settings.backendUrl]);
+  }, [activeDevice.deviceId, activeDevice.brokerUrl, settings.backendUrl]);
 
   // Request browser notifications
   const handleRequestNotification = async () => {
@@ -484,8 +467,6 @@ export const App: React.FC = () => {
           onToggleTheme={handleToggleTheme}
           notifPermission={notifPermission}
           onRequestNotif={handleRequestNotification}
-          isSimulating={isSimulating}
-          onToggleSimulator={() => setIsSimulating(!isSimulating)}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
@@ -611,8 +592,6 @@ export const App: React.FC = () => {
                   theme={settings.tema}
                   onChangeTheme={handleChangeTheme}
                   onClearStorage={handleClearStorage}
-                  isSimulating={isSimulating}
-                  onToggleSimulator={() => setIsSimulating(!isSimulating)}
                   backendUrl={settings.backendUrl || ''}
                   onUpdateBackendUrl={handleUpdateBackendUrl}
                 />

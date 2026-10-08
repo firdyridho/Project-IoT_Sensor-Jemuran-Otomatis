@@ -14,8 +14,6 @@ interface HeaderProps {
   onToggleTheme: () => void;
   notifPermission: NotificationPermission;
   onRequestNotif: () => void;
-  isSimulating: boolean;
-  onToggleSimulator: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,8 +27,6 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   notifPermission,
   onRequestNotif,
-  isSimulating,
-  onToggleSimulator,
 }) => {
   return (
     <header className="sticky top-0 z-30 w-full border-b bg-kartu/90 backdrop-blur-md border-garis transition-colors">
@@ -92,26 +88,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Simulator Toggle, Notifications, Theme */}
+        {/* Right: Notifications, Theme */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Simulator pill */}
-          <button
-            onClick={onToggleSimulator}
-            className={`min-h-11 min-w-11 px-2.5 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all ${
-              isSimulating
-                ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-600 dark:text-cyan-400'
-                : 'bg-kartu-muted border-garis text-teks-sekunder hover:text-teks-utama'
-            }`}
-            title="Mode Simulator ESP32 (Uji coba tanpa alat fisik)"
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isSimulating ? 'bg-cyan-500 animate-pulse' : 'bg-slate-400'
-              }`}
-            />
-            <span className="hidden md:inline">Simulator</span>
-          </button>
-
           {/* Browser Notification Button */}
           <button
             onClick={onRequestNotif}

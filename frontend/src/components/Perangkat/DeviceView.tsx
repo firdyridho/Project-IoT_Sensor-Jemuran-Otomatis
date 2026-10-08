@@ -24,7 +24,6 @@ import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
-import { simulator } from '../../services/simulator';
 import { BackendService } from '../../services/api';
 
 interface DeviceViewProps {
@@ -37,8 +36,6 @@ interface DeviceViewProps {
   theme: 'light' | 'dark' | 'system';
   onChangeTheme: (theme: 'light' | 'dark' | 'system') => void;
   onClearStorage: () => void;
-  isSimulating: boolean;
-  onToggleSimulator: () => void;
   backendUrl?: string;
   onUpdateBackendUrl: (url: string) => void;
 }
@@ -53,8 +50,6 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   theme,
   onChangeTheme,
   onClearStorage,
-  isSimulating,
-  onToggleSimulator,
   backendUrl = '',
   onUpdateBackendUrl,
 }) => {
@@ -95,20 +90,6 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [editAdm4, setEditAdm4] = useState('');
   const [editAmbangPct, setEditAmbangPct] = useState(60);
   const [editError, setEditError] = useState('');
-
-  // Simulator controls
-  const [simMode, setSimMode] = useState<'dry' | 'light_rain' | 'heavy_rain'>('dry');
-  const [simOnline, setSimOnline] = useState(true);
-
-  const handleSimModeChange = (mode: 'dry' | 'light_rain' | 'heavy_rain') => {
-    setSimMode(mode);
-    simulator.setRainMode(mode);
-  };
-
-  const handleSimOnlineChange = (online: boolean) => {
-    setSimOnline(online);
-    simulator.setOnline(online);
-  };
 
   const handleCreateRandomId = () => {
     const hex = Math.random().toString(16).slice(2, 14).padEnd(12, '0');
@@ -525,104 +506,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
         </div>
       </section>
 
-      {/* 3. Interactive ESP32 Simulator Panel */}
-      <Card className="p-5 border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/5 to-transparent space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-cyan-500/15 text-cyan-500">
-              <Sliders className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-teks-utama flex items-center gap-2">
-                <span>Simulator Hardware ESP32</span>
-                <Badge variant={isSimulating ? 'hujan' : 'netral'} dot>
-                  {isSimulating ? 'Berjalan' : 'Nonaktif'}
-                </Badge>
-              </h3>
-              <p className="text-xs text-teks-sekunder mt-0.5">
-                Uji coba deteksi hujan, alarm audio, grafik realtime, dan LWT tanpa memerlukan mikrokontroler fisik
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant={isSimulating ? 'secondary' : 'primary'}
-            size="sm"
-            onClick={onToggleSimulator}
-            className="gap-2 shrink-0 self-start sm:self-auto"
-          >
-            {isSimulating ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-            <span>{isSimulating ? 'Hentikan Simulator' : 'Nyalakan Simulator'}</span>
-          </Button>
-        </div>
-
-        {isSimulating && (
-          <div className="space-y-4 pt-3 border-t border-garis">
-            <div>
-              <label className="block text-xs font-semibold text-teks-sekunder mb-2">
-                Simulasi Kondisi Sensor Cuaca:
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => handleSimModeChange('dry')}
-                  className={`min-h-11 p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
-                    simMode === 'dry'
-                      ? 'bg-blue-500/15 border-blue-500 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/30 shadow-xs'
-                      : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
-                  }`}
-                >
-                  <SunMedium className="w-4 h-4 text-blue-500" />
-                  <span>Kering (0–10%)</span>
-                </button>
-
-                <button
-                  onClick={() => handleSimModeChange('light_rain')}
-                  className={`min-h-11 p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
-                    simMode === 'light_rain'
-                      ? 'bg-cyan-500/15 border-cyan-500 text-cyan-600 dark:text-cyan-400 ring-1 ring-cyan-500/30 shadow-xs'
-                      : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
-                  }`}
-                >
-                  <CloudDrizzle className="w-4 h-4 text-cyan-500" />
-                  <span>Gerimis (40–55%)</span>
-                </button>
-
-                <button
-                  onClick={() => handleSimModeChange('heavy_rain')}
-                  className={`min-h-11 p-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all ${
-                    simMode === 'heavy_rain'
-                      ? 'bg-cyan-600/20 border-cyan-500 text-cyan-600 dark:text-cyan-300 ring-1 ring-cyan-500/40 shadow-xs font-bold'
-                      : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
-                  }`}
-                >
-                  <CloudRain className="w-4 h-4 text-cyan-400 animate-bounce" />
-                  <span>Hujan Lebat (80–95%)</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Simulated Online/Offline Toggle */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-kartu border border-garis">
-              <div>
-                <span className="text-xs font-bold text-teks-utama">Status Daya/Koneksi ESP32</span>
-                <p className="text-[11px] text-teks-sekunder">
-                  Simulasikan perangkat mati tiba-tiba untuk memicu Last Will & Testament (LWT)
-                </p>
-              </div>
-              <Button
-                variant={simOnline ? 'secondary' : 'danger'}
-                size="sm"
-                onClick={() => handleSimOnlineChange(!simOnline)}
-                className="text-xs"
-              >
-                {simOnline ? 'Matikan (Offline)' : 'Nyalakan Kembali'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* 4. Tampilan & Pengaturan Umum */}
+      {/* 3. Tampilan & Pengaturan Umum */}
       <section className="space-y-3">
         <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
           Pengaturan Aplikasi

@@ -1,81 +1,115 @@
-# Panduan Lengkap Deploy IoT Sensor Hujan & Jemuran Otomatis
+# Panduan Lengkap Deploy IoT Sensor Hujan & Jemuran Otomatis (MySQL + CI/CD)
 
-Panduan ini berisi panduan teknis implementasi backend **Golang + SQLite** di VPS **Tencent Cloud Lighthouse (aaPanel)** dan frontend di **Vercel**, serta solusi penyebab sensor ESP32 sebelumnya tidak terdeteksi basah di web.
-
----
-
-## 1. Penyebab Kenapa Sensor ESP32 Sebelumnya Masih Terbaca "Kering"
-
-Ada 2 penyebab utama yang sudah diperbaiki:
-
-1. **Simulator Web Otomatis Aktif (Root Cause)**:
-   - Sebelumnya, state awal simulator diatur ke `true` untuk keperluan demo saat belum ada alat fisik. Akibatnya, modul simulator lokal terus-menerus menimpa (*override*) pembacaan MQTT riil dengan angka acak kondisi kering setiap 2 detik.
-   - **Perbaikan**: Kami sudah mengubah nilai default menjadi `isSimulating = false`. Sekarang web memprioritaskan data riil dari ESP32 / WebSocket backend secara langsung.
-2. **Kesesuaian Topic & Device ID**:
-   - ESP32 harus mempublikasikan telemetry dengan topik:
-     `hujansensor/{DEVICE_ID}/telemetry`
-     Contoh Device ID bawaan: `hs-8f3a1c9d2b70`
-     Topik: `hujansensor/hs-8f3a1c9d2b70/telemetry`
+Panduan ini berisi arsitektur lengkap untuk **Frontend (Vercel)**, **Backend (Golang + MySQL di VPS Tencent Cloud aaPanel)**, dan **CI/CD Otomatis via GitHub**.
 
 ---
 
-## 2. Struktur Proyek yang Telah Dipisah
+## 1. Arsitektur Folder Proyek & CI/CD
 
-Proyek sekarang memiliki struktur terpisah (*monorepo clean split*):
+Semua file berada dalam 1 repository GitHub yang rapi (*Monorepo*):
 
 ```
 Iot Sensor Hujan/
-├── backend/                  <-- Dideploy ke Tencent Cloud VPS (aaPanel)
-│   ├── database/             <-- SQLite murni (GORM + pure-Go driver, tanpa CGO)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml            <-- CI/CD: Otomatis compile & deploy ke VPS saat git push
+├── backend/                      <-- Golang Backend Service
+│   ├── database/                 <-- GORM MySQL Driver & Migrasi Skema
 │   ├── deploy/
-│   │   ├── build-linux.bat   <-- Script compile binary Linux langsung dari Windows
-│   │   ├── hujan-backend.service <-- Service systemd untuk autostart 24/7 di VPS
-│   │   └── nginx-aapanel.conf <-- Template Reverse Proxy + WebSocket Nginx
-│   ├── handlers/             <-- REST API & Hub WebSocket
-│   ├── models/               <-- Skema tabel Device, Telemetry, Event
-│   ├── mqtt/                 <-- MQTT Subscriber daemon (test.mosquitto.org)
-│   ├── hujan-backend-linux   <-- Binary Linux 64-bit SIAP JALAN (~14 MB, RAM < 15 MB)
+│   │   ├── build-linux.bat       <-- Script kompilasi Linux lokal
+│   │   ├── hujan-backend.service <-- Systemd service unit di VPS
+│   │   └── nginx-aapanel.conf    <-- Nginx Reverse Proxy + WebSocket (/ws)
+│   ├── handlers/                 <-- REST API & Hub WebSocket
+│   ├── models/                   <-- Model data (Device, Telemetry, Event)
+│   ├── mqtt/                     <-- Subscriber MQTT 24/7 (test.mosquitto.org)
+│   ├── hujan-backend-linux       <-- Binary Linux mandiri
 │   ├── go.mod
 │   └── main.go
-│
-├── frontend/                 <-- Dideploy ke Vercel
-│   ├── src/                  <-- React 19 + TypeScript + Vite + Tailwind CSS v4
-│   ├── public/
-│   ├── vercel.json           <-- Routing SPA & Security Header
+├── frontend/                     <-- React 19 + TypeScript + Vite + Tailwind CSS
+│   ├── src/
+│   ├── vercel.json               <-- Routing SPA & Security Header Vercel
 │   └── package.json
-│
-└── docs/                     <-- Dokumentasi teknis
+└── docs/
+    └── DEPLOYMENT_GUIDE.md       <-- Panduan ini
 ```
 
 ---
 
-## 3. Langkah Deploy Backend di Tencent Cloud Lighthouse (aaPanel)
+## 2. Arsitektur Terpisah: Staging vs Production
 
-Spesifikasi VPS Tencent Cloud murah (1-2 vCPU, 1-2 GB RAM) **sangat lebih dari cukup** karena backend Golang ini di-compile menjadi single static binary dan menggunakan database SQLite yang hanya memakan RAM sekitar **10 - 15 MB**!
+Sistem mendukung pemisahan lingkungan (*Environment Separation*) secara penuh:
 
-### Langkah 1: Siapkan Folder di aaPanel
-1. Buka dashboard **aaPanel** di browser Anda.
-2. Masuk ke menu **Files**.
-3. Masuk ke direktori `/www/wwwroot/` lalu buat folder baru bernama:
-   `/www/wwwroot/hujan-backend`
+| Komponen | 🟡 Staging (Uji Coba) | 🟢 Production (Produksi) |
+| :--- | :--- | :--- |
+| **Git Branch** | `staging` | `main` |
+| **Frontend Vercel** | `https://hujan-pantau-git-staging-xxx.vercel.app` (Preview otomatis) | `https://hujan-pantau.vercel.app` (Live Domain) |
+| **Backend Domain** | `https://staging-43-133-136-149.sslip.io` | `https://43-133-136-149.sslip.io` |
+| **Port Backend VPS** | Port `8080` | Port `8081` |
+| **Database MySQL** | `hujan_iot_staging` | `hujan_iot_prod` |
+| **Service Systemd** | `hujan-backend-staging.service` | `hujan-backend-prod.service` |
+| **Konsumsi RAM VPS** | ~15 MB RAM | ~15 MB RAM |
+
+*Kedua backend berjalan bersamaan di 1 VPS tanpa saling mengganggu, total RAM hanya ~30 MB!*
+
+---
+
+### A. Apakah Redis Berat di VPS?
+* **Jawab:** **SANGAT RINGAN!** Redis hanya memakan RAM sekitar **15 – 25 MB**.
+* **Fungsi di IoT:**
+  1. **Cache Status Terkini:** Menyimpan status sensor terakhir (*Last Known State*) sehingga web tidak perlu terus-menerus melakukan query berat ke database disk.
+  2. **Cache BMKG:** Menyimpan prakiraan cuaca BMKG selama 1–2 jam agar server tidak bolak-balik menembak API BMKG.
+* **Cara Install di aaPanel:** Buka **App Store** di aaPanel -> Cari **Redis** -> Klik **Install** (Fast).
+
+### B. Apakah Semua File Di-push ke GitHub?
+* **YA**, semua kode di folder `frontend/`, `backend/`, `.github/`, dan `docs/` di-push ke GitHub.
+* Yang **TIDAK** di-push (otomatis diabaikan oleh `.gitignore`):
+  - `node_modules/` (library frontend)
+  - File rahasia berisi password database (`.env`)
+
+---
+
+## 3. Langkah Setup Database MySQL di aaPanel
+
+Setelah paket **LNMP** (Nginx, MySQL 5.7, phpMyAdmin) selesai di-install di aaPanel:
+
+### Langkah 1: Buat Database di aaPanel
+1. Buka dashboard **aaPanel** (`http://43.133.136.149:7800/login`).
+2. Masuk ke menu **Database** di sebelah kiri.
+3. Klik tombol biru **Add Database**:
+   - **DBName:** `hujan_iot`
+   - **DBType:** `MySQL`
+   - **Username:** `hujan_user` (atau biarkan default)
+   - **Password:** Catat password yang dibuatkan aaPanel (misal: `Rahasia123!`)
+   - **Access Permission:** `Local server` (127.0.0.1)
+4. Klik **Submit**.
+5. Database `hujan_iot` sudah siap digunakan!
+
+### Langkah 2: Buka phpMyAdmin (Opsional)
+* Di menu **Database**, kamu bisa klik tombol **phpMyAdmin** untuk membuka tampilan visual database lewat browser.
+
+---
+
+## 4. Langkah Deploy Backend Golang di VPS
+
+### Langkah 1: Siapkan Folder Aplikasi
+Di aaPanel, masuk ke menu **Files** -> buat folder:
+`/www/wwwroot/hujan-backend`
 
 ### Langkah 2: Upload File Binary
-1. Dari laptop Anda, buka folder:
-   `c:\Users\alfadhilah\Downloads\Iot Sensor Hujan\backend\`
-2. Upload file **`hujan-backend-linux`** ke dalam folder `/www/wwwroot/hujan-backend/` di aaPanel.
-3. Klik kanan file `hujan-backend-linux` di aaPanel -> pilih **Permissions** -> centang **Execute (755)** (atau ketik `chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux` di terminal SSH aaPanel).
+Upload file `hujan-backend-linux` dari folder `backend/` laptop kamu ke `/www/wwwroot/hujan-backend/`.
+Beri izin eksekusi:
+```bash
+chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+```
 
-> **Catatan Recompile**: Jika suatu saat Anda mengubah kode backend di Windows, cukup jalankan script `backend\deploy\build-linux.bat`, binary Linux baru akan otomatis terbuat.
-
-### Langkah 3: Jalankan sebagai Background Service 24/7 (systemd)
-Buka menu **Terminal** di aaPanel (atau via PuTTY/SSH) dan jalankan perintah:
+### Langkah 3: Konfigurasi Service Systemd dengan MySQL
+Buka menu **Terminal** di aaPanel (atau OrcaTerm Tencent) dan jalankan perintah:
 
 ```bash
-# 1. Salin konfigurasi service
 cat << 'EOF' > /etc/systemd/system/hujan-backend.service
 [Unit]
 Description=HujanPantau IoT Go Backend
-After=network.target
+After=network.target mysql.service
 
 [Service]
 Type=simple
@@ -86,31 +120,42 @@ Restart=always
 RestartSec=5
 Environment=PORT=8080
 Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
-Environment=DB_PATH=/www/wwwroot/hujan-backend/hujan.db
+
+# Konfigurasi Database MySQL aaPanel:
+Environment=DB_TYPE=mysql
+Environment=MYSQL_USER=hujan_user
+Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
+Environment=MYSQL_DATABASE=hujan_iot
+Environment=MYSQL_HOST=127.0.0.1
+Environment=MYSQL_PORT=3306
+
+# Konfigurasi Cache Redis aaPanel:
+Environment=REDIS_ADDR=127.0.0.1:6379
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# 2. Reload daemon dan jalankan service
+# Reload dan jalankan service
 systemctl daemon-reload
 systemctl enable hujan-backend
-systemctl start hujan-backend
+systemctl restart hujan-backend
 
-# 3. Cek status berjalan
+# Cek status (harus warna hijau 'active running')
 systemctl status hujan-backend
 ```
 
-Database `hujan.db` akan otomatis dibuat oleh backend saat pertama kali dijalankan!
+*Begitu service berjalan, tabel `devices`, `telemetries`, dan `events` otomatis dibuatkan di dalam database MySQL `hujan_iot`!*
 
-### Langkah 4: Setup Domain / Reverse Proxy Nginx di aaPanel
-1. Di aaPanel, masuk ke menu **Website** -> klik **Add site**.
-2. Masukkan domain Anda (misal `api.domainanda.com`) atau gunakan IP VPS jika belum memiliki domain.
-3. Setelah website dibuat, klik nama website -> pilih menu **Reverse Proxy** -> klik **Add Reverse Proxy**:
-   - Proxy Name: `hujan-api`
+### Langkah 4: Setup Domain Gratis & Reverse Proxy Nginx di aaPanel
+1. Masuk ke menu **Website** -> **Add site**.
+2. Masukkan domain gratis: **`43-133-136-149.sslip.io`**.
+3. Di tab **SSL**, pilih **Let's Encrypt** -> centang nama domain -> klik **Apply** -> aktifkan **Force HTTPS**.
+4. Klik tab **Reverse Proxy** -> **Add Reverse Proxy**:
+   - Name: `hujan-api`
    - Target URL: `http://127.0.0.1:8080`
    - Sent Domain: `$host`
-4. Buka tab **Config** pada Reverse Proxy tersebut, pastikan baris WebSocket sudah ada:
+   - Pastikan **Enable cache** tetap **OFF (Mati)**!
    ```nginx
    location / {
        proxy_pass http://127.0.0.1:8080;
@@ -119,197 +164,43 @@ Database `hujan.db` akan otomatis dibuat oleh backend saat pertama kali dijalank
        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
        proxy_set_header X-Forwarded-Proto $scheme;
 
-       # Dukungan WebSocket
        proxy_http_version 1.1;
        proxy_set_header Upgrade $http_upgrade;
        proxy_set_header Connection "upgrade";
        proxy_read_timeout 86400s;
    }
    ```
-5. Buka tab **SSL** di website aaPanel untuk memasang sertifikat HTTPS gratis (Let's Encrypt).
-6. **Penting**: Pastikan port `80`, `443` (dan `8080` jika diakses langsung) sudah dibuka di menu **Firewall aaPanel** dan di **Security Group / Firewall Console Tencent Cloud**.
+5. Buka tab **SSL** di website aaPanel -> pilih **Let's Encrypt** -> klik **Apply** untuk SSL gratis.
 
 ---
 
-## 4. Langkah Deploy Frontend di Vercel
+## 5. Langkah Deploy Frontend ke Vercel
 
-Frontend dibangun dengan React + Vite dan siap dideploy ke Vercel tanpa biaya sepeser pun.
-
-### Opsi A: Deploy Melalui Git (GitHub / GitLab)
-1. Buat repository baru di [GitHub](https://github.com) dan push folder proyek ini.
-2. Buka [vercel.com](https://vercel.com) -> login -> klik **Add New...** -> **Project**.
-3. Import repository GitHub Anda.
-4. Pada bagian **Configure Project**:
-   - **Root Directory**: klik Edit lalu pilih `frontend` (atau ketik `frontend`).
-   - **Framework Preset**: `Vite` (terdeteksi otomatis).
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-5. Klik tombol **Deploy**.
-6. Dalam 1-2 menit, situs Anda sudah aktif di domain seperti `https://hujan-pantau.vercel.app`.
+1. Push repository ke akun [GitHub](https://github.com) Anda.
+2. Buka dashboard [vercel.com](https://vercel.com) -> **Add New...** -> **Project**.
+3. Import repo GitHub Anda.
+4. Pada form konfigurasi:
+   - **Root Directory:** pilih `frontend`
+   - **Framework Preset:** `Vite`
+5. Klik **Deploy**.
+6. Selesai! Web Anda langsung tayang secara global di domain Vercel.
 
 ---
 
-## 5. Menghubungkan Frontend Vercel ke Backend Tencent VPS
+## 6. Hubungkan Frontend Vercel ke Backend VPS
 
-Setelah kedua layanan aktif:
-1. Buka website Anda di Vercel (misal `https://hujan-pantau.vercel.app`).
-2. Masuk ke tab **Perangkat** di navigasi bawah/samping.
-3. Gulir ke kartu **Backend Server & Database (Tencent VPS aaPanel)**.
-4. Masukkan URL server backend Anda, contoh:
-   - `https://api.domainanda.com` (jika menggunakan domain + SSL)
-   - atau `http://129.226.xx.xx:8080` (jika menggunakan IP publik langsung)
-5. Klik tombol **Tes & Simpan Koneksi**.
-6. Sistem akan mengecek endpoint `/health`. Jika berhasil, badge hijau **Tersambung (Online)** akan menyala dan seluruh riwayat database 24/7 langsung tersinkronisasi!
+1. Buka website Vercel Anda di browser.
+2. Masuk ke menu **Perangkat** di navigasi bawah/samping.
+3. Di kartu **Backend Server & Database (Tencent VPS aaPanel)**:
+   - Masukkan alamat backend Anda (contoh: `https://api.domainkamu.com` atau `http://43.133.136.149:8080`).
+   - Klik **Tes & Simpan Koneksi**.
+4. Status akan berubah hijau: **Tersambung (Online)**.
+5. Seluruh riwayat data sensor dari database MySQL di VPS akan langsung tersinkronisasi 24 jam nonstop ke web frontend!
 
 ---
 
-## 6. Contoh Kode Arduino / ESP32 Lengkap
+## 7. Setup CI/CD Otomatis (Setiap Git Push Langsung Update)
 
-Berikut adalah sketsa ESP32 yang terhubung ke sensor hujan (pin Analog 34), servo jemuran (pin 18), dan mempublikasikan data ke broker Mosquitto:
-
-```cpp
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <ESP32Servo.h>
-
-// 1. Konfigurasi WiFi
-const char* WIFI_SSID     = "NAMA_WIFI_ANDA";
-const char* WIFI_PASSWORD = "PASSWORD_WIFI";
-
-// 2. Konfigurasi MQTT (100% Gratis Tanpa Akun)
-const char* MQTT_BROKER   = "test.mosquitto.org";
-const int   MQTT_PORT     = 1883;
-
-// 3. Identitas Perangkat (Samakan dengan yang terdaftar di Web/Backend)
-const char* DEVICE_ID     = "hs-8f3a1c9d2b70";
-
-// Pin Hardware
-const int PIN_SENSOR_HUJAN = 34; // Pin Analog sensor hujan FC-37
-const int PIN_SERVO        = 18; // Pin Signal Motor Servo Jemuran
-
-// Ambang Batas (Toleransi Sensor)
-// Nilai ADC ESP32: 4095 = Kering Total, < 2500 = Basah/Hujan
-const int THRESHOLD_RAW    = 2500; 
-
-WiFiClient espClient;
-PubSubClient client(espClient);
-Servo jemuranServo;
-
-bool statusHujanSebelumnya = false;
-unsigned long lastSendMs = 0;
-
-void setupWifi() {
-  Serial.print("Menghubungkan ke WiFi: ");
-  Serial.println(WIFI_SSID);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nWiFi Terhubung! IP: " + WiFi.localIP().toString());
-}
-
-void reconnectMqtt() {
-  while (!client.connected()) {
-    Serial.print("Menghubungkan ke Mosquitto...");
-    String clientId = "ESP32Hujan-" + String(DEVICE_ID);
-    
-    // Last Will & Testament (LWT) jika koneksi mati
-    String lwtTopic = "hujansensor/" + String(DEVICE_ID) + "/state";
-    String lwtPayload = "{\"v\":1,\"deviceId\":\"" + String(DEVICE_ID) + "\",\"status\":\"offline\"}";
-
-    if (client.connect(clientId.c_str(), lwtTopic.c_str(), 1, true, lwtPayload.c_str())) {
-      Serial.println(" Berhasil!");
-      // Kirim state online
-      String onlinePayload = "{\"v\":1,\"deviceId\":\"" + String(DEVICE_ID) + "\",\"status\":\"online\",\"fw\":\"1.0.0\"}";
-      client.publish(lwtTopic.c_str(), onlinePayload.c_str(), true);
-    } else {
-      Serial.print(" Gagal, rc=");
-      Serial.print(client.state());
-      Serial.println(" Coba lagi dalam 3 detik...");
-      delay(3000);
-    }
-  }
-}
-
-void setup() {
-  Serial.begin(115200);
-  pinMode(PIN_SENSOR_HUJAN, INPUT);
-  jemuranServo.attach(PIN_SERVO);
-  jemuranServo.write(0); // Posisi jemuran di luar saat kering
-
-  setupWifi();
-  client.setServer(MQTT_BROKER, MQTT_PORT);
-}
-
-void loop() {
-  if (WiFi.status() != WL_CONNECTED) {
-    setupWifi();
-  }
-  if (!client.connected()) {
-    reconnectMqtt();
-  }
-  client.loop();
-
-  // Baca sensor hujan setiap 2 detik
-  unsigned long now = millis();
-  if (now - lastSendMs >= 2000) {
-    lastSendMs = now;
-
-    int rawAdc = analogRead(PIN_SENSOR_HUJAN);
-    // Hitung persentase kebasahan (0% kering, 100% basah kuyup)
-    int pct = map(4095 - rawAdc, 0, 4095, 0, 100);
-    pct = constrain(pct, 0, 100);
-
-    bool isWet = (rawAdc < THRESHOLD_RAW);
-
-    // Gerakkan Servo Jemuran Otomatis
-    if (isWet && !statusHujanSebelumnya) {
-      Serial.println("🌧️ HUJAN TERDETEKSI! Menarik jemuran ke dalam...");
-      jemuranServo.write(90); // Tarik jemuran masuk ke kanopi/teduhan
-      
-      // Kirim event rain_start ke MQTT
-      String evTopic = "hujansensor/" + String(DEVICE_ID) + "/event";
-      String evPayload = "{\"v\":1,\"deviceId\":\"" + String(DEVICE_ID) + "\",\"type\":\"rain_start\",\"ts\":" + String(now) + ",\"data\":{\"pct\":" + String(pct) + "}}";
-      client.publish(evTopic.c_str(), evPayload.c_str());
-    } else if (!isWet && statusHujanSebelumnya) {
-      Serial.println("☀️ HUJAN REDA! Mengeluarkan jemuran kembali...");
-      jemuranServo.write(0); // Keluarkan jemuran kembali ke sinar matahari
-
-      // Kirim event rain_stop ke MQTT
-      String evTopic = "hujansensor/" + String(DEVICE_ID) + "/event";
-      String evPayload = "{\"v\":1,\"deviceId\":\"" + String(DEVICE_ID) + "\",\"type\":\"rain_stop\",\"ts\":" + String(now) + "}";
-      client.publish(evTopic.c_str(), evPayload.c_str());
-    }
-    statusHujanSebelumnya = isWet;
-
-    // Kirim Telemetry ke MQTT
-    String telemTopic = "hujansensor/" + String(DEVICE_ID) + "/telemetry";
-    String telemPayload = "{"
-      "\"v\":1,"
-      "\"deviceId\":\"" + String(DEVICE_ID) + "\","
-      "\"ts\":" + String(now) + ","
-      "\"raw\":" + String(rawAdc) + ","
-      "\"pct\":" + String(pct) + ","
-      "\"wet\":" + (isWet ? "true" : "false") + ","
-      "\"rssi\":" + String(WiFi.RSSI()) +
-    "}";
-
-    client.publish(telemTopic.c_str(), telemPayload.c_str());
-    Serial.println("Data terkirim -> ADC: " + String(rawAdc) + " | Wet: " + String(isWet ? "YA" : "TIDAK"));
-  }
-}
-```
-
----
-
-## 7. Rangkuman Pertanyaan & Jawaban
-
-1. **Bisa ngga Frontend di Vercel dan Backend di Tencent Cloud?**
-   - **BISA BANGET**. Ini adalah arsitektur *Decoupled/Microservices* standar industri terbaik.
-   - Frontend di Vercel mendapatkan CDN global ultra-cepat dan gratis.
-   - Backend di Tencent Cloud menyimpan database SQLite 24 jam nonstop dan mendengarkan sensor ESP32 meskipun browser ditutup.
-2. **Kekuatan VPS Murah Tencent Cloud**:
-   - Backend Golang tidak membutuhkan Node.js runtime atau Docker berat. Binary hanya memakan RAM ~12 MB, CPU < 1%, sehingga sisa kapasitas VPS 2GB masih sangat longgar untuk aaPanel dan database.
-3. **Gratis Tanpa Biaya Berlangganan**:
-   - Broker MQTT memakai Mosquitto umum (`test.mosquitto.org`), database memakai SQLite lokal di disk VPS, dan hosting frontend di Vercel 100% gratis.
+Dengan file workflow `.github/workflows/deploy.yml`:
+* **Frontend**: Vercel secara otomatis mendeteksi setiap kali kamu melakukan `git push` ke GitHub dan langsung memperbarui website secara instan tanpa perlu setting apa pun lagi.
+* **Backend**: Menggunakan GitHub Actions via SSH atau Webhook aaPanel untuk memperbarui file binary backend di VPS setiap kali ada pembaruan kode.
