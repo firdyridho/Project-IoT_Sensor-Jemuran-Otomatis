@@ -271,6 +271,75 @@ export const App: React.FC = () => {
   }, [settings.backendUrl, activeDevice.deviceId]);
 
   // ---------------------------------------------------------------------------
+  // Sync Devices from Golang Backend (MySQL Database on Tencent VPS)
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const backendUrl = settings.backendUrl;
+    if (!backendUrl) return;
+
+    let isMounted = true;
+    const syncDevices = async () => {
+      try {
+        const remoteDevices = await BackendService.getDevices(backendUrl);
+        if (!isMounted) return;
+
+        if (remoteDevices && remoteDevices.length > 0) {
+          // Check if user has local devices not yet saved to backend
+          const currentLocal = StorageService.getDevices();
+          const missingOnRemote = currentLocal.filter(
+            (localDev) => !remoteDevices.some((r) => r.deviceId === localDev.deviceId)
+          );
+
+          if (missingOnRemote.length > 0) {
+            for (const missingDev of missingOnRemote) {
+              await BackendService.createDevice(backendUrl, missingDev);
+            }
+            const updatedRemote = await BackendService.getDevices(backendUrl);
+            if (isMounted && updatedRemote && updatedRemote.length > 0) {
+              setDevices(updatedRemote);
+              StorageService.saveDevices(updatedRemote);
+              return;
+            }
+          }
+
+          setDevices(remoteDevices);
+          StorageService.saveDevices(remoteDevices);
+
+          // Ensure active device exists
+          setSettings((prevSettings) => {
+            if (!remoteDevices.some((d) => d.deviceId === prevSettings.deviceIdActive)) {
+              const updatedSettings = { ...prevSettings, deviceIdActive: remoteDevices[0].deviceId };
+              StorageService.saveSettings(updatedSettings);
+              return updatedSettings;
+            }
+            return prevSettings;
+          });
+        } else {
+          // If remote database is empty, push existing local devices to backend
+          const localDevices = StorageService.getDevices();
+          for (const dev of localDevices) {
+            await BackendService.createDevice(backendUrl, dev);
+          }
+        }
+      } catch (err) {
+        console.warn('Gagal sinkronisasi daftar perangkat dari backend:', err);
+      }
+    };
+
+    syncDevices();
+
+    // Re-sync on window focus (e.g. when user switches between laptop and phone)
+    const handleFocus = () => {
+      syncDevices();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [settings.backendUrl]);
+
+  // ---------------------------------------------------------------------------
   // Realtime Backend WebSocket & Direct MQTT Hardware Lifecycle
   // ---------------------------------------------------------------------------
   useEffect(() => {
@@ -341,6 +410,13 @@ export const App: React.FC = () => {
     setDevices(updated);
     StorageService.saveDevices(updated);
     handleSelectDevice(newDevice.deviceId);
+
+    // Sync to MySQL Database on VPS
+    if (settings.backendUrl) {
+      BackendService.createDevice(settings.backendUrl, newDevice).catch((err) => {
+        console.warn('Gagal menyimpan perangkat ke database backend:', err);
+      });
+    }
   };
 
   // Update/Edit Device
@@ -360,6 +436,13 @@ export const App: React.FC = () => {
       message: `Pengaturan "${updatedDevice.nama}" berhasil disimpan.`,
       timestamp: Date.now(),
     });
+
+    // Sync to MySQL Database on VPS
+    if (settings.backendUrl) {
+      BackendService.updateDevice(settings.backendUrl, updatedDevice).catch((err) => {
+        console.warn('Gagal memperbarui perangkat di database backend:', err);
+      });
+    }
   };
 
   // Delete Device
@@ -383,6 +466,9 @@ export const App: React.FC = () => {
       setDevices([cleanDefault]);
       StorageService.saveDevices([cleanDefault]);
       handleSelectDevice(cleanDefault.deviceId);
+      if (settings.backendUrl) {
+        BackendService.createDevice(settings.backendUrl, cleanDefault).catch(() => {});
+      }
     } else {
       const updated = devices.filter((d) => d.deviceId !== deviceId);
       setDevices(updated);
@@ -390,6 +476,13 @@ export const App: React.FC = () => {
       if (settings.deviceIdActive === deviceId) {
         handleSelectDevice(updated[0].deviceId);
       }
+    }
+
+    // Sync deletion to MySQL Database on VPS
+    if (settings.backendUrl) {
+      BackendService.deleteDevice(settings.backendUrl, deviceId).catch((err) => {
+        console.warn('Gagal menghapus perangkat di database backend:', err);
+      });
     }
 
     Notifications.addToast({

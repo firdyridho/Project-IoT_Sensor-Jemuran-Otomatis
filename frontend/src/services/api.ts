@@ -44,6 +44,60 @@ export const BackendService = {
     }
   },
 
+  async createDevice(baseUrl: string, device: Perangkat): Promise<boolean> {
+    if (!baseUrl) return false;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deviceId: device.deviceId,
+          name: device.nama,
+          brokerUrl: device.brokerUrl,
+          lokasiAdm4: device.lokasiAdm4,
+          ambangPct: device.ambangPct || 60,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  async updateDevice(baseUrl: string, device: Perangkat): Promise<boolean> {
+    if (!baseUrl) return false;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices/${encodeURIComponent(device.deviceId)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: device.nama,
+          brokerUrl: device.brokerUrl,
+          lokasiAdm4: device.lokasiAdm4,
+          ambangPct: device.ambangPct || 60,
+        }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  async deleteDevice(baseUrl: string, deviceId: string): Promise<boolean> {
+    if (!baseUrl) return false;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices/${encodeURIComponent(deviceId)}`, {
+        method: 'DELETE',
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
   async getTelemetry(baseUrl: string, deviceId: string, range: string): Promise<PembacaanHujan[]> {
     if (!baseUrl || !deviceId) return [];
     try {
