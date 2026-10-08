@@ -24,15 +24,24 @@ const DEFAULT_DEVICE: Perangkat = {
 };
 
 export function getDefaultBackendUrl(): string {
+  // If explicitly specified in Vite build environment
+  const metaEnv = (import.meta as { env?: Record<string, string> }).env;
+  if (metaEnv?.VITE_BACKEND_URL) {
+    return metaEnv.VITE_BACKEND_URL;
+  }
   if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // If on staging preview or current vercel domain
-    if (host.includes('staging') || host.includes('rintik-self') || host.includes('preview')) {
+    const host = window.location.hostname.toLowerCase();
+    // Staging / Dev detection:
+    if (
+      host.includes('staging') ||
+      host.includes('-git-staging') ||
+      host.includes('dev') ||
+      host === 'localhost' ||
+      host === '127.0.0.1'
+    ) {
       return 'https://staging-43-133-136-149.sslip.io';
     }
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return 'https://staging-43-133-136-149.sslip.io';
-    }
+    // Production (e.g. rintik-self.vercel.app, main branch, or custom domain)
     return 'https://43-133-136-149.sslip.io';
   }
   return 'https://staging-43-133-136-149.sslip.io';
@@ -101,9 +110,8 @@ export const StorageService = {
       const raw = localStorage.getItem(KEYS.SETTINGS);
       if (!raw) return DEFAULT_SETTINGS;
       const parsed = JSON.parse(raw);
-      if (!parsed.backendUrl) {
-        parsed.backendUrl = getDefaultBackendUrl();
-      }
+      // Always resolve backend URL automatically based on the environment
+      parsed.backendUrl = getDefaultBackendUrl();
       return { ...DEFAULT_SETTINGS, ...parsed };
     } catch {
       return DEFAULT_SETTINGS;

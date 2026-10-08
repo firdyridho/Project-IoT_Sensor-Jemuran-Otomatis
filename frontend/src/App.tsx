@@ -411,20 +411,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Update backend VPS URL
-  const handleUpdateBackendUrl = (url: string) => {
-    const newSettings = { ...settings, backendUrl: url };
-    setSettings(newSettings);
-    StorageService.saveSettings(newSettings);
-    Notifications.addToast({
-      id: 'b-url-' + Date.now(),
-      type: 'success',
-      title: 'Backend VPS Disimpan',
-      message: url ? `Tersambung ke: ${url}` : 'URL backend dinonaktifkan.',
-      timestamp: Date.now(),
-    });
-  };
-
   // Latest values for Dashboard
   const latestReading = readings[readings.length - 1];
   const currentWet = latestState?.rain?.wet ?? latestReading?.wet ?? false;
@@ -592,8 +578,6 @@ export const App: React.FC = () => {
                   theme={settings.tema}
                   onChangeTheme={handleChangeTheme}
                   onClearStorage={handleClearStorage}
-                  backendUrl={settings.backendUrl || ''}
-                  onUpdateBackendUrl={handleUpdateBackendUrl}
                 />
               </div>
             )}

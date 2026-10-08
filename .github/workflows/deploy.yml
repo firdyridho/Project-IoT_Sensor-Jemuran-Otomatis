@@ -62,3 +62,58 @@ jobs:
         with:
           name: hujan-backend-linux
           path: backend/hujan-backend-linux
+
+  # 3. Deploy Otomatis Binary ke VPS Tencent Cloud via SSH
+  deploy-to-vps:
+    name: Auto Deploy to Tencent VPS
+    needs: [backend-build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Compiled Linux Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: hujan-backend-linux
+          path: ./
+
+      - name: Check VPS Credentials
+        id: check-creds
+        run: |
+          if [ -n "${{ secrets.VPS_HOST }}" ] && ([ -n "${{ secrets.VPS_PASSWORD }}" ] || [ -n "${{ secrets.VPS_SSH_KEY }}" ]); then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::notice ::VPS SSH Secrets belum diatur di GitHub Secrets (VPS_HOST, VPS_PASSWORD / VPS_SSH_KEY). Step auto-deploy dilewati."
+          fi
+
+      - name: Copy Binary to VPS via SCP
+        if: steps.check-creds.outputs.configured == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          source: "hujan-backend-linux"
+          target: ${{ github.ref == 'refs/heads/main' && '/www/wwwroot/hujan-backend-prod' || '/www/wwwroot/hujan-backend-staging' }}
+
+      - name: Set Permissions & Restart Systemd Service
+        if: steps.check-creds.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
+              systemctl restart hujan-backend-prod
+              echo "✅ hujan-backend-prod berhasil diperbarui dan di-restart!"
+            else
+              chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
+              systemctl restart hujan-backend-staging
+              echo "✅ hujan-backend-staging berhasil diperbarui dan di-restart!"
+            fi

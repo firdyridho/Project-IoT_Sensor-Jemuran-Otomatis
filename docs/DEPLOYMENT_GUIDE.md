@@ -187,20 +187,37 @@ systemctl status hujan-backend
 
 ---
 
-## 6. Hubungkan Frontend Vercel ke Backend VPS
+---
 
-1. Buka website Vercel Anda di browser.
-2. Masuk ke menu **Perangkat** di navigasi bawah/samping.
-3. Di kartu **Backend Server & Database (Tencent VPS aaPanel)**:
-   - Masukkan alamat backend Anda (contoh: `https://api.domainkamu.com` atau `http://43.133.136.149:8080`).
-   - Klik **Tes & Simpan Koneksi**.
-4. Status akan berubah hijau: **Tersambung (Online)**.
-5. Seluruh riwayat data sensor dari database MySQL di VPS akan langsung tersinkronisasi 24 jam nonstop ke web frontend!
+## 6. Koneksi Otomatis Frontend ke Backend (Zero Configuration)
+
+Frontend secara otomatis mendeteksi environment dan terhubung ke backend yang tepat secara transparan (*invisible routing*) tanpa perlu input URL atau konfigurasi manual oleh pengguna:
+
+1. **Staging Frontend** (domain staging, preview PR, localhost):
+   - Otomatis tersambung ke: `https://staging-43-133-136-149.sslip.io`
+   - Terhubung ke database: `hujan_iot_staging`
+2. **Production Frontend** (`https://rintik-self.vercel.app` atau custom domain produksi):
+   - Otomatis tersambung ke: `https://43-133-136-149.sslip.io`
+   - Terhubung ke database: `hujan_iot_prod`
+
+Pengguna awam cukup membuka website dan langsung melihat data sensor realtime tanpa perlu repot mengatur IP atau server.
 
 ---
 
-## 7. Setup CI/CD Otomatis (Setiap Git Push Langsung Update)
+## 7. Setup CI/CD Otomatis Backend ke VPS (Setiap Git Push Langsung Update)
 
-Dengan file workflow `.github/workflows/deploy.yml`:
-* **Frontend**: Vercel secara otomatis mendeteksi setiap kali kamu melakukan `git push` ke GitHub dan langsung memperbarui website secara instan tanpa perlu setting apa pun lagi.
-* **Backend**: Menggunakan GitHub Actions via SSH atau Webhook aaPanel untuk memperbarui file binary backend di VPS setiap kali ada pembaruan kode.
+Agar binary backend Golang di VPS otomatis terupdate setiap kali kamu melakukan `git push` (tanpa perlu upload manual lewat aaPanel Files):
+
+### Tambahkan 3 GitHub Secrets di Repository:
+1. Buka Repository GitHub -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**.
+2. Masukkan secret berikut:
+   - `VPS_HOST`: `43.133.136.149`
+   - `VPS_USERNAME`: `root` (atau `ubuntu`)
+   - `VPS_PASSWORD`: Password SSH VPS Anda (atau isi `VPS_SSH_KEY` jika menggunakan Private Key SSH)
+
+### Cara Kerja Otomatis:
+- Saat push ke branch **`staging`**:
+  GitHub Actions otomatis mengompilasi binary Linux, mengirimkannya ke `/www/wwwroot/hujan-backend-staging/hujan-backend-linux`, dan me-restart service `hujan-backend-staging`.
+- Saat push ke branch **`main`**:
+  GitHub Actions otomatis mengompilasi binary Linux, mengirimkannya ke `/www/wwwroot/hujan-backend-prod/hujan-backend-linux`, dan me-restart service `hujan-backend-prod`.
+- **Frontend Vercel**: Tetap otomatis deploy dalam hitungan detik setiap ada push ke GitHub.
