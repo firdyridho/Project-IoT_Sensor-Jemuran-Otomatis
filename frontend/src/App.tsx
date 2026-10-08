@@ -11,7 +11,7 @@ import { WeatherView } from './components/Cuaca/WeatherView';
 import { HistoryView } from './components/Riwayat/HistoryView';
 import { DeviceView } from './components/Perangkat/DeviceView';
 import { ConfirmModal } from './components/Common/ConfirmModal';
-import { AuthModal } from './components/Auth/AuthModal';
+import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/Landing/LandingPage';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
@@ -34,8 +34,7 @@ import { BackendService } from './services/api';
 export const App: React.FC = () => {
   // 0. Auth Session State ("Ingat Saya" & User Data Isolation)
   const [session, setSession] = useState<AuthSession | null>(() => AuthService.getSession());
-  const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
 
   // 1. Core State
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
@@ -162,6 +161,7 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     AuthService.clearSession();
     setSession(null);
+    setAuthView('login');
     Notifications.addToast({
       id: 'auth-logout-' + Date.now(),
       type: 'info',
@@ -636,27 +636,33 @@ export const App: React.FC = () => {
     : 'kering';
 
   if (!session) {
+    if (authView === 'login' || authView === 'register') {
+      return (
+        <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
+          <ToastContainer />
+          <AuthPage
+            initialMode={authView}
+            backendUrl={settings.backendUrl || ''}
+            onSuccess={handleAuthSuccess}
+            onBackToLanding={() => setAuthView('landing')}
+            theme={settings.tema}
+            onToggleTheme={handleToggleTheme}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
         <ToastContainer />
         <LandingPage
-          onOpenAuth={(mode) => {
-            setAuthModalMode(mode);
-            setShowAuthModal(true);
-          }}
+          onGoToAuth={(mode) => setAuthView(mode)}
           onQuickDemo={() => {
             const demoSession = AuthService.demoLogin(true);
             handleAuthSuccess(demoSession);
           }}
           theme={settings.tema}
           onToggleTheme={handleToggleTheme}
-        />
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-          onSuccess={handleAuthSuccess}
-          backendUrl={settings.backendUrl || ''}
-          initialMode={authModalMode}
         />
       </div>
     );
