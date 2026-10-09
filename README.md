@@ -147,9 +147,11 @@ Iot Sensor Hujan/
 │   ├── config.h.example          # Template konfigurasi WiFi & broker perangkat
 │   └── README.md                 # Panduan wiring diagram, BOM, pinout & flashing
 └── docs/                         # Dokumentasi Arsitektur, API & Manajemen Task
-    ├── BACKEND_TASKS.md          # Task khusus pengembangan backend & server
-    ├── FRONTEND_TASKS.md         # Task khusus antarmuka pengguna & komponen UI
-    ├── TASKS.md                  # Pintu gerbang pembagian tugas tim
+    ├── BACKEND_TASKS.md          # Task resmi & histori selesai backend
+    ├── BACKEND_REQUESTS.md       # Kotak masuk permintaan fitur dari frontend ke backend
+    ├── FRONTEND_TASKS.md         # Task resmi & histori selesai frontend
+    ├── FRONTEND_REQUESTS.md      # Kotak masuk permintaan tampilan dari backend ke frontend
+    ├── TASKS.md                  # Portal alur kerja & aturan kolaborasi tim
     ├── DEPLOYMENT_GUIDE.md       # Panduan deployment VPS Tencent Cloud
     └── API.md                    # Kontrak endpoint REST API & format paket data
 ```
