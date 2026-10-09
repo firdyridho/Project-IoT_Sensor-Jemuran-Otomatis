@@ -97,6 +97,13 @@ func main() {
 		api.GET("/devices/:id/events", handlers.GetEvents)
 		api.GET("/devices/:id/latest", handlers.GetLatest)
 
+		// Motor DC / Jemuran Kanopi Status & Kendali (REQ-BE-01)
+		api.GET("/devices/:id/motor", handlers.GetMotorStatus)
+		api.POST("/devices/:id/motor/command", handlers.CommandMotor)
+
+		// Simulator Cuaca Virtual (REQ-BE-02)
+		api.POST("/simulator/weather", handlers.SimulateWeather)
+
 		// Direct HTTP ingestion backup
 		api.POST("/telemetry", handlers.IngestTelemetry)
 

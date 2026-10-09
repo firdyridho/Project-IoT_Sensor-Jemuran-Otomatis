@@ -33,6 +33,9 @@ func setupTestRouter() *gin.Engine {
 		api.GET("/devices", handlers.GetDevices)
 		api.POST("/devices", handlers.CreateDevice)
 		api.GET("/devices/:id/latest", handlers.GetLatest)
+		api.GET("/devices/:id/motor", handlers.GetMotorStatus)
+		api.POST("/devices/:id/motor/command", handlers.CommandMotor)
+		api.POST("/simulator/weather", handlers.SimulateWeather)
 	}
 	return r
 }

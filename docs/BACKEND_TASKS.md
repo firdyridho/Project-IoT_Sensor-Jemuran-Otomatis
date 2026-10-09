@@ -97,6 +97,24 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 
 ---
 
+### Fase 4: Integrasi Otomasi Motor Kanopi & Simulator Cuaca [SELESAI]
+
+* [x] **BE-13: Status & Kendali Motor DC Rel Jemuran (REQ-BE-01)**:
+  * **Tujuan**: Sinkronisasi status posisi fisik kanopi jemuran (`sheltered` vs `extended`) dan eksekusi perintah motor dari kartu antarmuka frontend (`ClotheslineMotorCard.tsx`).
+  * **Endpoint Aktif**:
+    * `GET /api/devices/:id/motor` -> Mengembalikan status `{ position, status, lastMovedTs }`.
+    * `POST /api/devices/:id/motor/command` -> Menerima `{ action: "retract" | "extend" }` dan memicu broadcast WebSocket realtime serta update DB.
+  * **Status**: Selesai diimplementasikan di `handlers/motor.go`, sinkronisasi MQTT state di `mqtt/subscriber.go`, dan lulus pengujian `TestMotorEndpoints`.
+
+* [x] **BE-14: Endpoint Simulator Cuaca Virtual (REQ-BE-02)**:
+  * **Tujuan**: Menyediakan injeksi telemetri virtual tanpa memerlukan perangkat fisik ESP32 agar tim frontend/QA dapat menguji mode cuaca (Cerah, Gerimis, Hujan, Badai).
+  * **Endpoint Aktif**:
+    * `POST /api/simulator/weather` -> Menerima `{ deviceId, condition: "cerah" | "gerimis" | "hujan" | "badai" }`.
+    * Menginjeksi telemetri ke database, Redis list cache, dan broadcast realtime event ke WebSocket Hub.
+  * **Status**: Selesai diimplementasikan di `handlers/simulator.go` dan lulus pengujian `TestSimulatorWeatherEndpoint`.
+
+---
+
 ## 3. Alur Serah Terima ke Frontend (Handoff)
 
 Bila Anda telah selesai membuat salah satu endpoint backend:

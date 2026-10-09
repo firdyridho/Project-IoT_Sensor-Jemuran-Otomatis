@@ -132,10 +132,23 @@ func (s *MqttSubscriber) handleState(raw []byte) {
 		status = "online"
 	}
 
-	database.DB.Model(&models.Device{}).Where("id = ?", st.DeviceID).Updates(map[string]interface{}{
+	updates := map[string]interface{}{
 		"status":       status,
 		"last_seen_at": time.Now(),
-	})
+	}
+	if st.Motor != nil {
+		if st.Motor.Position != "" {
+			updates["motor_position"] = st.Motor.Position
+		}
+		if st.Motor.Status != "" {
+			updates["motor_status"] = st.Motor.Status
+		}
+		if st.Motor.LastMovedTs > 0 {
+			updates["motor_last_moved_at"] = time.UnixMilli(st.Motor.LastMovedTs)
+		}
+	}
+
+	database.DB.Model(&models.Device{}).Where("id = ?", st.DeviceID).Updates(updates)
 
 	handlers.Hub.Broadcast("state", st)
 }

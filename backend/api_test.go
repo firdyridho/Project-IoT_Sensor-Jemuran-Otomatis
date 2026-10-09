@@ -146,3 +146,98 @@ func TestDeviceEndpoints(t *testing.T) {
 	_ = json.Unmarshal(wGet.Body.Bytes(), &devices)
 	assert.NotEmpty(t, devices)
 }
+
+func TestMotorEndpoints(t *testing.T) {
+	r := setupTestRouter()
+	devID := "hs-test-motor-01"
+
+	// Create test device
+	database.DB.Create(&models.Device{
+		ID:            devID,
+		Name:          "Motor Device Test",
+		MotorPosition: "extended",
+		MotorStatus:   "idle",
+		LastSeenAt:    time.Now(),
+	})
+
+	// 1. Get Motor Status -> 200 OK
+	wGet := httptest.NewRecorder()
+	reqGet, _ := http.NewRequest("GET", "/api/devices/"+devID+"/motor", nil)
+	r.ServeHTTP(wGet, reqGet)
+	assert.Equal(t, http.StatusOK, wGet.Code)
+
+	var statusResp models.MotorStatusResponse
+	err := json.Unmarshal(wGet.Body.Bytes(), &statusResp)
+	assert.NoError(t, err)
+	assert.Equal(t, devID, statusResp.DeviceID)
+	assert.Equal(t, "extended", statusResp.Position)
+	assert.Equal(t, "idle", statusResp.Status)
+
+	// 2. Command Motor: Retract -> 200 OK
+	cmdBody := models.MotorCommandRequest{Action: "retract"}
+	b, _ := json.Marshal(cmdBody)
+	wCmd := httptest.NewRecorder()
+	reqCmd, _ := http.NewRequest("POST", "/api/devices/"+devID+"/motor/command", bytes.NewBuffer(b))
+	reqCmd.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wCmd, reqCmd)
+	assert.Equal(t, http.StatusOK, wCmd.Code)
+
+	// Verify position updated to sheltered
+	wGet2 := httptest.NewRecorder()
+	reqGet2, _ := http.NewRequest("GET", "/api/devices/"+devID+"/motor", nil)
+	r.ServeHTTP(wGet2, reqGet2)
+	assert.Equal(t, http.StatusOK, wGet2.Code)
+	var statusResp2 models.MotorStatusResponse
+	_ = json.Unmarshal(wGet2.Body.Bytes(), &statusResp2)
+	assert.Equal(t, "sheltered", statusResp2.Position)
+
+	// 3. Command Motor: Invalid action -> 400 Bad Request
+	invBody := models.MotorCommandRequest{Action: "invalid_action"}
+	bInv, _ := json.Marshal(invBody)
+	wInv := httptest.NewRecorder()
+	reqInv, _ := http.NewRequest("POST", "/api/devices/"+devID+"/motor/command", bytes.NewBuffer(bInv))
+	reqInv.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wInv, reqInv)
+	assert.Equal(t, http.StatusBadRequest, wInv.Code)
+}
+
+func TestSimulatorWeatherEndpoint(t *testing.T) {
+	r := setupTestRouter()
+	devID := "hs-test-sim-01"
+
+	database.DB.Create(&models.Device{
+		ID:         devID,
+		Name:       "Sim Device Test",
+		LastSeenAt: time.Now(),
+	})
+
+	// 1. Simulate Rain Condition -> 200 OK
+	simBody := models.SimulatorWeatherRequest{
+		DeviceID:  devID,
+		Condition: "hujan",
+	}
+	b, _ := json.Marshal(simBody)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", "/api/simulator/weather", bytes.NewBuffer(b))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var res map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &res)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", res["status"])
+	assert.Equal(t, "hujan", res["condition"])
+
+	// 2. Simulate Invalid Condition -> 400 Bad Request
+	simInvalid := models.SimulatorWeatherRequest{
+		DeviceID:  devID,
+		Condition: "salju_lebat",
+	}
+	bInv, _ := json.Marshal(simInvalid)
+	wInv := httptest.NewRecorder()
+	reqInv, _ := http.NewRequest("POST", "/api/simulator/weather", bytes.NewBuffer(bInv))
+	reqInv.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wInv, reqInv)
+	assert.Equal(t, http.StatusBadRequest, wInv.Code)
+}

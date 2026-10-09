@@ -42,26 +42,29 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-BE-01: API & MQTT Status/Kontrol Motor DC Jemuran (Otomasi Kanopi Atap)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Frontend telah memiliki kartu antarmuka `ClotheslineMotorCard.tsx` yang menampilkan posisi rel jemuran (di bawah atap kanopi vs di luar ruangan) dan status Motor DC (L298N) saat hujan terdeteksi. Dibutuhkan sinkronisasi data aktual dari firmware ESP32 dan backend.
-  * Usulan Endpoint:
-    * `GET /api/devices/:id/motor` -> mengembalikan `{ "position": "sheltered" | "extended", "status": "idle" | "moving", "lastMovedTs": 1775702400000 }`
-    * (Opsional v2) `POST /api/devices/:id/motor/command` dengan payload `{"action": "retract" | "extend"}`
-  * Format Telemetri Tambahan di MQTT `state`:
-    * Menambahkan field objek `motor` pada payload state telemetri MQTT `hujansensor/{id}/state`.
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-02: Endpoint Injeksi Telemetri Simulasi Cuaca (Demo Mode Hub)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Frontend kini memiliki Chip Bar Demo (Cerah, Gerimis, Hujan, Badai) untuk pengujian efek audio, petir halilintar, dan pergerakan jemuran. Jika backend menyediakan endpoint injeksi telemetri virtual ke broker WebSocket staging, tim QA dapat melakukan pengujian otomatis tanpa hardware ESP32 fisik.
-  * Usulan Endpoint: `POST /api/simulator/weather` dengan payload `{ "deviceId": "hs-xxx", "condition": "cerah" | "gerimis" | "hujan" | "badai" }`
-  * Status: Menunggu Dikerjakan
+*(Saat ini kotak masuk kosong. Seluruh permintaan dari Frontend telah selesai dikerjakan dan aktif di backend!)*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
 
-*Belum ada permintaan di arsip.*
+* [x] **REQ-BE-01: API & MQTT Status/Kontrol Motor DC Jemuran (Otomasi Kanopi Atap)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Implementasi:
+    * Endpoint `GET /api/devices/:id/motor` (Mengembalikan `position`, `status`, dan `lastMovedTs`).
+    * Endpoint `POST /api/devices/:id/motor/command` (Payload `{"action":"retract"|"extend"}`).
+    * Sinkronisasi objek `motor` pada MQTT state message di `mqtt/subscriber.go`.
+    * Broadcast event `motor` ke seluruh klien WebSocket secara realtime.
+  * Status: Selesai (Tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md) sebagai BE-13).
+
+* [x] **REQ-BE-02: Endpoint Injeksi Telemetri Simulasi Cuaca (Demo Mode Hub)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Implementasi:
+    * Endpoint `POST /api/simulator/weather` dengan payload `{ "deviceId": "...", "condition": "cerah" | "gerimis" | "hujan" | "badai" }`.
+    * Menginjeksi data analog ADC, suhu, kelembapan, persentase basah, status motor, dan event darurat ke database, Redis list cache, dan siaran realtime WebSocket.
+  * Status: Selesai (Tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md) sebagai BE-14).
+
