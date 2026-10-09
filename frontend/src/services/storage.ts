@@ -93,9 +93,9 @@ export const StorageService = {
     try {
       const key = userId ? `${KEYS.DEVICES}.${userId}` : KEYS.DEVICES;
       const raw = localStorage.getItem(key);
-      if (!raw) return [DEFAULT_DEVICE];
+      if (raw === null) return [DEFAULT_DEVICE];
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed.map((d: Perangkat) => {
           const validTs = d.lastSeenTs && d.lastSeenTs > 1577836800000 ? d.lastSeenTs : 0;
           const isOnline = validTs > 0 && Date.now() - validTs <= 15000;
@@ -106,9 +106,9 @@ export const StorageService = {
           };
         });
       }
-      return [DEFAULT_DEVICE];
+      return [];
     } catch {
-      return [DEFAULT_DEVICE];
+      return [];
     }
   },
 

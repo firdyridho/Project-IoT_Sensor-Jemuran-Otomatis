@@ -431,89 +431,108 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
           Daftar Perangkat Terdaftar ({devices.length} / 5)
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {devices.map((device) => {
-            const isSelected = activeDevice.deviceId === device.deviceId;
+        {devices.length === 0 ? (
+          <Card className="p-8 text-center border-dashed border-2 border-garis/80">
+            <Cpu className="w-10 h-10 text-teks-tertier mx-auto mb-2 opacity-50" />
+            <h4 className="font-semibold text-sm text-teks-utama">Belum Ada Perangkat Terdaftar</h4>
+            <p className="text-xs text-teks-sekunder mt-1 max-w-sm mx-auto mb-4">
+              Semua perangkat telah dihapus. Klik tombol di bawah untuk mendaftarkan unit ESP32 baru.
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setShowAddForm(true)}
+              className="inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              Daftarkan Perangkat Baru
+            </Button>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {devices.map((device) => {
+              const isSelected = activeDevice.deviceId === device.deviceId;
 
-            return (
-              <Card
-                key={device.deviceId}
-                className={`p-4 transition-all relative ${
-                  isSelected
-                    ? 'border-2 border-blue-500/70 bg-blue-500/5'
-                    : 'hover:border-garis/90'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-sm text-teks-utama truncate">
-                        {device.nama}
-                      </h4>
-                      {isSelected && (
-                        <Badge variant="kering" className="text-[10px]">
-                          Aktif
-                        </Badge>
-                      )}
+              return (
+                <Card
+                  key={device.deviceId}
+                  className={`p-4 transition-all relative ${
+                    isSelected
+                      ? 'border-2 border-blue-500/70 bg-blue-500/5'
+                      : 'hover:border-garis/90'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm text-teks-utama truncate">
+                          {device.nama}
+                        </h4>
+                        {isSelected && (
+                          <Badge variant="kering" className="text-[10px]">
+                            Aktif
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs font-mono text-teks-sekunder truncate">
+                        {device.deviceId}
+                      </p>
                     </div>
-                    <p className="text-xs font-mono text-teks-sekunder truncate">
-                      {device.deviceId}
-                    </p>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {!isSelected && (
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {!isSelected && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => onSelectDevice(device.deviceId)}
+                          className="text-xs"
+                        >
+                          Pilih
+                        </Button>
+                      )}
                       <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
-                        onClick={() => onSelectDevice(device.deviceId)}
-                        className="text-xs"
+                        onClick={() => handleStartEdit(device)}
+                        className="text-blue-500 hover:text-blue-600 p-2 min-w-9 min-h-9"
+                        title="Edit perangkat"
+                        aria-label={`Edit ${device.nama}`}
                       >
-                        Pilih
+                        <Pencil className="w-3.5 h-3.5" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleStartEdit(device)}
-                      className="text-blue-500 hover:text-blue-600 p-2 min-w-9 min-h-9"
-                      title="Edit perangkat"
-                      aria-label={`Edit ${device.nama}`}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDeleteDevice(device.deviceId)}
-                      className="text-red-500 hover:text-red-600 p-2 min-w-9 min-h-9"
-                      title="Hapus perangkat"
-                      aria-label={`Hapus ${device.nama}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDeleteDevice(device.deviceId)}
+                        className="text-red-500 hover:text-red-600 p-2 min-w-9 min-h-9"
+                        title="Hapus perangkat"
+                        aria-label={`Hapus ${device.nama}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-3 gap-2">
-                  <div className="truncate">
-                    <span>Server: </span>
-                    <strong className="text-cyan-600 dark:text-cyan-400 font-medium">Cloud VPS</strong>
+                  <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-3 gap-2">
+                    <div className="truncate">
+                      <span>Server: </span>
+                      <strong className="text-cyan-600 dark:text-cyan-400 font-medium">Cloud VPS</strong>
+                    </div>
+                    <div className="truncate text-center">
+                      <span>Sensitivitas: </span>
+                      <strong className="text-teks-utama font-mono">{device.ambangPct || 60}%</strong>
+                    </div>
+                    <div className="truncate text-right">
+                      <span>Koneksi: </span>
+                      <strong className="text-emerald-500 font-medium">Realtime</strong>
+                    </div>
                   </div>
-                  <div className="truncate text-center">
-                    <span>Sensitivitas: </span>
-                    <strong className="text-teks-utama font-mono">{device.ambangPct || 60}%</strong>
-                  </div>
-                  <div className="truncate text-right">
-                    <span>Koneksi: </span>
-                    <strong className="text-emerald-500 font-medium">Realtime</strong>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {/* 3. Tampilan & Preferensi */}

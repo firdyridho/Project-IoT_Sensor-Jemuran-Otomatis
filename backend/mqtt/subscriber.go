@@ -120,6 +120,12 @@ func (s *MqttSubscriber) handleTelemetry(raw []byte) {
 		return
 	}
 
+	// Abaikan telemetri jika perangkat tidak terdaftar di database
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", p.DeviceID).Error; err != nil {
+		return
+	}
+
 	// 1. Save to Database
 	reading := models.Telemetry{
 		DeviceID:  p.DeviceID,
@@ -288,25 +294,13 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	now := time.Now()
 	nowMs := now.UnixMilli()
 
-	// 2. Auto-register device jika belum ada di database
+	// 2. Validasi pendaftaran perangkat:
+	// Hanya proses data jika perangkat sudah terdaftar di database.
+	// Jika perangkat belum/tidak terdaftar (atau telah dihapus oleh user), abaikan data agar tidak auto-register kembali.
 	var dev models.Device
 	if err := database.DB.First(&dev, "id = ?", devID).Error; err != nil {
-		newDev := models.Device{
-			ID:               devID,
-			Name:             "Jemuran ESP32 (" + devID + ")",
-			BrokerURL:        "wss://43-133-136-149.sslip.io/ws",
-			LokasiADM4:       "31.71.03.1001",
-			AmbangPct:        60,
-			Status:           "online",
-			MotorPosition:    motorPos,
-			MotorStatus:      "idle",
-			MotorLastMovedAt: now,
-			LastSeenAt:       now,
-			CreatedAt:        now,
-			UpdatedAt:        now,
-		}
-		database.DB.Create(&newDev)
-		log.Printf("[MQTT] Auto-registered device baru: %s", devID)
+		// Perangkat tidak terdaftar di database, abaikan paket data ini
+		return
 	}
 
 	// 3. Simpan Telemetri ke Database

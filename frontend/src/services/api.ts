@@ -108,12 +108,15 @@ export const BackendService = {
     }
   },
 
-  async deleteDevice(baseUrl: string, deviceId: string): Promise<boolean> {
+  async deleteDevice(baseUrl: string, deviceId: string, token?: string): Promise<boolean> {
     if (!baseUrl) return false;
     try {
       const clean = baseUrl.replace(/\/+$/, '');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`${clean}/api/devices/${encodeURIComponent(deviceId)}`, {
         method: 'DELETE',
+        headers,
       });
       return res.ok;
     } catch {

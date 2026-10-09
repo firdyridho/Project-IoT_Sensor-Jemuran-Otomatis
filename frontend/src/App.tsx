@@ -65,11 +65,11 @@ export const App: React.FC = () => {
   const activeDevice =
     devices.find((d) => d.deviceId === settings.deviceIdActive) ||
     devices[0] || {
-      deviceId: 'hs-24e1796dc9a1',
-      nama: 'Jemuran ESP32 Utama',
+      deviceId: '',
+      nama: 'Belum Ada Perangkat',
       brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
       lokasiAdm4: '31.71.03.1001',
-      fwVersi: '1.1.0',
+      fwVersi: '1.0.0',
       lastSeenTs: 0,
       online: false,
       ambangPct: 60,
@@ -330,7 +330,7 @@ export const App: React.FC = () => {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const backendUrl = settings.backendUrl;
-    if (!backendUrl) return;
+    if (!backendUrl || !activeDevice.deviceId) return;
 
     let isMounted = true;
     BackendService.getTelemetry(backendUrl, activeDevice.deviceId, '24h')
@@ -379,57 +379,24 @@ export const App: React.FC = () => {
         );
         if (!isMounted) return;
 
-        if (remoteDevices && remoteDevices.length > 0) {
-          // Check if user has local devices not yet saved to backend
-          const currentLocal = StorageService.getDevices(session.user.id);
-          const missingOnRemote = currentLocal.filter(
-            (localDev) => !remoteDevices.some((r) => r.deviceId === localDev.deviceId)
-          );
-
-          if (missingOnRemote.length > 0) {
-            for (const missingDev of missingOnRemote) {
-              await BackendService.createDevice(
-                backendUrl,
-                missingDev,
-                session.user.id,
-                session.token
-              );
-            }
-            const updatedRemote = await BackendService.getDevices(
-              backendUrl,
-              session.user.id,
-              session.token
-            );
-            if (isMounted && updatedRemote && updatedRemote.length > 0) {
-              setDevices(updatedRemote);
-              StorageService.saveDevices(updatedRemote, session.user.id);
-              return;
-            }
-          }
-
+        if (remoteDevices) {
           setDevices(remoteDevices);
           StorageService.saveDevices(remoteDevices, session.user.id);
 
-          // Ensure active device exists
+          // Pastikan active device sinkron jika daftar berubah
           setSettings((prevSettings) => {
-            if (!remoteDevices.some((d) => d.deviceId === prevSettings.deviceIdActive)) {
+            if (remoteDevices.length > 0 && !remoteDevices.some((d) => d.deviceId === prevSettings.deviceIdActive)) {
               const updatedSettings = { ...prevSettings, deviceIdActive: remoteDevices[0].deviceId };
+              StorageService.saveSettings(updatedSettings);
+              return updatedSettings;
+            }
+            if (remoteDevices.length === 0 && prevSettings.deviceIdActive !== '') {
+              const updatedSettings = { ...prevSettings, deviceIdActive: '' };
               StorageService.saveSettings(updatedSettings);
               return updatedSettings;
             }
             return prevSettings;
           });
-        } else {
-          // If remote database is empty for this user, push existing local devices to backend
-          const localDevices = StorageService.getDevices(session.user.id);
-          for (const dev of localDevices) {
-            await BackendService.createDevice(
-              backendUrl,
-              dev,
-              session.user.id,
-              session.token
-            );
-          }
         }
       } catch (err) {
         console.warn('Gagal sinkronisasi daftar perangkat dari backend:', err);
@@ -611,40 +578,27 @@ export const App: React.FC = () => {
     const deviceId = deviceToDelete.deviceId;
     const devName = deviceToDelete.nama;
 
-    if (devices.length <= 1) {
-      const cleanDefault: Perangkat = {
-        deviceId: 'hs-' + Math.random().toString(16).slice(2, 14).padEnd(12, '0'),
-        nama: 'Jemuran Utama',
-        brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
-        lokasiAdm4: '31.71.03.1001',
-        fwVersi: '1.0.0',
-        lastSeenTs: Date.now(),
-        online: true,
-        ambangPct: 60,
-      };
-      setDevices([cleanDefault]);
-      StorageService.saveDevices([cleanDefault], session?.user?.id);
-      handleSelectDevice(cleanDefault.deviceId);
-      if (settings.backendUrl) {
-        BackendService.createDevice(
-          settings.backendUrl,
-          cleanDefault,
-          session?.user?.id,
-          session?.token
-        ).catch(() => {});
-      }
-    } else {
-      const updated = devices.filter((d) => d.deviceId !== deviceId);
-      setDevices(updated);
-      StorageService.saveDevices(updated, session?.user?.id);
-      if (settings.deviceIdActive === deviceId) {
+    const updated = devices.filter((d) => d.deviceId !== deviceId);
+    setDevices(updated);
+    StorageService.saveDevices(updated, session?.user?.id);
+
+    if (settings.deviceIdActive === deviceId) {
+      if (updated.length > 0) {
         handleSelectDevice(updated[0].deviceId);
+      } else {
+        const newSettings = { ...settings, deviceIdActive: '' };
+        setSettings(newSettings);
+        StorageService.saveSettings(newSettings);
+        setReadings([]);
+        setEvents([]);
+        setLatestState(null);
+        setLastSeenTs(0);
       }
     }
 
     // Sync deletion to MySQL Database on VPS
     if (settings.backendUrl) {
-      BackendService.deleteDevice(settings.backendUrl, deviceId).catch((err) => {
+      BackendService.deleteDevice(settings.backendUrl, deviceId, session?.token).catch((err) => {
         console.warn('Gagal menghapus perangkat di database backend:', err);
       });
     }
