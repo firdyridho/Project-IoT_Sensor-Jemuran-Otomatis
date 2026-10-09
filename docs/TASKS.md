@@ -68,3 +68,8 @@ git push origin staging
 * Frontend tidak boleh mengutak-atik isi [BACKEND_TASKS.md](BACKEND_TASKS.md).
 * Backend tidak boleh mengutak-atik isi [FRONTEND_TASKS.md](FRONTEND_TASKS.md).
 * Komunikasi penambahan fitur baru HANYA dilakukan melalui berkas `*_REQUESTS.md` masing-masing.
+
+### 5. Aturan Ketat Branching: Wajib Push ke `staging` Saja
+* Seluruh pekerjaan harian, perbaikan bug, penambahan fitur backend/frontend, serta pembaruan task **HANYA boleh di-push ke branch `staging`**.
+* **DILARANG auto-push atau auto-merge ke branch `main`**.
+* Branch `main` adalah branch produksi (Production) dan hanya boleh diperbarui ketika fitur di `staging` sudah benar-benar stabil, teruji, dan disetujui secara eksplisit oleh pemilik proyek.
