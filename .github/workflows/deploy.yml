@@ -92,6 +92,7 @@ jobs:
 
       - name: Stop Old Service Before Upload
         if: steps.check-creds.outputs.configured == 'true'
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -100,14 +101,14 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
+            set +e
             mkdir -p /www/wwwroot/hujan-backend-staging
             mkdir -p /www/wwwroot/hujan-backend-prod
-            systemctl stop hujan-backend-staging 2>/dev/null || true
-            systemctl stop hujan-backend 2>/dev/null || true
-            systemctl stop hujan-backend-prod 2>/dev/null || true
-            pkill -9 -f hujan-backend 2>/dev/null || true
-            fuser -k -9 8080/tcp 2>/dev/null || true
-            fuser -k -9 8081/tcp 2>/dev/null || true
+            systemctl stop hujan-backend-staging 2>/dev/null
+            systemctl stop hujan-backend 2>/dev/null
+            systemctl stop hujan-backend-prod 2>/dev/null
+            pkill -9 -f hujan-backend-linux 2>/dev/null
+            exit 0
 
       - name: Copy Binary to VPS via SCP
         if: steps.check-creds.outputs.configured == 'true'
@@ -123,6 +124,7 @@ jobs:
 
       - name: Set Permissions & Restart Systemd Service
         if: steps.check-creds.outputs.configured == 'true'
+        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -131,27 +133,26 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
-            pkill -9 -f hujan-backend 2>/dev/null || true
-            fuser -k -9 8080/tcp 2>/dev/null || true
-            fuser -k -9 8081/tcp 2>/dev/null || true
+            set +e
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
+              pkill -9 -f hujan-backend-prod 2>/dev/null
+              chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux 2>/dev/null
               if [ -d "/www/wwwroot/hujan-backend" ]; then
-                cp -f /www/wwwroot/hujan-backend-prod/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null || true
-                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+                cp -f /www/wwwroot/hujan-backend-prod/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
+                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
               fi
-              systemctl restart hujan-backend-prod 2>/dev/null || true
-              systemctl restart hujan-backend 2>/dev/null || true
+              systemctl restart hujan-backend-prod 2>/dev/null
+              systemctl restart hujan-backend 2>/dev/null
               echo "✅ Backend Production berhasil diperbarui dan di-restart!"
             else
-              chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
+              pkill -9 -f hujan-backend-staging 2>/dev/null
+              chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux 2>/dev/null
               if [ -d "/www/wwwroot/hujan-backend" ]; then
-                cp -f /www/wwwroot/hujan-backend-staging/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null || true
-                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+                cp -f /www/wwwroot/hujan-backend-staging/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
+                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
               fi
-              systemctl restart hujan-backend-staging 2>/dev/null || true
-              systemctl restart hujan-backend 2>/dev/null || true
+              systemctl restart hujan-backend-staging 2>/dev/null
+              systemctl restart hujan-backend 2>/dev/null
               echo "✅ Backend Staging berhasil diperbarui dan di-restart!"
             fi
-            sleep 2
-            ss -tulpn | grep -E '8080|8081' || true
+            exit 0
