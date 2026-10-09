@@ -176,7 +176,8 @@ Layanan backend akan aktif pada port `:8080`.
 ## Dokumentasi Teknis & Manajemen Task
 
 Untuk menjaga alur pengembangan tetap terstruktur dan mempermudah kolaborasi antara Backend Engineer dan Frontend UI/AI:
-* **Peta Jalan & Pembagian Task (Backend vs Frontend)**: [docs/TASKS.md](docs/TASKS.md)
+* **Task Khusus Backend (Golang, Database & AI Engine)**: [docs/BACKEND_TASKS.md](docs/BACKEND_TASKS.md)
+* **Task Khusus Frontend (React, UI/UX & Komponen AI)**: [docs/FRONTEND_TASKS.md](docs/FRONTEND_TASKS.md)
 * **Spesifikasi REST API & WebSocket Hub**: [docs/API.md](docs/API.md)
 * **Struktur Data & Relasi Database (ERD)**: [docs/ERD.md](docs/ERD.md)
 * **Panduan Deployment Server & VPS aaPanel**: [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
