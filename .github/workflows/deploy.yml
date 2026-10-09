@@ -90,6 +90,22 @@ jobs:
             echo "::notice ::VPS SSH Secrets belum diatur di GitHub Secrets (VPS_HOST, VPS_PASSWORD / VPS_SSH_KEY). Step auto-deploy dilewati."
           fi
 
+      - name: Stop Old Service Before Upload
+        if: steps.check-creds.outputs.configured == 'true'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME || 'root' }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script: |
+            mkdir -p /www/wwwroot/hujan-backend-staging
+            mkdir -p /www/wwwroot/hujan-backend-prod
+            systemctl stop hujan-backend-staging 2>/dev/null || true
+            systemctl stop hujan-backend 2>/dev/null || true
+            systemctl stop hujan-backend-prod 2>/dev/null || true
+
       - name: Copy Binary to VPS via SCP
         if: steps.check-creds.outputs.configured == 'true'
         uses: appleboy/scp-action@v0.1.7
@@ -114,10 +130,20 @@ jobs:
           script: |
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
               chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
-              systemctl restart hujan-backend-prod
-              echo "✅ hujan-backend-prod berhasil diperbarui dan di-restart!"
+              if [ -d "/www/wwwroot/hujan-backend" ]; then
+                cp -f /www/wwwroot/hujan-backend-prod/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null || true
+                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+              fi
+              systemctl restart hujan-backend-prod 2>/dev/null || true
+              systemctl restart hujan-backend 2>/dev/null || true
+              echo "✅ Backend Production berhasil diperbarui dan di-restart!"
             else
               chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
-              systemctl restart hujan-backend-staging
-              echo "✅ hujan-backend-staging berhasil diperbarui dan di-restart!"
+              if [ -d "/www/wwwroot/hujan-backend" ]; then
+                cp -f /www/wwwroot/hujan-backend-staging/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null || true
+                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux
+              fi
+              systemctl restart hujan-backend-staging 2>/dev/null || true
+              systemctl restart hujan-backend 2>/dev/null || true
+              echo "✅ Backend Staging berhasil diperbarui dan di-restart!"
             fi
