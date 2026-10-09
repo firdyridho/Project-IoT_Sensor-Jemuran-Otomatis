@@ -22,10 +22,13 @@ type Device struct {
 	BrokerURL  string    `gorm:"size:256" json:"brokerUrl"`
 	LokasiADM4 string    `gorm:"size:32" json:"lokasiAdm4"`
 	AmbangPct  int       `gorm:"default:60" json:"ambangPct"`
-	Status     string    `gorm:"size:32;default:'offline'" json:"status"` // "online" or "offline"
-	LastSeenAt time.Time `json:"lastSeenAt"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
+	Status           string    `gorm:"size:32;default:'offline'" json:"status"` // "online" or "offline"
+	MotorPosition    string    `gorm:"size:32;default:'extended'" json:"motorPosition"` // "sheltered" or "extended"
+	MotorStatus      string    `gorm:"size:32;default:'idle'" json:"motorStatus"`         // "idle" or "moving"
+	MotorLastMovedAt time.Time `json:"motorLastMovedAt"`
+	LastSeenAt       time.Time `json:"lastSeenAt"`
+	CreatedAt        time.Time `json:"createdAt"`
+	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
 // Telemetry represents time-series telemetry readings from ESP32
@@ -95,6 +98,11 @@ type StatePayload struct {
 	Loc *struct {
 		ADM4 string `json:"adm4"`
 	} `json:"loc"`
+	Motor *struct {
+		Position    string `json:"position"`    // "sheltered" or "extended"
+		Status      string `json:"status"`      // "idle" or "moving"
+		LastMovedTs int64  `json:"lastMovedTs"` // epoch ms
+	} `json:"motor"`
 }
 
 // EventPayload format for incoming events
@@ -158,4 +166,24 @@ type AIDryingAdviceResponse struct {
 		ActionMessage    string  `json:"actionMessage"`
 	} `json:"advice"`
 }
+
+// MotorStatusResponse format for GET /api/devices/:id/motor (REQ-BE-01)
+type MotorStatusResponse struct {
+	DeviceID    string `json:"deviceId"`
+	Position    string `json:"position"`    // "sheltered" | "extended"
+	Status      string `json:"status"`      // "idle" | "moving"
+	LastMovedTs int64  `json:"lastMovedTs"` // epoch ms
+}
+
+// MotorCommandRequest format for POST /api/devices/:id/motor/command (REQ-BE-01)
+type MotorCommandRequest struct {
+	Action string `json:"action"` // "retract" | "extend"
+}
+
+// SimulatorWeatherRequest format for POST /api/simulator/weather (REQ-BE-02)
+type SimulatorWeatherRequest struct {
+	DeviceID  string `json:"deviceId"`
+	Condition string `json:"condition"` // "cerah" | "gerimis" | "hujan" | "badai"
+}
+
 
