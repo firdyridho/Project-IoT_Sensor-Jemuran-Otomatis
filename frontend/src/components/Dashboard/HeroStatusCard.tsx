@@ -7,10 +7,8 @@ import {
   AlertTriangle,
   Clock,
   Droplets,
-  Thermometer,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
-import { WeatherSphereOrb } from './WeatherSphereOrb';
 import { WeatherIllustration } from './WeatherIllustration';
 
 export type WeatherConditionType = 'cerah' | 'gerimis' | 'hujan' | 'badai';
@@ -40,7 +38,7 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   weatherCondition,
   tempC = null,
   hum = null,
-  locationName = 'Jemuran Utama — Jakarta',
+  locationName = 'Jemuran ESP32 Utama',
 }) => {
   const [showDetails, setShowDetails] = useState<boolean>(false);
 
@@ -91,7 +89,6 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   }
 
   if (status === 'offline') {
-    const isNeverConnected = !lastSeenTs || lastSeenTs <= 1577836800000;
     return (
       <Card className="relative overflow-hidden border-2 border-slate-700/60 bg-gradient-to-b from-slate-800/40 via-slate-900/80 to-slate-950 p-5 sm:p-7 backdrop-blur-xl shadow-2xl">
         <div className="flex items-start justify-between gap-4">
@@ -104,9 +101,7 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
               Perangkat ESP32 Offline
             </h2>
             <p className="text-sm text-slate-400 max-w-lg leading-relaxed">
-              {isNeverConnected
-                ? 'Perangkat belum terhubung. Nyalakan ESP32 dan hubungkan ke WiFi/MQTT broker untuk mulai memantau secara realtime.'
-                : `Tidak menerima telemetri sejak ${formatTime(lastSeenTs)} (${getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.`}
+              Tidak menerima telemetri sejak {formatTime(lastSeenTs)} ({getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.
             </p>
           </div>
           <div className="p-3.5 rounded-2xl bg-slate-800 text-slate-400 shrink-0">
@@ -117,17 +112,17 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     );
   }
 
-  // Theme configurations for card background, borders, and typography
-  // Left phone style for Cerah (Warm Frosted Glass), Right phone style for Rainy/Stormy (Dark Frosted Glass)
+  // Theme configurations
+  // Cerah: Putih transparan glassmorphism, Dark/Rainy: Dark moody glassmorphism
   const theme = {
     cerah: {
       cardClass: 'bg-white/40 border-white/60 text-slate-900 shadow-xl backdrop-blur-2xl',
-      locText: 'text-slate-800 font-semibold',
-      tempText: 'text-slate-900 font-extrabold',
-      condText: 'text-slate-800 font-bold',
+      locText: 'text-slate-800 font-bold',
+      tempText: 'text-slate-900 font-black',
+      condText: 'text-slate-900 font-extrabold',
       subText: 'text-slate-700',
-      badgeBg: 'bg-amber-500/25 border-amber-500/40 text-amber-900 font-bold',
-      motorBg: 'bg-white/60 border-white/70 text-slate-800',
+      badgeBg: 'bg-amber-500/20 border-amber-500/40 text-amber-900 font-bold',
+      motorBg: 'bg-white/60 border-white/80 text-slate-800 font-semibold',
       safetyBadge: 'Jemuran Terbuka (Sinar Matahari)',
       motorNotice: 'Motor DC: Siaga di luar',
       condLabel: 'Cerah Berawan',
@@ -137,14 +132,14 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     },
     gerimis: {
       cardClass: 'bg-slate-900/60 border-white/15 text-white shadow-2xl backdrop-blur-2xl',
-      locText: 'text-slate-200 font-semibold',
-      tempText: 'text-white font-extrabold',
-      condText: 'text-sky-200 font-bold',
+      locText: 'text-slate-200 font-bold',
+      tempText: 'text-white font-black',
+      condText: 'text-sky-200 font-extrabold',
       subText: 'text-slate-300',
       badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 font-bold',
-      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-300',
+      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-200 font-semibold',
       safetyBadge: 'Jemuran Aman (Di Bawah Atap)',
-      motorNotice: 'Motor DC: Menarik ke kanopi atap',
+      motorNotice: 'Motor DC: Menarik masuk ke kanopi atap',
       condLabel: 'Gerimis Ringan',
       chanceOfRain: '65%',
       humidityDisplay: hum ? `${hum}%` : '78%',
@@ -152,13 +147,13 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     },
     hujan: {
       cardClass: 'bg-slate-950/70 border-white/15 text-white shadow-2xl backdrop-blur-2xl',
-      locText: 'text-slate-200 font-semibold',
-      tempText: 'text-white font-extrabold',
-      condText: 'text-cyan-200 font-bold',
+      locText: 'text-slate-200 font-bold',
+      tempText: 'text-white font-black',
+      condText: 'text-cyan-200 font-extrabold',
       subText: 'text-slate-300',
       badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 font-bold',
-      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-300',
-      safetyBadge: 'Jemuran Aman (Terlindungi)',
+      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-200 font-semibold',
+      safetyBadge: 'Jemuran Aman (Terlindungi Atap)',
       motorNotice: 'Motor DC: Terkunci di bawah atap',
       condLabel: 'Hujan Deras',
       chanceOfRain: '95%',
@@ -167,12 +162,12 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     },
     badai: {
       cardClass: 'bg-slate-950/75 border-purple-500/30 text-white shadow-2xl backdrop-blur-2xl',
-      locText: 'text-purple-200 font-semibold',
-      tempText: 'text-white font-extrabold',
-      condText: 'text-purple-200 font-bold',
+      locText: 'text-purple-200 font-bold',
+      tempText: 'text-white font-black',
+      condText: 'text-purple-200 font-extrabold',
       subText: 'text-slate-300',
       badgeBg: 'bg-emerald-500/25 border-emerald-400/50 text-emerald-200 font-bold',
-      motorBg: 'bg-indigo-950/80 border-indigo-800/60 text-indigo-200',
+      motorBg: 'bg-indigo-950/80 border-indigo-800/60 text-indigo-200 font-semibold',
       safetyBadge: 'Jemuran Aman (Siaga Badai)',
       motorNotice: 'Motor DC: Terkunci rapat di naungan',
       condLabel: 'Badai Petir Halilintar',
@@ -186,7 +181,7 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     <Card
       className={`relative overflow-hidden rounded-3xl border-2 p-5 sm:p-7 transition-all duration-700 ${theme.cardClass}`}
     >
-      {/* 1. Location Bar & Options (Directly matching "Barcelona, Spain •••" in user reference image) */}
+      {/* 1. Location Bar & Safety Status Header */}
       <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-3 mb-4">
         <div className="flex items-center gap-2">
           <span className={`text-sm sm:text-base tracking-wide ${theme.locText}`}>
@@ -214,58 +209,47 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
         </div>
       </div>
 
-      {/* 2. Main Weather Display & 3D Illustration Row (Matching reference layout) */}
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
-        {/* Left Side: Big Temperature, Condition & Environmental Subtext */}
-        <div className="sm:col-span-6 space-y-1.5">
-          <div className="flex items-baseline gap-1">
-            <span className={`text-6xl sm:text-7xl font-black font-heading tracking-tight leading-none ${theme.tempText}`}>
+      {/* 2. Main Centerpiece: Icon di Tengah + Celcius di samping Icon */}
+      <div className="flex flex-col items-center justify-center my-3 text-center">
+        {/* Row: 3D Weather Icon di Tengah berdampingan dengan Celcius */}
+        <div className="flex items-center justify-center gap-4 sm:gap-6 my-2">
+          <div className="shrink-0 flex items-center justify-center">
+            <WeatherIllustration condition={condition} className="w-32 h-28 sm:w-40 sm:h-32" />
+          </div>
+
+          <div className="flex items-baseline">
+            <span className={`text-6xl sm:text-7xl md:text-8xl font-black font-heading tracking-tight leading-none ${theme.tempText}`}>
               {theme.tempDisplay}°
             </span>
-            <span className="text-xl font-medium opacity-60">C</span>
-          </div>
-
-          <div className={`text-lg sm:text-xl tracking-tight ${theme.condText}`}>
-            {theme.condLabel}
-          </div>
-
-          <div className={`text-xs sm:text-sm space-y-0.5 leading-relaxed ${theme.subText}`}>
-            <div>Peluang Hujan: <span className="font-semibold">{theme.chanceOfRain}</span></div>
-            <div>Tingkat Kelembapan: <span className="font-semibold">{theme.humidityDisplay}</span></div>
-          </div>
-
-          {/* Motor DC State Pill */}
-          <div className="pt-2">
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium shadow-inner ${theme.motorBg}`}>
-              <Umbrella className="w-3.5 h-3.5 text-cyan-400" />
-              <span>{theme.motorNotice}</span>
-            </div>
+            <span className="text-2xl sm:text-3xl font-bold opacity-60 ml-0.5">C</span>
           </div>
         </div>
 
-        {/* Right Side: Big 3D Weather Illustration + 3D Orb Sensor Kebasahan */}
-        <div className="sm:col-span-6 flex items-center justify-center sm:justify-end gap-3 sm:gap-4">
-          {/* 3D Weather Illustration (3D Puffy Cloud with 3D Sun Sphere or 3D glossy rain drops) */}
-          <div className="shrink-0 flex items-center justify-center">
-            <WeatherIllustration condition={condition} className="w-36 h-28 sm:w-44 sm:h-32" />
+        {/* 3. Info di Bawah Icon & Celcius */}
+        <div className="mt-2 space-y-2 max-w-md w-full">
+          {/* Judul Kondisi Cuaca */}
+          <div className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${theme.condText}`}>
+            {theme.condLabel}
           </div>
 
-          {/* 3D Glossy Sphere Orb Widget for Physical Rain Sensor (ADC & Pct) */}
-          <div className="shrink-0 flex flex-col items-center justify-center p-3 rounded-2xl bg-black/10 dark:bg-black/30 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-inner">
-            <WeatherSphereOrb condition={condition} size="sm" showLabel={false} />
-            <div className="mt-1.5 text-center">
-              <div className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
-                {pct}%
-              </div>
-              <div className="text-[9px] uppercase tracking-wider opacity-60 mt-0.5 font-medium">
-                Sensor ADC
-              </div>
+          {/* Peluang Hujan & Tingkat Kelembapan */}
+          <div className={`flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs sm:text-sm font-medium ${theme.subText}`}>
+            <span>Peluang Hujan: <strong className="font-bold">{theme.chanceOfRain}</strong></span>
+            <span>•</span>
+            <span>Tingkat Kelembapan: <strong className="font-bold">{theme.humidityDisplay}</strong></span>
+          </div>
+
+          {/* Motor DC Status Pill */}
+          <div className="pt-1.5">
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs sm:text-sm font-medium shadow-inner ${theme.motorBg}`}>
+              <Umbrella className="w-4 h-4 text-cyan-400" />
+              <span>{theme.motorNotice}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Expandable / Collapsible Telemetry Row */}
+      {/* 4. Expandable / Collapsible Telemetry Row */}
       {showDetails && (
         <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 grid grid-cols-3 gap-2 text-xs">
           <div className="flex items-center gap-1.5 opacity-80">

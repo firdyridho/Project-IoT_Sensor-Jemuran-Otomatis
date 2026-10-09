@@ -7,6 +7,8 @@ import { HeroStatusCard } from './components/Dashboard/HeroStatusCard';
 import { TelemetryGrid } from './components/Dashboard/TelemetryGrid';
 import { QuickWeatherCard } from './components/Dashboard/QuickWeatherCard';
 import { DashboardClockHeader } from './components/Dashboard/DashboardClockHeader';
+import { DailyForecastCards } from './components/Dashboard/DailyForecastCards';
+import { SensorADCCard } from './components/Dashboard/SensorADCCard';
 import { ConditionChipBar, SimulationMode, WeatherCondition } from './components/Dashboard/ConditionChipBar';
 import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas';
 import { SoftDriftingClouds } from './components/Dashboard/SoftDriftingClouds';
@@ -837,11 +839,9 @@ export const App: React.FC = () => {
                   onToggleAudio={handleToggleAudio}
                 />
 
-                {/* Large Digital Clock & 4-Day Forecast Header (Matched to Reference Image) */}
+                {/* Digital Clock & Date Header (Top) */}
                 <DashboardClockHeader
                   condition={activeCondition}
-                  weatherData={weatherData}
-                  effectiveWet={effectiveWet}
                 />
 
                 {/* Live Status Bar */}
@@ -869,7 +869,7 @@ export const App: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Big Hero Card with 3D Illustration & 3D Spherical Orb */}
+                {/* 1. Card Jemuran ESP32 Utama (Icon Cuaca di Tengah, Celcius di Samping, Info Cuaca & Motor di Bawah) */}
                 <HeroStatusCard
                   status={currentStatus}
                   pct={effectivePct}
@@ -881,7 +881,23 @@ export const App: React.FC = () => {
                   weatherCondition={activeCondition}
                   tempC={latestState?.env?.tempC ?? latestReading?.suhuC ?? null}
                   hum={latestState?.env?.hum ?? latestReading?.lembapPct ?? null}
-                  locationName={activeDevice.nama}
+                  locationName={activeDevice.nama || 'Jemuran ESP32 Utama'}
+                />
+
+                {/* 2. Card 95% Sensor ADC (Di Bawah Card Jemuran ESP32 Utama) */}
+                <SensorADCCard
+                  condition={activeCondition}
+                  pct={effectivePct}
+                  raw={effectiveRaw}
+                  thresholdPct={activeDevice.ambangPct}
+                  isWet={effectiveWet}
+                />
+
+                {/* 3. Card Perkiraan Cuaca Hari Ini, Besok, Lusa, Nanti (Di Bawah Card Jemuran ESP32 Utama) */}
+                <DailyForecastCards
+                  condition={activeCondition}
+                  weatherData={weatherData}
+                  effectiveWet={effectiveWet}
                 />
 
                 {/* Clothesline & DC Motor Safety Automation Card */}
