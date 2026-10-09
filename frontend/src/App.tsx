@@ -684,37 +684,37 @@ export const App: React.FC = () => {
   const currentRaw = latestState?.rain?.raw ?? latestReading?.raw ?? 3800;
   const currentSinceTs = latestState?.rain?.sinceMs ?? activeDevice.lastSeenTs;
 
-  // Real weather condition inferred from IoT hardware sensor
+  // Real weather condition inferred from IoT hardware sensor (cerah, mendung, hujan, badai)
   const realCondition: WeatherCondition = !currentWet
     ? currentPct > 30
       ? 'mendung'
       : 'cerah'
     : currentPct > 80
     ? 'badai'
-    : 'gerimis';
+    : 'hujan';
 
   // Effective condition (either simulated demo or real IoT)
   const activeCondition: WeatherCondition = simMode === 'live' ? realCondition : simMode;
 
-  const effectiveWet = simMode === 'live' ? currentWet : (activeCondition !== 'cerah' && activeCondition !== 'mendung');
+  const effectiveWet = simMode === 'live' ? currentWet : (activeCondition === 'hujan' || activeCondition === 'badai' || activeCondition === 'gerimis');
   const effectivePct = simMode === 'live'
     ? currentPct
     : activeCondition === 'cerah'
     ? 5
     : activeCondition === 'mendung'
     ? 30
-    : activeCondition === 'gerimis'
-    ? 58
-    : 95;
+    : activeCondition === 'hujan' || activeCondition === 'gerimis'
+    ? 80
+    : 98;
   const effectiveRaw = simMode === 'live'
     ? currentRaw
     : activeCondition === 'cerah'
     ? 3940
     : activeCondition === 'mendung'
     ? 3150
-    : activeCondition === 'gerimis'
-    ? 1980
-    : 610;
+    : activeCondition === 'hujan' || activeCondition === 'gerimis'
+    ? 1250
+    : 520;
 
   const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline && simMode === 'live'
     ? 'offline'
@@ -776,7 +776,7 @@ export const App: React.FC = () => {
     <div
       className={`min-h-screen flex flex-col relative transition-colors duration-1000 ${
         activeTab === 'dashboard' ? `weather-bg-${activeCondition}` : 'bg-latar'
-      } text-teks-utama selection:bg-cyan-500 selection:text-white overflow-x-hidden`}
+      } text-teks-utama selection:bg-cyan-500 selection:text-white overflow-x-clip`}
     >
       {/* Bottom atmospheric soft blue gradient */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 h-96 bottom-blue-gradient z-0" aria-hidden="true" />
@@ -807,7 +807,7 @@ export const App: React.FC = () => {
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col lg:pl-64 relative z-10">
-        {/* Sticky App Header */}
+        {/* Sticky Frozen App Header (Never sinks during scroll) */}
         <Header
           devices={devices}
           activeDevice={activeDevice}
@@ -823,6 +823,7 @@ export const App: React.FC = () => {
           onLogout={handleLogout}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           isDashboard={activeTab === 'dashboard'}
+          weatherCondition={activeCondition}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
@@ -1014,7 +1015,9 @@ export const App: React.FC = () => {
       <BottomNav
         activeTab={activeTab}
         onChangeTab={setActiveTab}
-        isRaining={currentWet}
+        isRaining={effectiveWet}
+        theme={settings.tema}
+        weatherCondition={activeCondition}
       />
 
       {/* Custom Confirmation Modals */}

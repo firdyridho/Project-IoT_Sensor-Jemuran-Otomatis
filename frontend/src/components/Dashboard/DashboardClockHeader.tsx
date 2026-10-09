@@ -27,8 +27,8 @@ export const DashboardClockHeader: React.FC<DashboardClockHeaderProps> = ({ cond
   const dateFormatted = `${dayName} | ${dateNum} ${monthName}`;
 
   const isCerah = condition === 'cerah';
-  const clockColor = isCerah ? 'text-slate-900' : 'text-white';
-  const dateColor = isCerah ? 'text-slate-700 font-semibold' : 'text-slate-300 font-medium';
+  const clockColor = isCerah ? 'text-slate-950 font-black drop-shadow-sm' : 'text-white font-black drop-shadow-md';
+  const dateColor = isCerah ? 'text-slate-950 font-black tracking-widest' : 'text-slate-100 font-bold tracking-widest';
 
   return (
     <div className="flex flex-col items-center justify-center pt-2 pb-1 text-center select-none">

@@ -80,8 +80,8 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 * [ ] **REQ-BE-05: Penyesuaian Simulator & Klasifikasi 4 Kondisi Cuaca (`POST /api/simulator/weather`)**
   * Tanggal Diminta: 2026-10-09
   * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Frontend menyelaraskan 4 kondisi cuaca standar pada UI dashboard: `cerah`, `mendung`, `gerimis`, dan `badai`. Khusus kondisi `mendung`, sensor mendeteksi kelembapan tinggi dan awan tebal namun belum ada tetesan air hujan (`wet: false`, motor DC dalam mode siaga antisipasi), sedangkan `gerimis` dan `badai` mengaktifkan penarikan motor kanopi atap (`wet: true`).
-  * Usulan Perubahan Payload: `POST /api/simulator/weather` menerima enum `"condition": "cerah" | "mendung" | "gerimis" | "badai"`
+  * Latar Belakang / Kebutuhan UI: Frontend menyelaraskan 4 kondisi cuaca standar pada UI dashboard: `cerah`, `mendung`, `hujan`, dan `badai`. Khusus kondisi `mendung`, sensor mendeteksi kelembapan tinggi dan awan tebal namun belum ada tetesan air hujan (`wet: false`, motor DC dalam mode siaga antisipasi), sedangkan `hujan` dan `badai` mengaktifkan penarikan motor kanopi atap (`wet: true`).
+  * Usulan Perubahan Payload: `POST /api/simulator/weather` menerima enum `"condition": "cerah" | "mendung" | "hujan" | "badai"`
   * Status: Menunggu Dikerjakan
 
 ---

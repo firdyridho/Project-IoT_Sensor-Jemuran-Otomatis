@@ -161,50 +161,53 @@
   background: linear-gradient(to top, rgba(59, 32, 100, 0.6) 0%, rgba(36, 20, 66, 0.3) 35%, transparent 85%);
 }
 
-/* Cerah: Semua Card diubah menjadi Putih Transparan Glassmorphism */
-.weather-bg-cerah [class*="rounded-2xl"],
-.weather-bg-cerah [class*="rounded-3xl"],
-.weather-bg-cerah [class*="bg-slate-900"],
-.weather-bg-cerah [class*="bg-slate-950"],
-.weather-bg-cerah [class*="bg-gradient-"] {
+/* Cerah: Card Konten Dashboard diubah menjadi Putih Transparan Glassmorphism, 
+   KECUALI Header, Footer Nav, Button, dan Badge agar tetap solid & kontras tinggi */
+.weather-bg-cerah main div[class*="rounded-3xl"],
+.weather-bg-cerah main div[class*="rounded-2xl"]:not(button):not([class*="rounded-full"]) {
   background-image: none !important;
-  background-color: rgba(255, 255, 255, 0.45) !important;
+  background-color: rgba(255, 255, 255, 0.60) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(255, 255, 255, 0.65) !important;
-  color: #1e293b !important;
-  box-shadow: 0 10px 30px rgba(217, 119, 6, 0.08) !important;
-}
-
-.weather-bg-cerah .text-white,
-.weather-bg-cerah h2,
-.weather-bg-cerah h3 {
+  border-color: rgba(255, 255, 255, 0.85) !important;
   color: #0f172a !important;
+  box-shadow: 0 10px 35px rgba(217, 119, 6, 0.12) !important;
 }
 
-.weather-bg-cerah .text-slate-200,
-.weather-bg-cerah .text-slate-300 {
+/* Header & Footer Solid & Ter-freeze (Tanpa Glassmorphism) */
+header.sticky {
+  position: -webkit-sticky !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 50 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+nav.fixed {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Pastikan semua teks di cuaca cerah memiliki kontras tinggi dan mudah dibaca */
+.weather-bg-cerah main .text-white {
+  color: #020617 !important;
+}
+
+.weather-bg-cerah main h1,
+.weather-bg-cerah main h2,
+.weather-bg-cerah main h3 {
+  color: #020617 !important;
+}
+
+.weather-bg-cerah main .text-slate-200,
+.weather-bg-cerah main .text-slate-300 {
+  color: #1e293b !important;
+}
+
+.weather-bg-cerah main .text-slate-400,
+.weather-bg-cerah main .text-slate-500 {
   color: #334155 !important;
-}
-
-.weather-bg-cerah .text-slate-400 {
-  color: #475569 !important;
-}
-
-.weather-bg-cerah .border-white\/10,
-.weather-bg-cerah .border-white\/5,
-.weather-bg-cerah .border-slate-800 {
-  border-color: rgba(255, 255, 255, 0.50) !important;
-}
-
-.weather-bg-cerah [class*="bg-slate-800\/"] {
-  background-color: rgba(255, 255, 255, 0.55) !important;
-  color: #1e293b !important;
-}
-
-.weather-bg-cerah [class*="bg-white\/\[0.03\]"] {
-  background-color: rgba(255, 255, 255, 0.40) !important;
-  color: #1e293b !important;
 }
 
 /* Realistic Diagonal Rain Streaks like right phone */
