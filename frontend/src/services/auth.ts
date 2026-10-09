@@ -43,58 +43,70 @@ export const AuthService = {
     password: string,
     rememberMe: boolean
   ): Promise<{ success: boolean; error?: string; session?: AuthSession }> {
-    try {
-      const clean = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
-      if (!clean) {
-        return { success: false, error: 'URL backend tidak tersedia' };
-      }
+    const urlsToTry = [
+      baseUrl ? baseUrl.replace(/\/+$/, '') : '',
+      baseUrl?.includes('staging') ? 'https://43-133-136-149.sslip.io' : 'https://staging-43-133-136-149.sslip.io'
+    ].filter(Boolean);
 
-      const res = await fetch(`${clean}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+    let lastError = '';
 
-      const contentType = res.headers.get('content-type') || '';
-      const data = contentType.includes('application/json')
-        ? await res.json().catch(() => ({}))
-        : {};
+    for (const clean of urlsToTry) {
+      try {
+        const res = await fetch(`${clean}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
 
-      if (!res.ok) {
-        if (res.status === 404) {
-          if (username === 'admin' && password === 'admin123') {
-            return { success: true, session: this.demoLogin(rememberMe) };
+        const contentType = res.headers.get('content-type') || '';
+        const data = contentType.includes('application/json')
+          ? await res.json().catch(() => ({}))
+          : {};
+
+        if (!res.ok) {
+          // Jika server mengembalikan 404, coba endpoint server alternatif
+          if (res.status === 404 && clean !== urlsToTry[urlsToTry.length - 1]) {
+            continue;
           }
-          return {
-            success: false,
-            error: 'Server autentikasi sedang dalam pembaruan (404). Silakan gunakan tombol Coba Mode Demo atau akun admin/admin123.',
-          };
+          if (res.status === 404) {
+            if (username === 'admin' && password === 'admin123') {
+              return { success: true, session: this.demoLogin(rememberMe) };
+            }
+            return {
+              success: false,
+              error: 'Server autentikasi sedang dalam pembaruan (404). Silakan gunakan akun admin/admin123 atau mode demo.',
+            };
+          }
+          return { success: false, error: data.error || 'Username atau kata sandi tidak cocok' };
         }
-        return { success: false, error: data.error || 'Username atau kata sandi tidak cocok' };
-      }
 
-      const session: AuthSession = {
-        user: {
-          id: data.user.id,
-          name: data.user.name,
-          username: data.user.username,
-          createdAt: data.user.createdAt,
-        },
-        token: data.token,
-        rememberMe,
-      };
+        const session: AuthSession = {
+          user: {
+            id: data.user.id,
+            name: data.user.name,
+            username: data.user.username,
+            createdAt: data.user.createdAt,
+          },
+          token: data.token,
+          rememberMe,
+        };
 
-      this.saveSession(session);
-      return { success: true, session };
-    } catch (err: any) {
-      if (username === 'admin' && password === 'admin123') {
-        return { success: true, session: this.demoLogin(rememberMe) };
+        this.saveSession(session);
+        return { success: true, session };
+      } catch (err: any) {
+        lastError = err.message || 'Koneksi jaringan terputus';
+        // Lanjutkan mencoba endpoint alternatif
       }
-      return {
-        success: false,
-        error: 'Gagal terhubung ke server autentikasi: ' + (err.message || 'Koneksi jaringan terputus'),
-      };
     }
+
+    if (username === 'admin' && password === 'admin123') {
+      return { success: true, session: this.demoLogin(rememberMe) };
+    }
+
+    return {
+      success: false,
+      error: 'Gagal terhubung ke server autentikasi: ' + (lastError || 'Server tidak dapat dijangkau'),
+    };
   },
 
   async register(
@@ -104,74 +116,80 @@ export const AuthService = {
     password: string,
     rememberMe: boolean
   ): Promise<{ success: boolean; error?: string; session?: AuthSession }> {
-    try {
-      const clean = baseUrl ? baseUrl.replace(/\/+$/, '') : '';
-      if (!clean) {
-        return { success: false, error: 'URL backend tidak tersedia' };
-      }
+    const urlsToTry = [
+      baseUrl ? baseUrl.replace(/\/+$/, '') : '',
+      baseUrl?.includes('staging') ? 'https://43-133-136-149.sslip.io' : 'https://staging-43-133-136-149.sslip.io'
+    ].filter(Boolean);
 
-      const res = await fetch(`${clean}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, username, password }),
-      });
+    for (const clean of urlsToTry) {
+      try {
+        const res = await fetch(`${clean}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, username, password }),
+        });
 
-      const contentType = res.headers.get('content-type') || '';
-      const data = contentType.includes('application/json')
-        ? await res.json().catch(() => ({}))
-        : {};
+        const contentType = res.headers.get('content-type') || '';
+        const data = contentType.includes('application/json')
+          ? await res.json().catch(() => ({}))
+          : {};
 
-      if (!res.ok) {
-        // Jika server backend mengembalikan 404 (binary server belum di-update dengan endpoint auth baru)
-        if (res.status === 404) {
-          console.warn('[Auth] Endpoint registrasi backend 404. Mengaktifkan sesi pengguna lokal...');
-          const localUser: User = {
-            id: `usr-${username.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-            name: name.trim(),
-            username: username.toLowerCase().trim(),
-            createdAt: new Date().toISOString(),
-          };
-          const session: AuthSession = {
-            user: localUser,
-            token: `token-local-${Date.now()}`,
-            rememberMe,
-          };
-          this.saveSession(session);
-          return { success: true, session };
+        if (!res.ok) {
+          if (res.status === 404 && clean !== urlsToTry[urlsToTry.length - 1]) {
+            continue;
+          }
+          if (res.status === 404) {
+            console.warn('[Auth] Endpoint registrasi backend 404. Mengaktifkan sesi pengguna lokal...');
+            const localUser: User = {
+              id: `usr-${username.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+              name: name.trim(),
+              username: username.toLowerCase().trim(),
+              createdAt: new Date().toISOString(),
+            };
+            const session: AuthSession = {
+              user: localUser,
+              token: `token-local-${Date.now()}`,
+              rememberMe,
+            };
+            this.saveSession(session);
+            return { success: true, session };
+          }
+          return { success: false, error: data.error || `Gagal mendaftarkan akun (HTTP ${res.status})` };
         }
-        return { success: false, error: data.error || `Gagal mendaftarkan akun (HTTP ${res.status})` };
+
+        const session: AuthSession = {
+          user: {
+            id: data.user.id,
+            name: data.user.name,
+            username: data.user.username,
+            createdAt: data.user.createdAt,
+          },
+          token: data.token,
+          rememberMe,
+        };
+
+        this.saveSession(session);
+        return { success: true, session };
+      } catch (err: any) {
+        // Lanjutkan mencoba endpoint alternatif
       }
-
-      const session: AuthSession = {
-        user: {
-          id: data.user.id,
-          name: data.user.name,
-          username: data.user.username,
-          createdAt: data.user.createdAt,
-        },
-        token: data.token,
-        rememberMe,
-      };
-
-      this.saveSession(session);
-      return { success: true, session };
-    } catch (err: any) {
-      // Fallback offline bila server tidak merespon sama sekali
-      console.warn('[Auth] Gagal menghubungi backend saat mendaftar, menggunakan fallback sesi lokal:', err);
-      const localUser: User = {
-        id: `usr-${username.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
-        name: name.trim(),
-        username: username.toLowerCase().trim(),
-        createdAt: new Date().toISOString(),
-      };
-      const session: AuthSession = {
-        user: localUser,
-        token: `token-local-${Date.now()}`,
-        rememberMe,
-      };
-      this.saveSession(session);
-      return { success: true, session };
     }
+
+    // Fallback offline bila seluruh server tidak merespon
+    console.warn('[Auth] Gagal menghubungi backend saat mendaftar, menggunakan fallback sesi lokal');
+    const localUser: User = {
+      id: `usr-${username.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+      name: name.trim(),
+      username: username.toLowerCase().trim(),
+      createdAt: new Date().toISOString(),
+    };
+    const session: AuthSession = {
+      user: localUser,
+      token: `token-local-${Date.now()}`,
+      rememberMe,
+    };
+    this.saveSession(session);
+    return { success: true, session };
   },
 
   demoLogin(rememberMe: boolean): AuthSession {
