@@ -37,6 +37,11 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
 * [x] **FE-04c: Fitur 1-Klik Deteksi Lokasi GPS Cuaca BMKG**:
   * Menggunakan `navigator.geolocation` browser untuk menghitung jarak terdekat ke preset wilayah BMKG.
   * Menampilkan banner konfirmasi wilayah terdeteksi.
+* [x] **FE-04d: Desain Visual Dashboard Cuaca Realistis Mobile-First**:
+  * Background cuaca fotorealistik: Cerah (kuning oranye matahari hangat), Gerimis (abu-abu transisi), Hujan (gelap pekat dengan rintik diagonal miring), Badai (gelap berhint ungu).
+  * Ilustrasi Cuaca 3D Skeuomorfik: Bola matahari 3D glossy, awan 3D puffy bervolume, dan tetesan air 3D cyan/sky-blue mengilap.
+  * Header Jam Digital Realtime & 4-Day Forecast pill cards row.
+  * Penyesuaian kontras dinamis: Frosted glass hangat pada cuaca cerah dan frosted glass gelap pada cuaca hujan/badai.
 
 ---
 

@@ -6,6 +6,7 @@ import { ToastContainer } from './components/Layout/ToastContainer';
 import { HeroStatusCard } from './components/Dashboard/HeroStatusCard';
 import { TelemetryGrid } from './components/Dashboard/TelemetryGrid';
 import { QuickWeatherCard } from './components/Dashboard/QuickWeatherCard';
+import { DashboardClockHeader } from './components/Dashboard/DashboardClockHeader';
 import { ConditionChipBar, SimulationMode, WeatherCondition } from './components/Dashboard/ConditionChipBar';
 import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas';
 import { SoftDriftingClouds } from './components/Dashboard/SoftDriftingClouds';
@@ -813,8 +814,15 @@ export const App: React.FC = () => {
                   onToggleAudio={handleToggleAudio}
                 />
 
+                {/* Large Digital Clock & 4-Day Forecast Header (Matched to Reference Image) */}
+                <DashboardClockHeader
+                  condition={activeCondition}
+                  weatherData={weatherData}
+                  effectiveWet={effectiveWet}
+                />
+
                 {/* Live Status Bar */}
-                <div className="flex items-center justify-between text-xs text-teks-sekunder px-1">
+                <div className={`flex items-center justify-between text-xs px-1 ${activeCondition === 'cerah' ? 'text-slate-800' : 'text-slate-300'}`}>
                   <span className="flex items-center gap-1.5 font-medium">
                     <span
                       className={`w-2 h-2 rounded-full ${
@@ -838,7 +846,7 @@ export const App: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Big Hero Card with 3D Orb and Weather Scene */}
+                {/* Big Hero Card with 3D Illustration & 3D Spherical Orb */}
                 <HeroStatusCard
                   status={currentStatus}
                   pct={effectivePct}
@@ -848,6 +856,9 @@ export const App: React.FC = () => {
                   lastSeenTs={lastSeenTs}
                   brokerDisconnected={isBrokerDisconnected && simMode === 'live'}
                   weatherCondition={activeCondition}
+                  tempC={latestState?.env?.tempC ?? latestReading?.suhuC ?? null}
+                  hum={latestState?.env?.hum ?? latestReading?.lembapPct ?? null}
+                  locationName={activeDevice.nama}
                 />
 
                 {/* Clothesline & DC Motor Safety Automation Card */}

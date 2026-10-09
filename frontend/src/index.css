@@ -113,26 +113,64 @@
   scrollbar-width: none;
 }
 
-/* Dynamic Weather Backgrounds (Harmonious Deep Slate Blues, Non-Electric) */
+/* Dynamic Weather Backgrounds (Matched to User Reference Image) */
+/* 1. Cerah: Warna kuning oranye hangat & golden hour cerah seperti bagian kiri gambar */
 .weather-bg-cerah {
-  background: radial-gradient(ellipse at 50% -10%, #16273f 0%, #0c1827 50%, #050b13 100%);
+  background: linear-gradient(180deg, #fde4b2 0%, #f6ca7e 30%, #ec9f4a 65%, #d97825 100%);
+  color: #1e1e1e;
 }
 
+/* 2. Gerimis: Mulai abu-abu lembut transisi */
 .weather-bg-gerimis {
-  background: radial-gradient(ellipse at 50% -10%, #172130 0%, #0e1622 50%, #060910 100%);
+  background: linear-gradient(180deg, #94a3b8 0%, #64748b 35%, #475569 70%, #334155 100%);
+  color: #ffffff;
 }
 
+/* 3. Hujan: Lebih gelap lagi seperti gambar kanan dengan awan badai pekat */
 .weather-bg-hujan {
-  background: radial-gradient(ellipse at 50% -10%, #101e2e 0%, #09131d 50%, #04080e 100%);
+  background: linear-gradient(180deg, #334155 0%, #1e293b 35%, #0f172a 70%, #020617 100%);
+  color: #ffffff;
 }
 
+/* 4. Badai / Halilintar: Gelap dramatis dengan hint ungu misterius */
 .weather-bg-badai {
-  background: radial-gradient(ellipse at 50% -10%, #1a1733 0%, #0d0c1c 50%, #05050d 100%);
+  background: linear-gradient(180deg, #3b2064 0%, #241442 35%, #160a2c 70%, #0c051a 100%);
+  color: #ffffff;
 }
 
-/* Atmospheric bottom soft blue gradient (Harmonious & Non-Electric) */
+/* Atmospheric bottom gradient depending on weather */
 .bottom-blue-gradient {
-  background: linear-gradient(to top, rgba(16, 37, 66, 0.45) 0%, rgba(10, 22, 40, 0.20) 35%, transparent 85%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.15) 35%, transparent 85%);
+}
+
+.weather-bg-cerah .bottom-blue-gradient {
+  background: linear-gradient(to top, rgba(217, 119, 38, 0.45) 0%, rgba(246, 202, 126, 0.20) 35%, transparent 85%);
+}
+
+.weather-bg-badai .bottom-blue-gradient {
+  background: linear-gradient(to top, rgba(59, 32, 100, 0.6) 0%, rgba(36, 20, 66, 0.3) 35%, transparent 85%);
+}
+
+/* Realistic Diagonal Rain Streaks like right phone */
+@keyframes diagonalRain {
+  0% {
+    transform: translate3d(0, -100px, 0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.65;
+  }
+  70% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translate3d(-60px, 300px, 0);
+    opacity: 0;
+  }
+}
+
+.animate-diagonal-rain {
+  animation: diagonalRain 1.4s linear infinite;
 }
 
 /* Realistic Soft Cloud Drift Animation */

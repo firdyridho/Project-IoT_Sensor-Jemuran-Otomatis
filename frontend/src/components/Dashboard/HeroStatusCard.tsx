@@ -1,15 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  CloudRain,
-  Sun,
+  MoreHorizontal,
+  ShieldCheck,
+  Umbrella,
   WifiOff,
   AlertTriangle,
-  Droplets,
-  ShieldCheck,
   Clock,
-  Umbrella,
-  CloudLightning,
-  CloudDrizzle,
+  Droplets,
+  Thermometer,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 import { WeatherSphereOrb } from './WeatherSphereOrb';
@@ -26,6 +24,9 @@ interface HeroStatusCardProps {
   lastSeenTs: number;
   brokerDisconnected: boolean;
   weatherCondition?: WeatherConditionType;
+  tempC?: number | null;
+  hum?: number | null;
+  locationName?: string;
 }
 
 export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
@@ -37,11 +38,18 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   lastSeenTs,
   brokerDisconnected,
   weatherCondition,
+  tempC = null,
+  hum = null,
+  locationName = 'Jemuran Utama — Jakarta',
 }) => {
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+
   // Infer fine-grained weather condition if not directly passed
   const condition: WeatherConditionType =
     weatherCondition ||
     (status === 'hujan' ? (pct > 80 ? 'badai' : 'hujan') : 'cerah');
+
+  const isCerah = condition === 'cerah';
 
   const formatTime = (ts: number) => {
     if (!ts) return '—';
@@ -106,126 +114,170 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     );
   }
 
-  // Harmonious slate-glass theme configurations (Non-electric, elegant)
+  // Theme configurations for card background, borders, and typography
+  // Left phone style for Cerah (Warm Frosted Glass), Right phone style for Rainy/Stormy (Dark Frosted Glass)
   const theme = {
     cerah: {
-      border: 'border-white/10 hover:border-amber-400/30',
-      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
-      accentText: 'text-amber-400',
-      title: 'Cuaca Cerah — Aman Menjemur',
-      subtitle: 'Tidak ada tetesan air terdeteksi. Sinar matahari optimal untuk pengeringan pakaian.',
-      safetyBadge: 'Jemuran di Luar (Menjemur)',
-      badgeBg: 'bg-amber-500/15 border-amber-400/30 text-amber-300',
-      motorNotice: 'Motor DC: Siaga di area terbuka',
+      cardClass: 'bg-white/40 border-white/60 text-slate-900 shadow-xl backdrop-blur-2xl',
+      locText: 'text-slate-800 font-semibold',
+      tempText: 'text-slate-900 font-extrabold',
+      condText: 'text-slate-800 font-bold',
+      subText: 'text-slate-700',
+      badgeBg: 'bg-amber-500/25 border-amber-500/40 text-amber-900 font-bold',
+      motorBg: 'bg-white/60 border-white/70 text-slate-800',
+      safetyBadge: 'Jemuran Terbuka (Sinar Matahari)',
+      motorNotice: 'Motor DC: Siaga di luar',
+      condLabel: 'Cerah Berawan',
+      chanceOfRain: '10%',
+      humidityDisplay: hum ? `${hum}%` : '55%',
+      tempDisplay: tempC ? Math.round(tempC) : 28,
     },
     gerimis: {
-      border: 'border-white/10 hover:border-sky-400/30',
-      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
-      accentText: 'text-sky-300',
-      title: 'Gerimis Terdeteksi — Jemuran Aman!',
-      subtitle: 'Tetesan gerimis mengenai sensor. Motor DC otomatis menarik jemuran ke bawah atap.',
+      cardClass: 'bg-slate-900/60 border-white/15 text-white shadow-2xl backdrop-blur-2xl',
+      locText: 'text-slate-200 font-semibold',
+      tempText: 'text-white font-extrabold',
+      condText: 'text-sky-200 font-bold',
+      subText: 'text-slate-300',
+      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 font-bold',
+      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-300',
       safetyBadge: 'Jemuran Aman (Di Bawah Atap)',
-      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
-      motorNotice: 'Motor DC: Menarik masuk ke kanopi atap',
+      motorNotice: 'Motor DC: Menarik ke kanopi atap',
+      condLabel: 'Gerimis Ringan',
+      chanceOfRain: '65%',
+      humidityDisplay: hum ? `${hum}%` : '78%',
+      tempDisplay: tempC ? Math.round(tempC) : 25,
     },
     hujan: {
-      border: 'border-white/10 hover:border-cyan-400/30',
-      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
-      accentText: 'text-cyan-300',
-      title: 'Hujan Terdeteksi — Jemuran Aman!',
-      subtitle: 'Sensor mendeteksi air hujan lebat. Motor DC telah mengamankan jemuran di area terlindung.',
+      cardClass: 'bg-slate-950/70 border-white/15 text-white shadow-2xl backdrop-blur-2xl',
+      locText: 'text-slate-200 font-semibold',
+      tempText: 'text-white font-extrabold',
+      condText: 'text-cyan-200 font-bold',
+      subText: 'text-slate-300',
+      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300 font-bold',
+      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-300',
       safetyBadge: 'Jemuran Aman (Terlindungi)',
-      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
       motorNotice: 'Motor DC: Terkunci di bawah atap',
+      condLabel: 'Hujan Deras',
+      chanceOfRain: '95%',
+      humidityDisplay: hum ? `${hum}%` : '88%',
+      tempDisplay: tempC ? Math.round(tempC) : 23,
     },
     badai: {
-      border: 'border-white/10 hover:border-purple-400/30',
-      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
-      accentText: 'text-purple-300',
-      title: 'Badai Petir — Jemuran Aman!',
-      subtitle: 'Hujan badai disertai kilat. Motor DC memastikan jemuran ditarik rapat ke dalam naungan.',
+      cardClass: 'bg-slate-950/75 border-purple-500/30 text-white shadow-2xl backdrop-blur-2xl',
+      locText: 'text-purple-200 font-semibold',
+      tempText: 'text-white font-extrabold',
+      condText: 'text-purple-200 font-bold',
+      subText: 'text-slate-300',
+      badgeBg: 'bg-emerald-500/25 border-emerald-400/50 text-emerald-200 font-bold',
+      motorBg: 'bg-indigo-950/80 border-indigo-800/60 text-indigo-200',
       safetyBadge: 'Jemuran Aman (Siaga Badai)',
-      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
-      motorNotice: 'Motor DC: Posisi aman terkunci',
+      motorNotice: 'Motor DC: Terkunci rapat di naungan',
+      condLabel: 'Badai Petir Halilintar',
+      chanceOfRain: '98%',
+      humidityDisplay: hum ? `${hum}%` : '92%',
+      tempDisplay: tempC ? Math.round(tempC) : 22,
     },
   }[condition];
 
   return (
     <Card
-      className={`relative overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.gradient} p-4 sm:p-7 backdrop-blur-2xl shadow-2xl transition-all duration-700`}
+      className={`relative overflow-hidden rounded-3xl border-2 p-5 sm:p-7 transition-all duration-700 ${theme.cardClass}`}
     >
-      {/* Upper Section: Badges & Live Status */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3">
+      {/* 1. Location Bar & Options (Directly matching "Barcelona, Spain •••" in user reference image) */}
+      <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-3 mb-4">
         <div className="flex items-center gap-2">
-          {/* Jemuran Safety Badge */}
+          <span className={`text-sm sm:text-base tracking-wide ${theme.locText}`}>
+            {locationName}
+          </span>
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Safety Badge */}
           <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${theme.badgeBg}`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs uppercase tracking-wider shadow-sm ${theme.badgeBg}`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>{theme.safetyBadge}</span>
           </div>
 
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            title="Detail Telemetri"
+          >
+            <MoreHorizontal className="w-5 h-5 opacity-75" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Main Weather Display & 3D Illustration Row (Matching reference layout) */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-center">
+        {/* Left Side: Big Temperature, Condition & Environmental Subtext */}
+        <div className="sm:col-span-6 space-y-1.5">
+          <div className="flex items-baseline gap-1">
+            <span className={`text-6xl sm:text-7xl font-black font-heading tracking-tight leading-none ${theme.tempText}`}>
+              {theme.tempDisplay}°
+            </span>
+            <span className="text-xl font-medium opacity-60">C</span>
+          </div>
+
+          <div className={`text-lg sm:text-xl tracking-tight ${theme.condText}`}>
+            {theme.condLabel}
+          </div>
+
+          <div className={`text-xs sm:text-sm space-y-0.5 leading-relaxed ${theme.subText}`}>
+            <div>Peluang Hujan: <span className="font-semibold">{theme.chanceOfRain}</span></div>
+            <div>Tingkat Kelembapan: <span className="font-semibold">{theme.humidityDisplay}</span></div>
+          </div>
+
           {/* Motor DC State Pill */}
-          <div className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300 text-[11px] font-medium">
-            <Umbrella className="w-3 h-3 text-cyan-400" />
-            <span>{theme.motorNotice}</span>
-          </div>
-        </div>
-
-        {/* Live Indicator */}
-        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
-          <span>Telemetri IoT Aktif</span>
-        </div>
-      </div>
-
-      {/* Main Content Area: Responsive Flex Layout with 3D Orb & Illustration */}
-      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 my-2">
-        {/* Left Information Column */}
-        <div className="space-y-3 text-center lg:text-left flex-1">
-          <div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white font-heading leading-tight drop-shadow-sm">
-              {theme.title}
-            </h2>
-            <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-xl leading-relaxed">
-              {theme.subtitle}
-            </p>
-          </div>
-
-          {/* Telemetry Metrics Bar */}
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 text-xs text-slate-400">
-            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
-              <Clock className="w-3.5 h-3.5 text-blue-400" />
-              Waktu: {formatTime(sinceTs)} ({getDuration(sinceTs)})
-            </span>
-            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
-              <Droplets className="w-3.5 h-3.5 text-cyan-400" />
-              Ambang Batas: {thresholdPct}%
-            </span>
-            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
-              <span className="font-mono text-cyan-300">ADC: {raw}</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Center: Dynamic SVG Weather Illustration (Awan, Matahari, Gerimis, Badai) */}
-        <div className="shrink-0 relative py-2">
-          <WeatherIllustration condition={condition} className="w-44 h-28 sm:w-52 sm:h-32" />
-        </div>
-
-        {/* Right: 3D Glossy Spherical Orb Widget (Inspired by User's Reference Image) */}
-        <div className="shrink-0 flex flex-col items-center justify-center bg-slate-950/50 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-inner">
-          <WeatherSphereOrb condition={condition} size="md" showLabel={false} />
-          <div className="mt-2 text-center">
-            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
-              {pct}%
+          <div className="pt-2">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-medium shadow-inner ${theme.motorBg}`}>
+              <Umbrella className="w-3.5 h-3.5 text-cyan-400" />
+              <span>{theme.motorNotice}</span>
             </div>
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-              Tingkat Kebasahan
+          </div>
+        </div>
+
+        {/* Right Side: Big 3D Weather Illustration + 3D Orb Sensor Kebasahan */}
+        <div className="sm:col-span-6 flex items-center justify-center sm:justify-end gap-3 sm:gap-4">
+          {/* 3D Weather Illustration (3D Puffy Cloud with 3D Sun Sphere or 3D glossy rain drops) */}
+          <div className="shrink-0 flex items-center justify-center">
+            <WeatherIllustration condition={condition} className="w-36 h-28 sm:w-44 sm:h-32" />
+          </div>
+
+          {/* 3D Glossy Sphere Orb Widget for Physical Rain Sensor (ADC & Pct) */}
+          <div className="shrink-0 flex flex-col items-center justify-center p-3 rounded-2xl bg-black/10 dark:bg-black/30 border border-black/5 dark:border-white/10 backdrop-blur-md shadow-inner">
+            <WeatherSphereOrb condition={condition} size="sm" showLabel={false} />
+            <div className="mt-1.5 text-center">
+              <div className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
+                {pct}%
+              </div>
+              <div className="text-[9px] uppercase tracking-wider opacity-60 mt-0.5 font-medium">
+                Sensor ADC
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 3. Expandable / Collapsible Telemetry Row */}
+      {showDetails && (
+        <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 grid grid-cols-3 gap-2 text-xs">
+          <div className="flex items-center gap-1.5 opacity-80">
+            <Clock className="w-3.5 h-3.5" />
+            <span>Aktif: {formatTime(sinceTs)}</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-80">
+            <Droplets className="w-3.5 h-3.5" />
+            <span>Ambang: {thresholdPct}%</span>
+          </div>
+          <div className="flex items-center gap-1.5 opacity-80 font-mono">
+            <span>ADC Raw: {raw}</span>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };
