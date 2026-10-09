@@ -1,8 +1,8 @@
 import React from 'react';
-import { Sun, CloudRain, CloudDrizzle, CloudLightning, ShieldCheck, Umbrella } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning, ShieldCheck, Umbrella } from 'lucide-react';
 
 interface WeatherSphereOrbProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
@@ -28,6 +28,15 @@ export const WeatherSphereOrb: React.FC<WeatherSphereOrbProps> = ({
       iconColor: 'text-amber-100',
       label: 'Cerah Terik',
       subtitle: 'Optimal Menjemur',
+    },
+    mendung: {
+      outerRing: 'from-slate-400/30 to-slate-600/20',
+      sphereBg: 'radial-gradient(circle at 35% 30%, #f8fafc 0%, #94a3b8 35%, #475569 70%, #1e293b 100%)',
+      glowColor: 'rgba(148, 163, 184, 0.4)',
+      icon: Cloud,
+      iconColor: 'text-slate-100',
+      label: 'Mendung Tebal',
+      subtitle: 'Siaga Jemuran',
     },
     gerimis: {
       outerRing: 'from-sky-400/30 to-indigo-500/20',

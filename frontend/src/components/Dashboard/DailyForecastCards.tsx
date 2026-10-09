@@ -1,9 +1,9 @@
 import React from 'react';
-import { Sun, CloudRain, CloudDrizzle, CloudLightning } from 'lucide-react';
+import { Sun, Cloud, CloudRain, CloudDrizzle, CloudLightning } from 'lucide-react';
 import { BmkgResponse } from '../../types/bmkg';
 
 interface DailyForecastCardsProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
   weatherData: BmkgResponse | null;
   effectiveWet?: boolean;
 }
@@ -24,11 +24,25 @@ export const DailyForecastCards: React.FC<DailyForecastCardsProps> = ({
   const forecastItems = [
     {
       day: 'HARI INI',
-      icon: condition === 'cerah' ? Sun : condition === 'gerimis' ? CloudDrizzle : CloudRain,
-      iconColor: condition === 'cerah' ? 'text-amber-500' : 'text-cyan-400',
+      icon:
+        condition === 'cerah'
+          ? Sun
+          : condition === 'mendung'
+          ? Cloud
+          : condition === 'gerimis'
+          ? CloudDrizzle
+          : CloudRain,
+      iconColor:
+        condition === 'cerah'
+          ? 'text-amber-500'
+          : condition === 'mendung'
+          ? 'text-slate-300'
+          : condition === 'gerimis'
+          ? 'text-sky-400'
+          : 'text-cyan-400',
       temp: '26° / 31°',
-      rainChance: effectiveWet ? '95% Rain' : '15% Rain',
-      safeBadge: effectiveWet ? 'Siaga' : 'Aman',
+      rainChance: effectiveWet ? '95% Rain' : condition === 'mendung' ? '45% Rain' : '15% Rain',
+      safeBadge: effectiveWet ? 'Siaga' : condition === 'mendung' ? 'Siaga' : 'Aman',
     },
     {
       day: 'BESOK',

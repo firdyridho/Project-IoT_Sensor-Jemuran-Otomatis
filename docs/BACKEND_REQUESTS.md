@@ -77,6 +77,13 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
   * Format Response yang Diharapkan: Header `Content-Type: text/csv` dengan file attachment stream berisi kolom `timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi`.
   * Status: Menunggu Dikerjakan
 
+* [ ] **REQ-BE-05: Penyesuaian Simulator & Klasifikasi 4 Kondisi Cuaca (`POST /api/simulator/weather`)**
+  * Tanggal Diminta: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI: Frontend menyelaraskan 4 kondisi cuaca standar pada UI dashboard: `cerah`, `mendung`, `gerimis`, dan `badai`. Khusus kondisi `mendung`, sensor mendeteksi kelembapan tinggi dan awan tebal namun belum ada tetesan air hujan (`wet: false`, motor DC dalam mode siaga antisipasi), sedangkan `gerimis` dan `badai` mengaktifkan penarikan motor kanopi atap (`wet: true`).
+  * Usulan Perubahan Payload: `POST /api/simulator/weather` menerima enum `"condition": "cerah" | "mendung" | "gerimis" | "badai"`
+  * Status: Menunggu Dikerjakan
+
 ---
 
 ## Riwayat Permintaan Selesai (Archive)

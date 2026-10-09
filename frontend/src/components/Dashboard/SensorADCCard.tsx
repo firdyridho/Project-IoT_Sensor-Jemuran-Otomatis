@@ -4,7 +4,7 @@ import { Card } from '../Common/Card';
 import { WeatherSphereOrb } from './WeatherSphereOrb';
 
 interface SensorADCCardProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
   pct: number;
   raw: number;
   thresholdPct: number;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface DashboardClockHeaderProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
 }
 
 export const DashboardClockHeader: React.FC<DashboardClockHeaderProps> = ({ condition }) => {

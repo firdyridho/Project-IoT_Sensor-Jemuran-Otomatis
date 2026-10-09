@@ -1,7 +1,7 @@
 import React from 'react';
-import { Sun, CloudDrizzle, CloudRain, CloudLightning, Cpu, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Sun, Cloud, CloudDrizzle, CloudLightning, Cpu, Volume2, VolumeX, Sparkles } from 'lucide-react';
 
-export type WeatherCondition = 'cerah' | 'gerimis' | 'hujan' | 'badai';
+export type WeatherCondition = 'cerah' | 'mendung' | 'gerimis' | 'badai' | 'hujan';
 export type SimulationMode = 'live' | WeatherCondition;
 
 interface ConditionChipBarProps {
@@ -33,18 +33,18 @@ export const ConditionChipBar: React.FC<ConditionChipBarProps> = ({
       accentColor: 'from-amber-500/30 to-orange-500/20 text-amber-300 border-amber-400/40',
     },
     {
-      id: 'gerimis',
-      label: 'Gerimis',
-      sub: 'Rintik Kaca',
-      icon: CloudDrizzle,
-      accentColor: 'from-sky-500/30 to-blue-500/20 text-sky-300 border-sky-400/40',
+      id: 'mendung',
+      label: 'Mendung',
+      sub: 'Awan Tebal',
+      icon: Cloud,
+      accentColor: 'from-slate-500/30 to-slate-600/20 text-slate-200 border-slate-400/40',
     },
     {
-      id: 'hujan',
-      label: 'Hujan',
-      sub: 'Tetes Air Lebat',
-      icon: CloudRain,
-      accentColor: 'from-cyan-500/30 to-blue-600/20 text-cyan-300 border-cyan-400/40',
+      id: 'gerimis',
+      label: 'Gerimis',
+      sub: 'Rintik Halus',
+      icon: CloudDrizzle,
+      accentColor: 'from-sky-500/30 to-blue-500/20 text-sky-300 border-sky-400/40',
     },
     {
       id: 'badai',

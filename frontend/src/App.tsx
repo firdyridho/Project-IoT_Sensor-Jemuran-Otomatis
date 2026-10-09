@@ -686,34 +686,34 @@ export const App: React.FC = () => {
 
   // Real weather condition inferred from IoT hardware sensor
   const realCondition: WeatherCondition = !currentWet
-    ? 'cerah'
+    ? currentPct > 30
+      ? 'mendung'
+      : 'cerah'
     : currentPct > 80
     ? 'badai'
-    : currentPct > 45
-    ? 'hujan'
     : 'gerimis';
 
   // Effective condition (either simulated demo or real IoT)
   const activeCondition: WeatherCondition = simMode === 'live' ? realCondition : simMode;
 
-  const effectiveWet = simMode === 'live' ? currentWet : activeCondition !== 'cerah';
+  const effectiveWet = simMode === 'live' ? currentWet : (activeCondition !== 'cerah' && activeCondition !== 'mendung');
   const effectivePct = simMode === 'live'
     ? currentPct
     : activeCondition === 'cerah'
     ? 5
+    : activeCondition === 'mendung'
+    ? 30
     : activeCondition === 'gerimis'
-    ? 35
-    : activeCondition === 'hujan'
-    ? 78
+    ? 58
     : 95;
   const effectiveRaw = simMode === 'live'
     ? currentRaw
     : activeCondition === 'cerah'
     ? 3940
+    : activeCondition === 'mendung'
+    ? 3150
     : activeCondition === 'gerimis'
-    ? 2680
-    : activeCondition === 'hujan'
-    ? 1380
+    ? 1980
     : 610;
 
   const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline && simMode === 'live'

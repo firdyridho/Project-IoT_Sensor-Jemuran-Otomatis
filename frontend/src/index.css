@@ -120,19 +120,25 @@
   color: #1e1e1e;
 }
 
-/* 2. Gerimis: Mulai abu-abu lembut transisi */
-.weather-bg-gerimis {
+/* 2. Mendung: Abu-abu awan tebal elegan (overcast) tanpa hujan */
+.weather-bg-mendung {
   background: linear-gradient(180deg, #94a3b8 0%, #64748b 35%, #475569 70%, #334155 100%);
   color: #ffffff;
 }
 
-/* 3. Hujan: Lebih gelap lagi seperti gambar kanan dengan awan badai pekat */
+/* 3. Gerimis: Abu-abu gelap dengan rintik hujan sejuk */
+.weather-bg-gerimis {
+  background: linear-gradient(180deg, #64748b 0%, #475569 35%, #334155 70%, #1e293b 100%);
+  color: #ffffff;
+}
+
+/* 4. Hujan: Lebih gelap lagi seperti gambar kanan dengan awan badai pekat */
 .weather-bg-hujan {
   background: linear-gradient(180deg, #334155 0%, #1e293b 35%, #0f172a 70%, #020617 100%);
   color: #ffffff;
 }
 
-/* 4. Badai / Halilintar: Gelap dramatis dengan hint ungu misterius */
+/* 5. Badai / Halilintar: Gelap dramatis dengan hint ungu misterius */
 .weather-bg-badai {
   background: linear-gradient(180deg, #3b2064 0%, #241442 35%, #160a2c 70%, #0c051a 100%);
   color: #ffffff;
@@ -147,6 +153,10 @@
   background: linear-gradient(to top, rgba(217, 119, 38, 0.45) 0%, rgba(246, 202, 126, 0.20) 35%, transparent 85%);
 }
 
+.weather-bg-mendung .bottom-blue-gradient {
+  background: linear-gradient(to top, rgba(51, 65, 85, 0.5) 0%, rgba(71, 85, 105, 0.25) 35%, transparent 85%);
+}
+
 .weather-bg-badai .bottom-blue-gradient {
   background: linear-gradient(to top, rgba(59, 32, 100, 0.6) 0%, rgba(36, 20, 66, 0.3) 35%, transparent 85%);
 }
@@ -155,7 +165,9 @@
 .weather-bg-cerah [class*="rounded-2xl"],
 .weather-bg-cerah [class*="rounded-3xl"],
 .weather-bg-cerah [class*="bg-slate-900"],
-.weather-bg-cerah [class*="bg-slate-950"] {
+.weather-bg-cerah [class*="bg-slate-950"],
+.weather-bg-cerah [class*="bg-gradient-"] {
+  background-image: none !important;
   background-color: rgba(255, 255, 255, 0.45) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;

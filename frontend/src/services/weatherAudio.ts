@@ -11,7 +11,7 @@ class WeatherAudioSynthesizer {
   private noiseBuffer: AudioBuffer | null = null;
   private thunderGain: GainNode | null = null;
   private isMuted: boolean = true; // Default muted to respect autoplay
-  private currentCondition: 'cerah' | 'gerimis' | 'hujan' | 'badai' = 'cerah';
+  private currentCondition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai' = 'cerah';
   private thunderTimer: number | null = null;
 
   private initContext() {
@@ -64,10 +64,10 @@ class WeatherAudioSynthesizer {
     return this.isMuted;
   }
 
-  public play(condition: 'cerah' | 'gerimis' | 'hujan' | 'badai') {
+  public play(condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai') {
     this.currentCondition = condition;
 
-    if (this.isMuted || condition === 'cerah') {
+    if (this.isMuted || condition === 'cerah' || condition === 'mendung') {
       this.stop();
       return;
     }

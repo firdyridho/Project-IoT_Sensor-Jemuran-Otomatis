@@ -11,7 +11,7 @@ import {
 import { Card } from '../Common/Card';
 import { WeatherIllustration } from './WeatherIllustration';
 
-export type WeatherConditionType = 'cerah' | 'gerimis' | 'hujan' | 'badai';
+export type WeatherConditionType = 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
 
 interface HeroStatusCardProps {
   status: 'kering' | 'hujan' | 'offline';
@@ -130,6 +130,21 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
       humidityDisplay: hum ? `${hum}%` : '55%',
       tempDisplay: tempC ? Math.round(tempC) : 28,
     },
+    mendung: {
+      cardClass: 'bg-slate-900/60 border-slate-600/30 text-white shadow-2xl backdrop-blur-2xl',
+      locText: 'text-slate-200 font-bold',
+      tempText: 'text-white font-black',
+      condText: 'text-slate-200 font-extrabold',
+      subText: 'text-slate-300',
+      badgeBg: 'bg-amber-500/20 border-amber-400/40 text-amber-300 font-bold',
+      motorBg: 'bg-slate-800/80 border-slate-700 text-slate-200 font-semibold',
+      safetyBadge: 'Jemuran Siaga (Mendung)',
+      motorNotice: 'Motor DC: Siaga menarik masuk jika hujan',
+      condLabel: 'Mendung Tebal',
+      chanceOfRain: '45%',
+      humidityDisplay: hum ? `${hum}%` : '72%',
+      tempDisplay: tempC ? Math.round(tempC) : 26,
+    },
     gerimis: {
       cardClass: 'bg-slate-900/60 border-white/15 text-white shadow-2xl backdrop-blur-2xl',
       locText: 'text-slate-200 font-bold',
@@ -181,30 +196,44 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     <Card
       className={`relative overflow-hidden rounded-3xl border-2 p-5 sm:p-7 transition-all duration-700 ${theme.cardClass}`}
     >
-      {/* 1. Location Bar & Safety Status Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-black/5 dark:border-white/10 pb-3 mb-4">
-        <div className="flex items-center gap-2">
-          <span className={`text-sm sm:text-base tracking-wide ${theme.locText}`}>
-            {locationName}
-          </span>
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Safety Badge */}
-          <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs uppercase tracking-wider shadow-sm ${theme.badgeBg}`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{theme.safetyBadge}</span>
+      {/* 1. Location Bar & Safety Status Header (Harmonis di Mobile & Desktop) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-black/5 dark:border-white/10 pb-3.5 mb-4">
+        {/* Baris atas mobile: Device Name + Live Pulse Dot + Action Button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className={`text-sm sm:text-base font-bold tracking-wide truncate ${theme.locText}`}>
+              {locationName}
+            </span>
           </div>
 
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="sm:hidden p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors opacity-75 shrink-0"
             title="Detail Telemetri"
           >
-            <MoreHorizontal className="w-5 h-5 opacity-75" />
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Baris bawah mobile / kanan desktop: Safety Badge */}
+        <div className="flex items-center justify-between sm:justify-end gap-2">
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-bold tracking-wide shadow-sm max-w-full truncate ${theme.badgeBg}`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{theme.safetyBadge}</span>
+          </div>
+
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="hidden sm:inline-flex p-1.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors opacity-75 shrink-0"
+            title="Detail Telemetri"
+          >
+            <MoreHorizontal className="w-5 h-5" />
           </button>
         </div>
       </div>

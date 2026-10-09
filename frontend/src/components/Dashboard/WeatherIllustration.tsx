@@ -1,7 +1,9 @@
 import React from 'react';
 
+export type IllustrationCondition = 'cerah' | 'mendung' | 'gerimis' | 'badai' | 'hujan';
+
 interface WeatherIllustrationProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: IllustrationCondition;
   className?: string;
 }
 
@@ -81,19 +83,12 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
 
           {/* 3D Volumetric Cloud Foreground */}
           <g className="animate-[bounce_6s_ease-in-out_infinite]" transform="translate(10, 15)">
-            {/* Cloud Puffs (Multi-sphere 3D Construction) */}
-            {/* Puff 1: Left */}
             <circle cx="58" cy="98" r="26" fill="url(#cloudPuff3D)" />
-            {/* Puff 2: Mid-Left Top */}
             <circle cx="82" cy="78" r="32" fill="url(#cloudPuff3D)" />
-            {/* Puff 3: Mid-Right Top */}
             <circle cx="118" cy="84" r="28" fill="url(#cloudPuff3D)" />
-            {/* Puff 4: Right */}
             <circle cx="142" cy="100" r="24" fill="url(#cloudPuff3D)" />
-            {/* Flat Bottom Fill */}
             <rect x="58" y="94" width="84" height="28" rx="14" fill="url(#cloudPuff3D)" />
 
-            {/* Specular Highlight Ribbons on Top of Cloud */}
             <path
               d="M 62 76 C 72 62 94 58 108 68 C 118 64 130 68 136 78"
               stroke="url(#cloudSpecular)"
@@ -109,13 +104,49 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
     );
   }
 
-  // 2. CUACA GERIMIS: 3D Cool Gray Cloud + 3D Glossy Sky-Blue Droplets
+  // 2. CUACA MENDUNG: 3D Awan Mendung Puffy Abu-Abu Tanpa Air Hujan di Bawahnya!
+  if (condition === 'mendung') {
+    return (
+      <div className={`relative flex items-center justify-center ${className}`} aria-label="Ilustrasi Cuaca Mendung 3D">
+        <svg viewBox="0 0 220 160" className="w-full h-full drop-shadow-2xl overflow-visible">
+          <defs>
+            {/* 3D Cool Gray Overcast Cloud Gradient */}
+            <radialGradient id="overcastCloud3D" cx="38%" cy="28%" r="65%">
+              <stop offset="0%" stopColor="#f8fafc" />
+              <stop offset="30%" stopColor="#e2e8f0" />
+              <stop offset="65%" stopColor="#94a3b8" />
+              <stop offset="100%" stopColor="#475569" />
+            </radialGradient>
+
+            <linearGradient id="overcastSpecular" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* 3D Overcast Cloud Base (TIDAK ADA TETESAN AIR DI BAWAHNYA) */}
+          <g className="animate-[bounce_7s_ease-in-out_infinite]" transform="translate(18, 20)">
+            <circle cx="56" cy="88" r="28" fill="url(#overcastCloud3D)" />
+            <circle cx="88" cy="62" r="36" fill="url(#overcastCloud3D)" />
+            <circle cx="128" cy="70" r="30" fill="url(#overcastCloud3D)" />
+            <circle cx="152" cy="88" r="24" fill="url(#overcastCloud3D)" />
+            <rect x="56" y="82" width="96" height="30" rx="15" fill="url(#overcastCloud3D)" />
+
+            {/* Specular curved highlights on top */}
+            <ellipse cx="86" cy="50" rx="18" ry="7" fill="#ffffff" opacity="0.75" transform="rotate(-8 86 50)" />
+            <ellipse cx="126" cy="58" rx="14" ry="6" fill="#ffffff" opacity="0.6" transform="rotate(-12 126 58)" />
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
+  // 3. CUACA GERIMIS: 3D Cool Gray Cloud + 3D Glossy Sky-Blue Droplets
   if (condition === 'gerimis') {
     return (
       <div className={`relative flex items-center justify-center ${className}`} aria-label="Ilustrasi Cuaca Gerimis 3D">
         <svg viewBox="0 0 220 160" className="w-full h-full drop-shadow-2xl overflow-visible">
           <defs>
-            {/* 3D Cool Gray Cloud Gradient */}
             <radialGradient id="drizzleCloud3D" cx="38%" cy="28%" r="65%">
               <stop offset="0%" stopColor="#f1f5f9" />
               <stop offset="35%" stopColor="#cbd5e1" />
@@ -123,7 +154,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
               <stop offset="100%" stopColor="#334155" />
             </radialGradient>
 
-            {/* 3D Glossy Water Drop Gradient */}
             <radialGradient id="drizzleDrop3D" cx="35%" cy="30%" r="65%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="30%" stopColor="#7dd3fc" />
@@ -140,7 +170,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
             <circle cx="152" cy="80" r="22" fill="url(#drizzleCloud3D)" />
             <rect x="62" y="74" width="90" height="28" rx="14" fill="url(#drizzleCloud3D)" />
 
-            {/* Top specular reflection */}
             <ellipse cx="90" cy="46" rx="16" ry="6" fill="#ffffff" opacity="0.6" transform="rotate(-10 90 46)" />
           </g>
 
@@ -156,7 +185,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
               className="animate-[pulse_1.5s_ease-in-out_infinite]"
               style={{ animationDelay: d.delay, animationDuration: d.dur }}
             >
-              {/* 3D Droplet Pill/Sphere with Specular Highlight */}
               <ellipse cx={d.cx} cy={d.cy} rx="4" ry="7" fill="url(#drizzleDrop3D)" />
               <ellipse cx={d.cx - 1.2} cy={d.cy - 2.5} rx="1.5" ry="2.5" fill="#ffffff" opacity="0.9" />
             </g>
@@ -166,13 +194,12 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
     );
   }
 
-  // 3. CUACA HUJAN: 3D White/Slate Storm Cloud + 3D Glossy Cyan Raindrops (Matched to Right Phone)
+  // 4. CUACA HUJAN LEBAT (JIKA DIAKSES): 3D Slate Storm Cloud + Glossy Cyan Raindrops
   if (condition === 'hujan') {
     return (
       <div className={`relative flex items-center justify-center ${className}`} aria-label="Ilustrasi Cuaca Hujan 3D">
         <svg viewBox="0 0 220 160" className="w-full h-full drop-shadow-2xl overflow-visible">
           <defs>
-            {/* 3D Rain Cloud Shading (Volumetric Slate/White Depth) */}
             <radialGradient id="rainCloud3D" cx="38%" cy="26%" r="65%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="40%" stopColor="#e2e8f0" />
@@ -180,7 +207,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
               <stop offset="100%" stopColor="#475569" />
             </radialGradient>
 
-            {/* 3D Raindrop High-Gloss Gradient */}
             <radialGradient id="rainDropGloss3D" cx="30%" cy="25%" r="70%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="25%" stopColor="#38bdf8" />
@@ -194,7 +220,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
             </filter>
           </defs>
 
-          {/* 3D Volumetric Cloud Formations */}
           <g className="animate-[bounce_6s_ease-in-out_infinite]" transform="translate(12, 8)">
             <circle cx="64" cy="74" r="28" fill="url(#rainCloud3D)" />
             <circle cx="98" cy="52" r="36" fill="url(#rainCloud3D)" />
@@ -202,12 +227,10 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
             <circle cx="162" cy="78" r="24" fill="url(#rainCloud3D)" />
             <rect x="64" y="70" width="98" height="30" rx="15" fill="url(#rainCloud3D)" />
 
-            {/* Specular Highlight Curvature */}
             <ellipse cx="94" cy="42" rx="18" ry="7" fill="#ffffff" opacity="0.8" transform="rotate(-8 94 42)" />
             <ellipse cx="134" cy="52" rx="14" ry="5" fill="#ffffff" opacity="0.65" transform="rotate(-12 134 52)" />
           </g>
 
-          {/* 3D Diagonal Slanted Glossy Droplets (Like the right reference phone) */}
           {[
             { x: 80, y: 116, delay: '0s' },
             { x: 104, y: 124, delay: '0.3s' },
@@ -220,10 +243,8 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
               className="animate-[pulse_1.2s_ease-in-out_infinite]"
               style={{ animationDelay: drop.delay }}
             >
-              {/* Slanted 3D Droplet Pill with Specular Reflection */}
               <g transform={`translate(${drop.x}, ${drop.y}) rotate(-25)`} filter="url(#dropGlow)">
                 <rect x="-3" y="-9" width="6" height="18" rx="3" fill="url(#rainDropGloss3D)" />
-                {/* Top specular reflection */}
                 <ellipse cx="-1" cy="-6" rx="1.5" ry="3" fill="#ffffff" opacity="0.95" />
               </g>
             </g>
@@ -233,12 +254,11 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
     );
   }
 
-  // 4. CUACA BADAI / HALILINTAR: 3D Heavy Storm Cloud + 3D Faceted Lightning Bolt + Hint of Purple
+  // 5. CUACA BADAI / HALILINTAR: 3D Heavy Storm Cloud + 3D Faceted Lightning Bolt + Hint of Purple
   return (
     <div className={`relative flex items-center justify-center ${className}`} aria-label="Ilustrasi Cuaca Badai 3D">
       <svg viewBox="0 0 220 160" className="w-full h-full drop-shadow-2xl overflow-visible">
         <defs>
-          {/* Deep Violet/Slate Storm Cloud */}
           <radialGradient id="stormCloud3D" cx="38%" cy="26%" r="65%">
             <stop offset="0%" stopColor="#94a3b8" />
             <stop offset="35%" stopColor="#475569" />
@@ -246,7 +266,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
             <stop offset="100%" stopColor="#1e1b4b" />
           </radialGradient>
 
-          {/* 3D Golden/Violet Lightning Bolt Gradient */}
           <linearGradient id="lightningBolt3D" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fef08a" />
             <stop offset="40%" stopColor="#facc15" />
@@ -263,10 +282,8 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
           </filter>
         </defs>
 
-        {/* Ambient Purple Electric Flash behind Cloud */}
         <circle cx="110" cy="70" r="50" fill="rgba(192, 132, 252, 0.35)" filter="url(#lightningAura)" className="animate-pulse" />
 
-        {/* 3D Storm Cloud Base */}
         <g className="animate-[bounce_6s_ease-in-out_infinite]" transform="translate(12, 6)">
           <circle cx="62" cy="72" r="28" fill="url(#stormCloud3D)" />
           <circle cx="98" cy="50" r="36" fill="url(#stormCloud3D)" />
@@ -274,11 +291,9 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
           <circle cx="162" cy="76" r="24" fill="url(#stormCloud3D)" />
           <rect x="62" y="68" width="100" height="30" rx="15" fill="url(#stormCloud3D)" />
 
-          {/* Electric Rim Highlights */}
           <ellipse cx="94" cy="40" rx="16" ry="6" fill="#c084fc" opacity="0.6" transform="rotate(-8 94 40)" />
         </g>
 
-        {/* 3D Faceted Lightning Bolt */}
         <g className="animate-[pulse_0.9s_ease-in-out_infinite]" filter="url(#lightningAura)">
           <polygon
             points="114,68 100,96 112,96 96,134 126,88 112,88"
@@ -288,7 +303,6 @@ export const WeatherIllustration: React.FC<WeatherIllustrationProps> = ({
           />
         </g>
 
-        {/* 3D Glossy Slanted Droplets */}
         {[
           { x: 68, y: 118 },
           { x: 148, y: 114 },

@@ -1,15 +1,16 @@
 import React from 'react';
 
 interface SoftDriftingCloudsProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
 }
 
 export const SoftDriftingClouds: React.FC<SoftDriftingCloudsProps> = ({ condition }) => {
-  // Atmospheric palette matching each weather condition exactly as requested by user
-  // 1. Cerah: Kuning oranye hangat dengan awan keemasan seperti bagian kiri gambar
-  // 2. Gerimis: Mulai abu-abu transisi
-  // 3. Hujan: Lebih gelap lagi seperti gambar kanan dengan awan mendung pekat
-  // 4. Badai: Gelap dengan hint ungu/violet
+  // Atmospheric palette matching each weather condition
+  // 1. Cerah: Kuning oranye hangat dengan awan keemasan
+  // 2. Mendung: Abu-abu tebal berawan (overcast) tanpa efek hujan
+  // 3. Gerimis: Abu-abu sejuk transisi
+  // 4. Hujan: Lebih gelap dengan awan pekat
+  // 5. Badai: Gelap dramatis dengan hint ungu/violet
   const theme = {
     cerah: {
       cloudTop: 'rgba(255, 255, 255, 0.85)',
@@ -17,6 +18,13 @@ export const SoftDriftingClouds: React.FC<SoftDriftingCloudsProps> = ({ conditio
       cloudBase: 'rgba(245, 158, 11, 0.45)',
       filter: 'drop-shadow(0 12px 24px rgba(217, 119, 6, 0.25))',
       sunGlow: 'radial-gradient(circle at 50% 30%, rgba(254, 243, 199, 0.5) 0%, rgba(245, 158, 11, 0.2) 50%, transparent 80%)',
+    },
+    mendung: {
+      cloudTop: 'rgba(203, 213, 225, 0.85)',
+      cloudMid: 'rgba(148, 163, 184, 0.70)',
+      cloudBase: 'rgba(71, 85, 105, 0.60)',
+      filter: 'drop-shadow(0 14px 28px rgba(15, 23, 42, 0.45))',
+      sunGlow: 'radial-gradient(circle at 50% 30%, rgba(148, 163, 184, 0.3) 0%, transparent 70%)',
     },
     gerimis: {
       cloudTop: 'rgba(226, 232, 240, 0.75)',

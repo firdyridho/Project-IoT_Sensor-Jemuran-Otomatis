@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 interface RaindropGlassCanvasProps {
-  condition: 'cerah' | 'gerimis' | 'hujan' | 'badai';
+  condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
 }
 
 interface Drop {
@@ -37,7 +37,7 @@ export const RaindropGlassCanvas: React.FC<RaindropGlassCanvasProps> = ({ condit
 
     window.addEventListener('resize', handleResize);
 
-    if (condition === 'cerah') {
+    if (condition === 'cerah' || condition === 'mendung') {
       ctx.clearRect(0, 0, width, height);
       return () => {
         window.removeEventListener('resize', handleResize);
@@ -181,7 +181,7 @@ export const RaindropGlassCanvas: React.FC<RaindropGlassCanvasProps> = ({ condit
     };
   }, [condition]);
 
-  if (condition === 'cerah') return null;
+  if (condition === 'cerah' || condition === 'mendung') return null;
 
   return (
     <canvas
