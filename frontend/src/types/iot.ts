@@ -10,6 +10,8 @@ export interface Perangkat {
   online: boolean;
   ambangPct: number;
   deteksiBerkepanjanganMs?: number;
+  motorPosition?: 'extended' | 'sheltered';
+  motorStatus?: 'idle' | 'moving';
 }
 
 export interface PembacaanHujan {

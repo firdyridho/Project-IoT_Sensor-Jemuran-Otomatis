@@ -478,16 +478,27 @@ export const App: React.FC = () => {
       });
     }
 
-    // 2. Connect to MQTT Broker over WSS (ensures realtime directly from ESP32 hardware)
-    mqttClient.connect(activeDevice.brokerUrl, activeDevice.deviceId, {
-      onStatusChange: (status, errMsg) => {
-        setBrokerStatus(status);
-        if (errMsg) setBrokerError(errMsg);
-      },
-      onStateMessage: (state) => handleIngestState(state),
-      onTelemetryMessage: (telemetry) => handleIngestTelemetry(telemetry),
-      onEventMessage: (ev) => handleIngestEvent(ev),
-    });
+    // 2. Connect to external MQTT Broker over WSS (hanya jika broker eksternal dan bukan endpoint /ws backend)
+    const isExternalMqttBroker =
+      activeDevice.brokerUrl &&
+      (activeDevice.brokerUrl.startsWith('wss://') || activeDevice.brokerUrl.startsWith('ws://')) &&
+      !activeDevice.brokerUrl.includes('/ws');
+
+    if (isExternalMqttBroker) {
+      mqttClient.connect(activeDevice.brokerUrl, activeDevice.deviceId, {
+        onStatusChange: (status, errMsg) => {
+          if (status === 'connected') {
+            setBrokerStatus('connected');
+            setBrokerError('');
+          } else if (errMsg) {
+            console.warn('[MQTT WSS]', errMsg);
+          }
+        },
+        onStateMessage: (state) => handleIngestState(state),
+        onTelemetryMessage: (telemetry) => handleIngestTelemetry(telemetry),
+        onEventMessage: (ev) => handleIngestEvent(ev),
+      });
+    }
 
     return () => {
       if (closeWs) closeWs();
@@ -901,10 +912,35 @@ export const App: React.FC = () => {
                   effectiveWet={effectiveWet}
                 />
 
-                {/* Clothesline & DC Motor Safety Automation Card */}
+                {/* Clothesline & DC Motor Safety Automation Card with Manual Control Buttons */}
                 <ClotheslineMotorCard
                   isRaining={effectiveWet}
                   condition={activeCondition}
+                  backendUrl={settings.backendUrl}
+                  deviceId={activeDevice.deviceId}
+                  currentMotorPos={activeDevice.motorPosition as 'extended' | 'sheltered'}
+                  onCommandMotor={async (action) => {
+                    if (!settings.backendUrl) return false;
+                    const ok = await BackendService.commandMotor(
+                      settings.backendUrl,
+                      activeDevice.deviceId,
+                      action
+                    );
+                    if (ok) {
+                      setDevices((prev) =>
+                        prev.map((d) =>
+                          d.deviceId === activeDevice.deviceId
+                            ? {
+                                ...d,
+                                motorPosition: action === 'retract' ? 'sheltered' : 'extended',
+                                motorStatus: 'idle',
+                              }
+                            : d
+                        )
+                      );
+                    }
+                    return ok;
+                  }}
                 />
 
                 {/* AI Rain Prediction Card (REQ-FE-01 / FE-05) */}
