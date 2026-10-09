@@ -22,20 +22,21 @@ Dokumen ini menjelaskan rancangan perangkat keras, diagram pengkabelan (pinout),
 
 ## 2. Diagram Pinout & Skematik Pengkabelan
 
-### Tabel Sambungan Pin ESP32
+### Tabel Sambungan Pin ESP32 (Hardware Stepper + OLED + LDR)
 
 | Pin ESP32 | Terhubung Ke | Pin Komponen | Keterangan |
 |---|---|---|---|
-| **GPIO 34** (ADC1_CH6) | Sensor Hujan FC-37 | **AO** (Analog Out) | Pembacaan analog 0-4095 (Input only, bebas noise WiFi) |
-| **GPIO 4** | Sensor DHT22 | **DATA / OUT** | Sinyal satu kabel (1-Wire) suhu dan kelembapan |
-| **GPIO 18** | Motor Servo SG90 | **PWM / Signal** (Kabel Oranye/Kuning) | Pulsa 50Hz kendali sudut putaran motor |
-| **GPIO 19** | Buzzer Aktif | **Anoda (+)** | Bunyi alarm saat hujan terdeteksi |
-| **GPIO 2** | LED Status | Internal / Anoda (+) | LED indikator kondisi jemuran tertutup |
-| **VIN / 5V** | Semua VCC Komponen | **VCC / 5V** | Tegangan masuk 5V |
-| **GND** | Semua GND Komponen | **GND** | Jalur ground bersama (Common Ground) |
+| **GPIO 33** (ADC1_CH5) | Sensor Hujan FC-37 | **AO** (Analog Out) | Pembacaan analog air hujan (ADC < 2500 = Hujan) |
+| **GPIO 34** (ADC1_CH6) | Sensor Cahaya LDR | **AO** (Analog Out) | Pembacaan intensitas cahaya (ADC > 2500 = Mendung) |
+| **GPIO 18** | Driver Stepper A4988 / DRV8825 | **STEP** | Pulsa langkah rotasi motor stepper jemuran |
+| **GPIO 19** | Driver Stepper A4988 / DRV8825 | **DIR** | Arah putaran motor (LOW = Masuk, HIGH = Keluar) |
+| **GPIO 21** | Layar OLED SSD1306 | **SDA** | Jalur data I2C komunikasi layar display |
+| **GPIO 22** | Layar OLED SSD1306 | **SCL** | Jalur clock I2C komunikasi layar display |
+| **5V / VIN** | Modul Sensor & Layar | **VCC** | Catu daya modul 5V |
+| **GND** | Semua Komponen | **GND** | Common ground bersama catu daya eksternal |
 
-> **PENTING TENTANG CATU DAYA MOTOR SERVO**:
-> Motor servo dapat menarik arus lonjakan hingga 500mA saat bergerak menarik beban jemuran. Sangat disarankan untuk menghubungkan pin VCC servo ke sumber 5V eksternal (jangan hanya mengandalkan pin 3.3V ESP32) dan pastikan jalur Ground (GND) dari adaptor dihubungkan bersama ke pin GND ESP32 (*Common Ground*).
+> **PENTING TENTANG CATU DAYA MOTOR STEPPER**:
+> Driver stepper A4988 memerlukan suplai daya motor tersendiri (VMOT 12V 2A) dengan kapasitor elko 100uF terpasang paralel pada pin VMOT dan GND untuk mencegah lonjakan tegangan merusak driver. Pastikan seluruh jalur Ground (GND) dari ESP32 dan adaptor dihubungkan bersama (Common Ground).
 
 ---
 

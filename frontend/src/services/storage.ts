@@ -12,13 +12,13 @@ const KEYS = {
 };
 
 const DEFAULT_DEVICE: Perangkat = {
-  deviceId: 'hs-8f3a1c9d2b70',
-  nama: 'Jemuran Utama',
+  deviceId: 'hs-24e1796dc9a1',
+  nama: 'Jemuran ESP32 Utama',
   brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
   lokasiAdm4: '31.71.03.1001',
   fwVersi: '1.1.0',
-  lastSeenTs: Date.now(),
-  online: true,
+  lastSeenTs: 0,
+  online: false,
   ambangPct: 60,
   deteksiBerkepanjanganMs: 60000,
 };
@@ -48,7 +48,7 @@ export function getDefaultBackendUrl(): string {
 }
 
 const DEFAULT_SETTINGS: Pengaturan = {
-  deviceIdActive: 'hs-8f3a1c9d2b70',
+  deviceIdActive: 'hs-24e1796dc9a1',
   tema: 'system',
   rentangGrafik: '1h',
   izinNotif: false,
@@ -95,7 +95,18 @@ export const StorageService = {
       const raw = localStorage.getItem(key);
       if (!raw) return [DEFAULT_DEVICE];
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : [DEFAULT_DEVICE];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((d: Perangkat) => {
+          const validTs = d.lastSeenTs && d.lastSeenTs > 1577836800000 ? d.lastSeenTs : 0;
+          const isOnline = validTs > 0 && Date.now() - validTs <= 15000;
+          return {
+            ...d,
+            lastSeenTs: validTs,
+            online: isOnline,
+          };
+        });
+      }
+      return [DEFAULT_DEVICE];
     } catch {
       return [DEFAULT_DEVICE];
     }

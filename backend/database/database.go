@@ -119,22 +119,38 @@ func InitDB() (*gorm.DB, error) {
 		db.Model(&models.User{}).Where("id = ? AND (username = '' OR username IS NULL)", "usr-demo-admin").Update("username", "admin")
 	}
 
-	// Seed default device if empty
+	// Seed default device if empty or ensure user device hs-24e1796dc9a1 exists
 	var count int64
 	db.Model(&models.Device{}).Count(&count)
 	if count == 0 {
 		defaultDev := models.Device{
-			ID:         "hs-8f3a1c9d2b70",
+			ID:         "hs-24e1796dc9a1",
 			UserID:     "usr-demo-admin",
-			Name:       "Jemuran Utama",
+			Name:       "Jemuran ESP32 Utama",
 			BrokerURL:  "wss://43-133-136-149.sslip.io/ws",
 			LokasiADM4: "31.71.03.1001",
 			AmbangPct:  60,
-			Status:     "online",
-			LastSeenAt: time.Now(),
+			Status:     "offline",
+			LastSeenAt: time.Time{},
 		}
 		db.Create(&defaultDev)
-		log.Println("[Database] Seeded default device: hs-8f3a1c9d2b70")
+		log.Println("[Database] Seeded default device: hs-24e1796dc9a1")
+	} else {
+		var devUser models.Device
+		if err := db.First(&devUser, "id = ?", "hs-24e1796dc9a1").Error; err != nil {
+			newDev := models.Device{
+				ID:         "hs-24e1796dc9a1",
+				UserID:     "usr-demo-admin",
+				Name:       "Jemuran ESP32 Utama",
+				BrokerURL:  "wss://43-133-136-149.sslip.io/ws",
+				LokasiADM4: "31.71.03.1001",
+				AmbangPct:  60,
+				Status:     "offline",
+				LastSeenAt: time.Time{},
+			}
+			db.Create(&newDev)
+			log.Println("[Database] Seeded user device: hs-24e1796dc9a1")
+		}
 	}
 
 	DB = db

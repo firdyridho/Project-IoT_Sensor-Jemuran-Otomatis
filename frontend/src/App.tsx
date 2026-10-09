@@ -63,13 +63,13 @@ export const App: React.FC = () => {
   const activeDevice =
     devices.find((d) => d.deviceId === settings.deviceIdActive) ||
     devices[0] || {
-      deviceId: 'hs-8f3a1c9d2b70',
-      nama: 'Jemuran Utama',
+      deviceId: 'hs-24e1796dc9a1',
+      nama: 'Jemuran ESP32 Utama',
       brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
       lokasiAdm4: '31.71.03.1001',
-      fwVersi: '1.0.0',
-      lastSeenTs: Date.now(),
-      online: true,
+      fwVersi: '1.1.0',
+      lastSeenTs: 0,
+      online: false,
       ambangPct: 60,
     };
 
@@ -84,7 +84,10 @@ export const App: React.FC = () => {
 
   const [brokerStatus, setBrokerStatus] = useState<MqttConnectionStatus>('connected');
   const [brokerError, setBrokerError] = useState<string>('');
-  const [lastSeenTs, setLastSeenTs] = useState<number>(Date.now());
+  const [lastSeenTs, setLastSeenTs] = useState<number>(() => {
+    const ts = activeDevice.lastSeenTs || 0;
+    return ts > 1577836800000 && Date.now() - ts <= 15000 ? ts : 0;
+  });
   const [secondsAgo, setSecondsAgo] = useState(0);
 
   // 3. BMKG Weather State
@@ -213,10 +216,14 @@ export const App: React.FC = () => {
   }, [activeDevice.lokasiAdm4]);
 
   // ---------------------------------------------------------------------------
-  // Ticker for Staleness (>90s) & seconds counter
+  // Ticker for Staleness (>15s) & seconds counter
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const interval = window.setInterval(() => {
+      if (!lastSeenTs || lastSeenTs === 0) {
+        setSecondsAgo(0);
+        return;
+      }
       const now = Date.now();
       const diffSec = Math.floor((now - lastSeenTs) / 1000);
       setSecondsAgo(diffSec);
@@ -224,12 +231,15 @@ export const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [lastSeenTs]);
 
-  // Offline calculation as per API.md A.8:
-  // 1. retained LWT status === 'offline'
-  // 2. Date.now() - lastSeen > 90_000
-  // 3. Broker disconnected
+  // Realtime offline calculation:
+  // 1. Belum pernah menerima telemetri (lastSeenTs === 0)
+  // 2. Retained LWT status === 'offline'
+  // 3. Tidak ada telemetri baru masuk > 15 detik
   const isDeviceOffline =
-    latestState?.status === 'offline' || Date.now() - lastSeenTs > 90000;
+    !lastSeenTs ||
+    lastSeenTs === 0 ||
+    latestState?.status === 'offline' ||
+    Date.now() - lastSeenTs > 15000;
   const isBrokerDisconnected = brokerStatus !== 'connected';
 
   // ---------------------------------------------------------------------------
@@ -273,7 +283,11 @@ export const App: React.FC = () => {
 
   const handleIngestState = (state: StatePayload) => {
     setLatestState(state);
-    setLastSeenTs(Date.now());
+    if (state.status === 'offline') {
+      setLastSeenTs(0);
+    } else {
+      setLastSeenTs(Date.now());
+    }
   };
 
   const handleIngestEvent = (ev: EventPayload) => {
@@ -499,6 +513,15 @@ export const App: React.FC = () => {
     const newSettings = { ...settings, deviceIdActive: deviceId };
     setSettings(newSettings);
     StorageService.saveSettings(newSettings);
+
+    const dev = devices.find((d) => d.deviceId === deviceId);
+    const validTs =
+      dev?.lastSeenTs &&
+      dev.lastSeenTs > 1577836800000 &&
+      Date.now() - dev.lastSeenTs <= 15000
+        ? dev.lastSeenTs
+        : 0;
+    setLastSeenTs(validTs);
 
     const newReadings = StorageService.getReadings(deviceId);
     const newEvents = StorageService.getEvents(deviceId);

@@ -1,383 +1,273 @@
-/**
- * =============================================================================
- * Proyek IoT Sistem Monitoring Hujan & Jemuran Otomatis Berbasis ESP32
- * =============================================================================
- * 
- * Fitur:
- * 1. Pembacaan Analog Sensor Hujan FC-37 (GPIO 34) dengan interpolasi persentase.
- * 2. Pembacaan Suhu & Kelembapan Udara DHT22 (GPIO 4).
- * 3. Pengendalian Motor Servo SG90 (GPIO 18) untuk menarik/membuka jemuran.
- * 4. Komunikasi Realtime via MQTT (TCP 1883) ke Server Dedicated VPS Tencent Cloud.
- * 5. Failover HTTP REST POST Ingestion bila jaringan MQTT terhambat.
- * 6. Subscribing kontrol jarak jauh dari Dashboard Web (Topik: hujansensor/{ID}/cmd).
- * 7. Debounce & Histeresis untuk mencegah motor servo bergerak bolak-balik saat gerimis tipis.
- * 
- * Library yang dibutuhkan (instal via Library Manager):
- * - PubSubClient oleh Nick O'Leary
- * - DHT sensor library oleh Adafruit
- * - ESP32Servo oleh Kevin Harrington
- * - ArduinoJson oleh Benoit Blanchon (v6 atau v7)
- * =============================================================================
- */
-
 #include <WiFi.h>
-#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
-#include <ESP32Servo.h>
-#include <DHT.h>
-#include <ArduinoJson.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
-// Muat konfigurasi kredensial
-#if __has_include("config.h")
-  #include "config.h"
-#else
-  #include "config.h.example"
-#endif
+// ================= 1. KONFIGURASI WIFI & MQTT =================
+// Kredensial WiFi
+const char* ssid = "UNTIRTA";
+const char* password = "untirtajawara";
 
-// =============================================================================
-// Definisi Objek & Variabel Global
-// =============================================================================
+// Broker MQTT VPS Tencent Cloud (Terhubung langsung ke Go Backend & Dashboard Web)
+// PENTING: Jangan gunakan 'test.mosquitto.org' karena itu broker publik terpisah dan tidak terhubung ke Web ini!
+const char* mqtt_server = "43.133.136.149";
+const int mqtt_port = 1883;
+
+// Device ID sesuai dengan yang didaftarkan di form Web
+const char* device_id = "hs-24e1796dc9a1"; 
+
+// Topik MQTT Komunikasi Realtime
+String topic_publish       = String(device_id) + "/data";              // Format data custom ESP32
+String topic_telemetry_std = "hujansensor/" + String(device_id) + "/telemetry"; // Format standar sistem
+String topic_state_std     = "hujansensor/" + String(device_id) + "/state";     // Status online / offline (LWT)
+String topic_subscribe     = String(device_id) + "/control";           // Terima perintah dari tombol Web
+String topic_cmd_std       = "hujansensor/" + String(device_id) + "/cmd";       // Perintah standar motor
+
+// ================= 2. KONFIGURASI HARDWARE =================
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+// Pin Sensor Analog (ESP32 ADC1: aman digunakan bersama WiFi)
+#define PIN_HUJAN 33
+#define PIN_LDR   34
+
+// Pin Driver Motor Stepper (A4988 / DRV8825)
+const int stepPin = 18;
+const int dirPin  = 19;
+
 WiFiClient espClient;
-PubSubClient mqttClient(espClient);
-DHT dht(PIN_DHT, DHT22);
-Servo jemuranServo;
+PubSubClient client(espClient);
 
-// Variabel Status Perangkat
-int rainThreshold = DEFAULT_THRESHOLD;
-bool isRaining = false;
-bool servoClosed = false;
-unsigned long lastTelemetryMillis = 0;
-unsigned long lastDryStableMillis = 0;
-const unsigned long DRY_CONFIRM_DELAY = 12000; // 12 detik kering stabil sebelum membuka kembali
+// Status Posisi Jemuran (false = Di Luar/Jemur, true = Di Dalam/Teduh)
+bool jemuranDiDalam = false;
 
-// Topik MQTT Dinamis
-char topicTelemetry[64];
-char topicEvent[64];
-char topicState[64];
-char topicCmd[64];
+// ================= 3. FUNGSI KONTROL MOTOR & OLED =================
+void updateOLED(String hujan, String cahaya, String posisi, bool warningMendung) {
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
 
-// =============================================================================
-// Prototipe Fungsi
-// =============================================================================
-void setupWiFi();
-void reconnectMQTT();
-void mqttCallback(char* topic, byte* payload, unsigned int length);
-int readRainPercentage(int& rawAdc);
-void controlServo(bool close);
-void sendTelemetry();
-void sendRainEvent(const char* eventType, int rainPct, float temp, float hum);
+  display.setCursor(0, 0);
+  if (warningMendung) {
+    display.println("! AWAS MENDUNG !");
+  } else {
+    display.print("ID: "); display.println(device_id);
+  }
+  display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
 
-// =============================================================================
-// Inisialisasi Sistem (setup)
-// =============================================================================
+  display.setCursor(0, 16);
+  display.print("Hujan : "); display.println(hujan);
+
+  display.setCursor(0, 32);
+  display.print("Langit: "); display.println(cahaya);
+
+  display.setCursor(0, 48);
+  display.print("Posisi: "); display.println(posisi);
+
+  display.display();
+}
+
+// Fungsi menggerakkan stepper
+void gerakkanJemuran(bool tarikMasuk, String sumber) {
+  if (tarikMasuk && !jemuranDiDalam) {
+    Serial.println("Menarik jemuran masuk (" + sumber + ")...");
+    updateOLED("Proses...", sumber, "Menarik Masuk", false);
+
+    // Putar ke arah jemuran masuk (LOW)
+    digitalWrite(dirPin, LOW);
+    for (int i = 0; i < 800; i++) {
+      digitalWrite(stepPin, HIGH);
+      delayMicroseconds(1000);
+      digitalWrite(stepPin, LOW);
+      delayMicroseconds(1000);
+    }
+
+    jemuranDiDalam = true;
+    Serial.println("Selesai: Jemuran sekarang di dalam.");
+  } 
+  else if (!tarikMasuk && jemuranDiDalam) {
+    Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
+    updateOLED("Proses...", sumber, "Dorong Keluar", false);
+
+    // Putar ke arah jemuran keluar (HIGH)
+    digitalWrite(dirPin, HIGH);
+    for (int i = 0; i < 800; i++) {
+      digitalWrite(stepPin, HIGH);
+      delayMicroseconds(1000);
+      digitalWrite(stepPin, LOW);
+      delayMicroseconds(1000);
+    }
+
+    jemuranDiDalam = false;
+    Serial.println("Selesai: Jemuran sekarang di luar.");
+  }
+}
+
+// ================= 4. FUNGSI TERIMA PERINTAH DARI WEB =================
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  String pesan = "";
+  for (unsigned int i = 0; i < length; i++) {
+    pesan += (char)payload[i];
+  }
+  
+  Serial.print("Perintah masuk dari Web [");
+  Serial.print(topic);
+  Serial.print("]: ");
+  Serial.println(pesan);
+
+  pesan.toLowerCase();
+  if (pesan.indexOf("tarik") >= 0 || pesan.indexOf("masuk") >= 0 || pesan.indexOf("retract") >= 0 || pesan.indexOf("in") >= 0 || pesan.indexOf("tutup") >= 0 || pesan == "1") {
+    gerakkanJemuran(true, "Tombol Web");
+  } 
+  else if (pesan.indexOf("dorong") >= 0 || pesan.indexOf("keluar") >= 0 || pesan.indexOf("extend") >= 0 || pesan.indexOf("out") >= 0 || pesan.indexOf("buka") >= 0 || pesan == "0") {
+    int adcHujan = analogRead(PIN_HUJAN);
+    if (adcHujan >= 2500) {
+      gerakkanJemuran(false, "Tombol Web");
+    } else {
+      Serial.println("Ditolak: Sensor masih mendeteksi air hujan!");
+    }
+  }
+}
+
+// ================= 5. KONEKSI KE BROKER MQTT VPS DENGAN LWT =================
+void reconnectMQTT() {
+  while (!client.connected()) {
+    Serial.print("Menghubungkan ke MQTT Broker VPS (" + String(mqtt_server) + ")...");
+    String clientId = "ESP32Client-" + String(device_id) + "-" + String(random(1000, 9999));
+    
+    // Konfigurasi LWT (Last Will and Testament)
+    // Jika ESP32 mati/terputus, broker otomatis mengabari Web bahwa status 'offline' secara instan
+    const char* willTopic = topic_state_std.c_str();
+    int willQos = 1;
+    bool willRetain = true;
+    const char* willMessage = "{\"status\":\"offline\"}";
+
+    if (client.connect(clientId.c_str(), willTopic, willQos, willRetain, willMessage)) {
+      Serial.println(" Terhubung!");
+
+      // 1. Publikasikan status bahwa perangkat sekarang resmi ONLINE (Retained)
+      client.publish(topic_state_std.c_str(), "{\"status\":\"online\"}", true);
+
+      // 2. Berlangganan topik perintah kontrol dari Web
+      client.subscribe(topic_subscribe.c_str());
+      client.subscribe(topic_cmd_std.c_str());
+      Serial.println("Subscribe ke: " + topic_subscribe + " & " + topic_cmd_std);
+    } else {
+      Serial.print(" Gagal, rc=");
+      Serial.print(client.state());
+      Serial.println(" Coba lagi dalam 3 detik...");
+      delay(3000);
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
-  delay(1000);
 
-  Serial.println();
-  Serial.println("==================================================");
-  Serial.println("  ESP32 - Sistem Jemuran Otomatis & Sensor Hujan  ");
-  Serial.printf("  Device ID : %s\n", DEVICE_ID);
-  Serial.printf("  Firmware  : %s\n", FIRMWARE_VERSION);
-  Serial.println("==================================================");
+  // Setup Pin Driver Motor Stepper
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
 
-  // Setup Pin Hardware
-  pinMode(PIN_RAIN_ANALOG, INPUT);
-  pinMode(PIN_LED_STATUS, OUTPUT);
-  pinMode(PIN_BUZZER, OUTPUT);
-  digitalWrite(PIN_LED_STATUS, LOW);
-  digitalWrite(PIN_BUZZER, LOW);
-
-  // Inisialisasi Servo
-  jemuranServo.setPeriodHertz(50);
-  jemuranServo.attach(PIN_SERVO, 500, 2400);
-  // Posisi awal: Terbuka (0 derajat)
-  jemuranServo.write(0);
-  servoClosed = false;
-
-  // Inisialisasi Sensor DHT22
-  dht.begin();
-
-  // Format Topik MQTT
-  snprintf(topicTelemetry, sizeof(topicTelemetry), "hujansensor/%s/telemetry", DEVICE_ID);
-  snprintf(topicEvent, sizeof(topicEvent), "hujansensor/%s/event", DEVICE_ID);
-  snprintf(topicState, sizeof(topicState), "hujansensor/%s/state", DEVICE_ID);
-  snprintf(topicCmd, sizeof(topicCmd), "hujansensor/%s/cmd", DEVICE_ID);
-
-  // Inisialisasi Jaringan & MQTT
-  setupWiFi();
-  mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
-  mqttClient.setCallback(mqttCallback);
-
-  Serial.println("[INFO] Inisialisasi hardware selesai.");
-}
-
-// =============================================================================
-// Loop Utama (loop)
-// =============================================================================
-void loop() {
-  // 1. Pastikan koneksi WiFi & MQTT tetap terjaga
-  if (WiFi.status() != WL_CONNECTED) {
-    setupWiFi();
+  // Inisialisasi Layar OLED (I2C SDA=21, SCL=22)
+  Wire.begin(21, 22);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println("OLED SSD1306 gagal diinisialisasi");
   }
-  if (!mqttClient.connected()) {
-    reconnectMQTT();
-  }
-  mqttClient.loop();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 10);
+  display.println("Sistem Jemuran IoT");
+  display.setCursor(0, 25);
+  display.println("Connecting WiFi...");
+  display.display();
 
-  // 2. Baca Sensor Hujan
-  int rawAdc = 0;
-  int rainPct = readRainPercentage(rawAdc);
-
-  // 3. Baca DHT22
-  float temp = dht.readTemperature();
-  float hum = dht.readHumidity();
-  if (isnan(temp)) temp = 28.5; // Fallback jika sensor DHT offline
-  if (isnan(hum)) hum = 70.0;
-
-  // 4. Logika Otomatisasi Jemuran
-  if (rainPct >= rainThreshold) {
-    // HUJAN TERDETEKSI!
-    lastDryStableMillis = 0;
-    if (!isRaining) {
-      isRaining = true;
-      Serial.printf("[ALERT] HUJAN TERDETEKSI! Intensitas: %d%% (Ambang: %d%%)\n", rainPct, rainThreshold);
-      
-      // Bunyikan buzzer singkat 2x
-      for (int i = 0; i < 2; i++) {
-        digitalWrite(PIN_BUZZER, HIGH);
-        delay(150);
-        digitalWrite(PIN_BUZZER, LOW);
-        delay(100);
-      }
-
-      // Tarik jemuran (Servo 90 derajat)
-      controlServo(true);
-
-      // Kirim event darurat ke Server
-      sendRainEvent("HUJAN_TERDETEKSI", rainPct, temp, hum);
-    }
-  } else if (rainPct < (rainThreshold - 5)) {
-    // Kering / tidak hujan (histeresis 5% agar tidak flapping)
-    if (isRaining) {
-      if (lastDryStableMillis == 0) {
-        lastDryStableMillis = millis();
-        Serial.println("[INFO] Pelat sensor mengering. Menunggu konfirmasi stabil...");
-      } else if (millis() - lastDryStableMillis >= DRY_CONFIRM_DELAY) {
-        // Hujan terbukti reda stabil
-        isRaining = false;
-        lastDryStableMillis = 0;
-        Serial.println("[INFO] HUJAN TELAH REDA. Membuka kembali jemuran...");
-
-        // Buka jemuran kembali (Servo 0 derajat)
-        controlServo(false);
-
-        // Kirim event ke Server
-        sendRainEvent("HUJAN_BERHENTI", rainPct, temp, hum);
-      }
-    }
-  }
-
-  // 5. Kirim Telemetri Berkala (Setiap 5 detik)
-  unsigned long now = millis();
-  if (now - lastTelemetryMillis >= TELEMETRY_INTERVAL) {
-    lastTelemetryMillis = now;
-    sendTelemetry();
-  }
-
-  delay(50);
-}
-
-// =============================================================================
-// Helper: Membaca Persentase Hujan dari ADC
-// =============================================================================
-int readRainPercentage(int& rawAdc) {
-  // Lakukan oversampling 8x untuk mereduksi noise ADC ESP32
-  long sum = 0;
-  for (int i = 0; i < 8; i++) {
-    sum += analogRead(PIN_RAIN_ANALOG);
-    delay(2);
-  }
-  rawAdc = sum / 8;
-
-  // Rumus konversi ADC ke persentase basah (0% = Kering, 100% = Basah Tergenang)
-  // Nilai ADC sensor hujan: Kering = 4095, Basah = ~800
-  int pct = map(rawAdc, DRY_RAW_ADC, WET_RAW_ADC, 0, 100);
-  if (pct < 0) pct = 0;
-  if (pct > 100) pct = 100;
-
-  return pct;
-}
-
-// =============================================================================
-// Helper: Kendali Posisi Motor Servo
-// =============================================================================
-void controlServo(bool close) {
-  if (close) {
-    jemuranServo.write(90); // Posisi tertutup/terlindungi
-    servoClosed = true;
-    digitalWrite(PIN_LED_STATUS, HIGH);
-  } else {
-    jemuranServo.write(0);  // Posisi terbuka/terbentang
-    servoClosed = false;
-    digitalWrite(PIN_LED_STATUS, LOW);
-  }
-}
-
-// =============================================================================
-// Helper: Koneksi Jaringan WiFi
-// =============================================================================
-void setupWiFi() {
-  Serial.printf("\n[WIFI] Menghubungkan ke SSID: %s ...\n", WIFI_SSID);
+  // Koneksi Wi-Fi
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 25) {
-    delay(500);
+  WiFi.begin(ssid, password);
+  Serial.print("Menghubungkan ke WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(400);
     Serial.print(".");
-    attempts++;
   }
+  Serial.println("\nWiFi Terhubung! IP: " + WiFi.localIP().toString());
 
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n[WIFI] Terhubung dengan sukses!");
-    Serial.printf("[WIFI] IP Address: %s\n", WiFi.localIP().toString().c_str());
-    Serial.printf("[WIFI] RSSI Signal: %d dBm\n", WiFi.RSSI());
-  } else {
-    Serial.println("\n[WARN] Gagal terhubung ke WiFi dalam 12 detik. Mencoba lagi nanti...");
-  }
+  // Inisialisasi Klien MQTT
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(mqttCallback);
+  client.setBufferSize(512);
 }
 
-// =============================================================================
-// Helper: Koneksi ke Broker MQTT Private VPS
-// =============================================================================
-void reconnectMQTT() {
-  if (WiFi.status() != WL_CONNECTED) return;
-
-  static unsigned long lastMqttAttempt = 0;
-  if (millis() - lastMqttAttempt < 4000) return; // Cooldown coba koneksi tiap 4 detik
-  lastMqttAttempt = millis();
-
-  Serial.printf("[MQTT] Menghubungkan ke broker %s:%d ...\n", MQTT_SERVER, MQTT_PORT);
-
-  // Buat Client ID unik
-  String clientId = "ESP32-" + String(DEVICE_ID) + "-" + String(random(0xffff), HEX);
-
-  // Last Will and Testament (LWT) jika koneksi terputus mendadak
-  const char* willTopic = topicState;
-  const char* willMsg = "{\"status\":\"offline\"}";
-
-  bool connected = false;
-  if (strlen(MQTT_USER) > 0) {
-    connected = mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASS, willTopic, 1, true, willMsg);
-  } else {
-    connected = mqttClient.connect(clientId.c_str(), willTopic, 1, true, willMsg);
-  }
-
-  if (connected) {
-    Serial.println("[MQTT] Terkoneksi dengan broker VPS!");
-    
-    // Publikasikan status online
-    mqttClient.publish(topicState, "{\"status\":\"online\"}", true);
-
-    // Langganan topik perintah manual dari Web
-    mqttClient.subscribe(topicCmd);
-    Serial.printf("[MQTT] Berlangganan topik perintah: %s\n", topicCmd);
-  } else {
-    Serial.printf("[WARN] Gagal konek MQTT (rc=%d). Mencoba lagi...\n", mqttClient.state());
-  }
-}
-
-// =============================================================================
-// Callback: Menerima Pesan Perintah (Command) dari Web
-// =============================================================================
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-  char message[256];
-  if (length >= sizeof(message)) length = sizeof(message) - 1;
-  memcpy(message, payload, length);
-  message[length] = '\0';
-
-  Serial.printf("[MQTT RECV] Topik: %s | Pesan: %s\n", topic, message);
-
-  // Parse JSON Perintah
-  StaticJsonDocument<256> doc;
-  DeserializationError err = deserializeJson(doc, message);
-  if (err) {
-    Serial.printf("[WARN] Format JSON perintah tidak valid: %s\n", err.c_str());
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.reconnect();
+    delay(500);
     return;
   }
 
-  const char* cmd = doc["cmd"];
-  if (cmd) {
-    if (strcmp(cmd, "BUKA") == 0) {
-      Serial.println("[CMD] Perintah manual: BUKA JEMURAN");
-      controlServo(false);
-      isRaining = false;
-    } else if (strcmp(cmd, "TUTUP") == 0) {
-      Serial.println("[CMD] Perintah manual: TUTUP JEMURAN");
-      controlServo(true);
-    } else if (strcmp(cmd, "SET_THRESHOLD") == 0) {
-      int newThreshold = doc["value"] | rainThreshold;
-      if (newThreshold >= 10 && newThreshold <= 95) {
-        rainThreshold = newThreshold;
-        Serial.printf("[CMD] Ambang batas diperbarui ke: %d%%\n", rainThreshold);
-      }
+  if (!client.connected()) {
+    reconnectMQTT();
+  }
+  client.loop();
+
+  // Cek sensor & kirim data telemetri ke Web setiap 2 detik
+  static unsigned long lastMsg = 0;
+  if (millis() - lastMsg > 2000) {
+    lastMsg = millis();
+
+    int adcHujan = analogRead(PIN_HUJAN);
+    int adcLdr = analogRead(PIN_LDR);
+
+    // Kalibrasi logika deteksi hujan dan mendung
+    bool isHujan = (adcHujan < 2500);
+    bool isMendung = (adcLdr > 2500);
+
+    // 1. LOGIKA OTOMATIS: Tarik jemuran masuk saat hujan mulai turun
+    if (isHujan && !jemuranDiDalam) {
+      gerakkanJemuran(true, "Auto Hujan");
     }
-  }
-}
 
-// =============================================================================
-// Helper: Kirim Data Telemetri Berkala
-// =============================================================================
-void sendTelemetry() {
-  int rawAdc = 0;
-  int rainPct = readRainPercentage(rawAdc);
-  float temp = dht.readTemperature();
-  float hum = dht.readHumidity();
-  if (isnan(temp)) temp = 28.5;
-  if (isnan(hum)) hum = 70.0;
+    // 2. UPDATE TAMPILAN LAYAR OLED
+    String txtHujan = isHujan ? "HUJAN!" : "Kering";
+    String txtLangit = isMendung ? "Mendung" : "Cerah";
+    String txtPosisi = jemuranDiDalam ? "Di Dalam" : "Di Luar";
+    bool warningMendung = (isMendung && !jemuranDiDalam);
 
-  // Format JSON Telemetri
-  StaticJsonDocument<256> doc;
-  doc["deviceId"] = DEVICE_ID;
-  doc["rainPct"] = rainPct;
-  doc["rawAdc"] = rawAdc;
-  doc["tempC"] = serialized(String(temp, 1));
-  doc["hum"] = serialized(String(hum, 1));
-  doc["servoClosed"] = servoClosed;
-  doc["isRaining"] = isRaining;
-  doc["threshold"] = rainThreshold;
-  doc["rssi"] = WiFi.RSSI();
+    updateOLED(txtHujan, txtLangit, txtPosisi, warningMendung);
 
-  char buffer[256];
-  size_t len = serializeJson(doc, buffer);
+    // 3. KIRIM DATA JSON KE WEB LEWAT BROKER MQTT VPS
+    String payload = "{";
+    payload += "\"device_id\":\"" + String(device_id) + "\",";
+    payload += "\"adc_hujan\":" + String(adcHujan) + ",";
+    payload += "\"adc_ldr\":" + String(adcLdr) + ",";
+    payload += "\"hujan\":" + String(isHujan ? "true" : "false") + ",";
+    payload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
+    payload += "\"peringatan\":" + String(warningMendung ? "true" : "false") + ",";
+    payload += "\"posisi\":\"" + String(jemuranDiDalam ? "didalam" : "diluar") + "\"";
+    payload += "}";
 
-  if (mqttClient.connected()) {
-    mqttClient.publish(topicTelemetry, buffer);
-    Serial.printf("[TELEMETRY] Hujan: %d%% (ADC: %d) | Suhu: %.1fC | Hum: %.1f%% | Servo: %s\n",
-                  rainPct, rawAdc, temp, hum, servoClosed ? "TUTUP" : "BUKA");
-  } else {
-    Serial.println("[WARN] MQTT offline, telemetri disimpan lokal sementara.");
-  }
-}
+    // Publikasikan ke topik custom ESP32
+    client.publish(topic_publish.c_str(), payload.c_str());
 
-// =============================================================================
-// Helper: Kirim Notifikasi Event Darurat
-// =============================================================================
-void sendRainEvent(const char* eventType, int rainPct, float temp, float hum) {
-  StaticJsonDocument<256> doc;
-  doc["deviceId"] = DEVICE_ID;
-  doc["event"] = eventType;
-  doc["rainPct"] = rainPct;
-  doc["tempC"] = serialized(String(temp, 1));
-  doc["hum"] = serialized(String(hum, 1));
-  doc["timestamp"] = millis();
+    // Konversi ADC hujan ke persentase basah (0-100%)
+    int rainPct = (4095 - adcHujan) * 100 / (4095 - 800);
+    if (rainPct < 0) rainPct = 0;
+    if (rainPct > 100) rainPct = 100;
 
-  char buffer[256];
-  size_t len = serializeJson(doc, buffer);
+    // Publikasikan juga ke topik standar format sistem
+    String stdPayload = "{";
+    stdPayload += "\"v\":1,";
+    stdPayload += "\"deviceId\":\"" + String(device_id) + "\",";
+    stdPayload += "\"ts\":" + String(millis()) + ",";
+    stdPayload += "\"raw\":" + String(adcHujan) + ",";
+    stdPayload += "\"pct\":" + String(rainPct) + ",";
+    stdPayload += "\"wet\":" + String(isHujan ? "true" : "false") + ",";
+    stdPayload += "\"rssi\":" + String(WiFi.RSSI());
+    stdPayload += "}";
+    client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
 
-  if (mqttClient.connected()) {
-    mqttClient.publish(topicEvent, buffer);
-    Serial.printf("[EVENT PUSH] %s terkirim ke MQTT!\n", eventType);
+    Serial.println("Kirim MQTT [" + topic_publish + "]: " + payload);
   }
 }

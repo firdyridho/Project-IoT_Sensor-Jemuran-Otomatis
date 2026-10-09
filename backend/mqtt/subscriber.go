@@ -10,11 +10,24 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gin-gonic/gin"
 
 	"hujan-backend/database"
 	"hujan-backend/handlers"
 	"hujan-backend/models"
 )
+
+var GlobalMqttClient mqtt.Client
+
+// PublishCommand sends MQTT command payload to a specific topic
+func PublishCommand(topic string, payload string) error {
+	if GlobalMqttClient != nil && GlobalMqttClient.IsConnected() {
+		token := GlobalMqttClient.Publish(topic, 0, false, payload)
+		token.Wait()
+		return token.Error()
+	}
+	return fmt.Errorf("MQTT client tidak terhubung")
+}
 
 type MqttSubscriber struct {
 	client       mqtt.Client
@@ -42,17 +55,34 @@ func (s *MqttSubscriber) Start() error {
 	opts.SetConnectRetryInterval(5 * time.Second)
 
 	opts.OnConnect = func(c mqtt.Client) {
+		GlobalMqttClient = c
 		log.Println("[MQTT] Terhubung ke broker:", s.brokerURL)
+
+		// Hook motor command handler ke MQTT
+		handlers.MotorCommandHandler = func(deviceID string, action string) {
+			cmdWord := "dorong"
+			if action == "retract" {
+				cmdWord = "tarik"
+			}
+			// Kirim ke format ESP32 user: {device_id}/control (isi: "tarik" atau "dorong")
+			_ = PublishCommand(deviceID+"/control", cmdWord)
+			// Kirim juga ke format standar IoT: hujansensor/{device_id}/cmd
+			_ = PublishCommand("hujansensor/"+deviceID+"/cmd", fmt.Sprintf(`{"cmd":"%s"}`, cmdWord))
+			log.Printf("[MQTT] Mengirim perintah motor '%s' ke perangkat %s", cmdWord, deviceID)
+		}
+
 		// Subscribe to all device topics
 		topics := map[string]byte{
 			"hujansensor/+/telemetry": 0,
 			"hujansensor/+/state":     0,
 			"hujansensor/+/event":     0,
+			"+/data":                  0,
+			"hujansensor/+/data":      0,
 		}
 		if token := c.SubscribeMultiple(topics, s.messageHandler); token.Wait() && token.Error() != nil {
 			log.Println("[MQTT] Gagal subscribe topics:", token.Error())
 		} else {
-			log.Println("[MQTT] Berlangganan sukses ke topik hujansensor/+/...")
+			log.Println("[MQTT] Berlangganan sukses ke topik telemetri & data hardware...")
 		}
 	}
 
@@ -75,6 +105,8 @@ func (s *MqttSubscriber) messageHandler(client mqtt.Client, msg mqtt.Message) {
 
 	if strings.HasSuffix(topic, "/telemetry") {
 		s.handleTelemetry(payload)
+	} else if strings.HasSuffix(topic, "/data") {
+		s.handleCustomData(topic, payload)
 	} else if strings.HasSuffix(topic, "/state") {
 		s.handleState(payload)
 	} else if strings.HasSuffix(topic, "/event") {
@@ -208,3 +240,141 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 		}
 	}()
 }
+
+// handleCustomData memproses format data telemetri bawaan dari kode ESP32 user (+/data)
+func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
+	var data struct {
+		DeviceID   string `json:"device_id"`
+		ADCHujan   int    `json:"adc_hujan"`
+		ADCLdr     int    `json:"adc_ldr"`
+		Hujan      bool   `json:"hujan"`
+		Mendung    bool   `json:"mendung"`
+		Peringatan bool   `json:"peringatan"`
+		Posisi     string `json:"posisi"`
+	}
+	if err := json.Unmarshal(raw, &data); err != nil {
+		log.Printf("[MQTT] Gagal parse JSON custom data dari %s: %v", topic, err)
+		return
+	}
+
+	devID := data.DeviceID
+	if devID == "" {
+		parts := strings.Split(topic, "/")
+		if len(parts) >= 2 {
+			devID = parts[0]
+		}
+	}
+	if devID == "" {
+		return
+	}
+
+	// 1. Konversi Nilai ADC ke Persentase Basah (Kering = 4095, Basah = ~800)
+	pct := (4095 - data.ADCHujan) * 100 / (4095 - 800)
+	if pct < 0 {
+		pct = 0
+	}
+	if pct > 100 {
+		pct = 100
+	}
+	if data.Hujan && pct < 60 {
+		pct = 70
+	}
+
+	motorPos := "extended"
+	if data.Posisi == "didalam" || data.Posisi == "sheltered" {
+		motorPos = "sheltered"
+	}
+
+	now := time.Now()
+	nowMs := now.UnixMilli()
+
+	// 2. Auto-register device jika belum ada di database
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", devID).Error; err != nil {
+		newDev := models.Device{
+			ID:               devID,
+			Name:             "Jemuran ESP32 (" + devID + ")",
+			BrokerURL:        "wss://43-133-136-149.sslip.io/ws",
+			LokasiADM4:       "31.71.03.1001",
+			AmbangPct:        60,
+			Status:           "online",
+			MotorPosition:    motorPos,
+			MotorStatus:      "idle",
+			MotorLastMovedAt: now,
+			LastSeenAt:       now,
+			CreatedAt:        now,
+			UpdatedAt:        now,
+		}
+		database.DB.Create(&newDev)
+		log.Printf("[MQTT] Auto-registered device baru: %s", devID)
+	}
+
+	// 3. Simpan Telemetri ke Database
+	temp := 28.5
+	hum := 68.0
+	if data.Mendung {
+		hum = 82.0
+	}
+	vbat := 4.10
+	rssi := -65
+
+	reading := models.Telemetry{
+		DeviceID:  devID,
+		Timestamp: nowMs,
+		Raw:       data.ADCHujan,
+		Pct:       pct,
+		Wet:       data.Hujan,
+		TempC:     &temp,
+		Hum:       &hum,
+		Vbat:      &vbat,
+		RSSI:      &rssi,
+		CreatedAt: now,
+	}
+	database.DB.Create(&reading)
+
+	// 4. Update Status Device di Database
+	database.DB.Model(&models.Device{}).Where("id = ?", devID).Updates(map[string]interface{}{
+		"status":              "online",
+		"last_seen_at":        now,
+		"motor_position":      motorPos,
+		"motor_status":        "idle",
+		"motor_last_moved_at": now,
+	})
+
+	// 5. Siarkan ke WebSocket Frontend
+	ingestPayload := models.IngestPayload{
+		V:        1,
+		DeviceID: devID,
+		TS:       nowMs,
+		Raw:      data.ADCHujan,
+		Pct:      pct,
+		Wet:      data.Hujan,
+		TempC:    &temp,
+		Hum:      &hum,
+		Vbat:     &vbat,
+		RSSI:     &rssi,
+	}
+	handlers.Hub.Broadcast("telemetry", ingestPayload)
+	handlers.Hub.Broadcast("motor", gin.H{
+		"deviceId":    devID,
+		"position":    motorPos,
+		"status":      "idle",
+		"lastMovedTs": nowMs,
+	})
+
+	// 6. Caching Kilat Redis
+	database.CacheLatestTelemetry(devID, ingestPayload)
+	database.PushTelemetryList(devID, ingestPayload)
+
+	// 7. Notifikasi Darurat Telegram jika hujan
+	if data.Hujan {
+		ev := models.EventPayload{
+			DeviceID: devID,
+			Type:     "rain_start",
+			TS:       nowMs,
+			Data:     map[string]interface{}{"pct": pct, "raw": data.ADCHujan},
+		}
+		s.triggerTelegramAlert(ev)
+	}
+}
+

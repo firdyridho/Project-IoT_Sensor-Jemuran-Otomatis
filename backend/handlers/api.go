@@ -33,6 +33,11 @@ func GetDevices(c *gin.Context) {
 	} else {
 		database.DB.Order("created_at asc").Find(&devices)
 	}
+	for i := range devices {
+		if devices[i].LastSeenAt.IsZero() || time.Since(devices[i].LastSeenAt) > 15*time.Second {
+			devices[i].Status = "offline"
+		}
+	}
 	c.JSON(http.StatusOK, devices)
 }
 
@@ -59,8 +64,8 @@ func CreateDevice(c *gin.Context) {
 		}
 	}
 
-	req.LastSeenAt = time.Now()
-	req.Status = "online"
+	req.LastSeenAt = time.Time{}
+	req.Status = "offline"
 	if req.AmbangPct == 0 {
 		req.AmbangPct = 60
 	}
@@ -173,8 +178,8 @@ func GetLatest(c *gin.Context) {
 	var latestTel models.Telemetry
 	database.DB.Where("device_id = ?", deviceID).Order("timestamp desc").First(&latestTel)
 
-	// Check staleness (> 90 seconds)
-	isStale := time.Since(dev.LastSeenAt) > 90*time.Second
+	// Check staleness (> 15 seconds or never seen)
+	isStale := dev.LastSeenAt.IsZero() || time.Since(dev.LastSeenAt) > 15*time.Second
 	status := dev.Status
 	if isStale {
 		status = "offline"

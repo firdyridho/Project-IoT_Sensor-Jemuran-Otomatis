@@ -91,6 +91,7 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   }
 
   if (status === 'offline') {
+    const isNeverConnected = !lastSeenTs || lastSeenTs <= 1577836800000;
     return (
       <Card className="relative overflow-hidden border-2 border-slate-700/60 bg-gradient-to-b from-slate-800/40 via-slate-900/80 to-slate-950 p-5 sm:p-7 backdrop-blur-xl shadow-2xl">
         <div className="flex items-start justify-between gap-4">
@@ -103,7 +104,9 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
               Perangkat ESP32 Offline
             </h2>
             <p className="text-sm text-slate-400 max-w-lg leading-relaxed">
-              Tidak menerima telemetri sejak {formatTime(lastSeenTs)} ({getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.
+              {isNeverConnected
+                ? 'Perangkat belum terhubung. Nyalakan ESP32 dan hubungkan ke WiFi/MQTT broker untuk mulai memantau secara realtime.'
+                : `Tidak menerima telemetri sejak ${formatTime(lastSeenTs)} (${getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.`}
             </p>
           </div>
           <div className="p-3.5 rounded-2xl bg-slate-800 text-slate-400 shrink-0">

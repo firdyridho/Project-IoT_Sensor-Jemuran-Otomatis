@@ -11,6 +11,9 @@ import (
 	"hujan-backend/models"
 )
 
+// MotorCommandHandler is a hook for publishing motor commands to MQTT/hardware
+var MotorCommandHandler func(deviceID string, action string)
+
 // GetMotorStatus handles GET /api/devices/:id/motor (REQ-BE-01)
 func GetMotorStatus(c *gin.Context) {
 	deviceID := c.Param("id")
@@ -74,6 +77,11 @@ func CommandMotor(c *gin.Context) {
 	dev.MotorStatus = "idle"
 	dev.MotorLastMovedAt = now
 	database.DB.Save(&dev)
+
+	// Panggil hook MQTT untuk mengirim perintah ke hardware ESP32
+	if MotorCommandHandler != nil {
+		MotorCommandHandler(dev.ID, action)
+	}
 
 	// Broadcast status perubahan motor ke seluruh client WebSocket
 	motorPayload := gin.H{
