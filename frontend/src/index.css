@@ -174,19 +174,19 @@
   box-shadow: 0 10px 35px rgba(217, 119, 6, 0.12) !important;
 }
 
-/* Header & Footer Solid & Ter-freeze (Tanpa Glassmorphism) */
+/* Header & Footer Ter-freeze di Atas & Bawah */
 header.sticky {
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 50 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
-nav.fixed {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* Glassmorphism dominan putih khusus cuaca Cerah untuk Header & Footer */
+.weather-bg-cerah header.sticky,
+.weather-bg-cerah nav.fixed {
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
 }
 
 /* Pastikan semua teks di cuaca cerah memiliki kontras tinggi dan mudah dibaca */

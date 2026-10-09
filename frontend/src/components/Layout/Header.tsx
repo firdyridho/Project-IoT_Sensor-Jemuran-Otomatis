@@ -57,10 +57,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   if (isDashboard) {
     if (weatherCondition === 'cerah') {
-      headerBgClass = 'bg-[#9a3412] text-white shadow-xl';
-      borderClass = 'border-[#7c2d12]';
-      buttonBgClass = 'bg-white/10 hover:bg-white/20 text-white border-white/20';
-      selectBgClass = 'bg-white/15 text-white border-white/20';
+      headerBgClass = 'bg-white/80 backdrop-blur-2xl text-slate-950 shadow-xl';
+      borderClass = 'border-white/80';
+      buttonBgClass = 'bg-white/80 hover:bg-white text-slate-900 border-slate-200/90 shadow-xs';
+      selectBgClass = 'bg-white text-slate-950 border-slate-300 shadow-xs font-bold';
     } else if (weatherCondition === 'mendung') {
       headerBgClass = 'bg-[#1e293b] text-white shadow-xl';
       borderClass = 'border-slate-700';
