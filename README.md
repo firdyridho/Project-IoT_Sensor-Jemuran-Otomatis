@@ -173,10 +173,13 @@ Layanan backend akan aktif pada port `:8080`.
 
 ---
 
-## Panduan Deployment Server
+## Dokumentasi Teknis & Manajemen Task
 
-Instruksi lengkap mengenai setup VPS, database MySQL, reverse proxy Nginx, sertifikat SSL Let's Encrypt, serta konfigurasi rahasia GitHub Actions CI/CD tersedia pada:
-* [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
+Untuk menjaga alur pengembangan tetap terstruktur dan mempermudah kolaborasi antara Backend Engineer dan Frontend UI/AI:
+* **Peta Jalan & Pembagian Task (Backend vs Frontend)**: [docs/TASKS.md](docs/TASKS.md)
+* **Spesifikasi REST API & WebSocket Hub**: [docs/API.md](docs/API.md)
+* **Struktur Data & Relasi Database (ERD)**: [docs/ERD.md](docs/ERD.md)
+* **Panduan Deployment Server & VPS aaPanel**: [docs/DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md)
 
 ---
 
