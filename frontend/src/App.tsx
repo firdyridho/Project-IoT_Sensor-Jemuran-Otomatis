@@ -8,6 +8,7 @@ import { TelemetryGrid } from './components/Dashboard/TelemetryGrid';
 import { QuickWeatherCard } from './components/Dashboard/QuickWeatherCard';
 import { ConditionChipBar, SimulationMode, WeatherCondition } from './components/Dashboard/ConditionChipBar';
 import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas';
+import { SoftDriftingClouds } from './components/Dashboard/SoftDriftingClouds';
 import { LightningFlash } from './components/Dashboard/LightningFlash';
 import { ClotheslineMotorCard } from './components/Dashboard/ClotheslineMotorCard';
 import { weatherAudio } from './services/weatherAudio';
@@ -103,10 +104,17 @@ export const App: React.FC = () => {
   const prevWetRef = useRef<boolean>(false);
 
   // ---------------------------------------------------------------------------
-  // Theme Manager
+  // Theme Manager (Dashboard selalu menggunakan tema atmosferik gelap mandiri)
   // ---------------------------------------------------------------------------
   useEffect(() => {
     const applyTheme = () => {
+      // Khusus Dashboard, mode terang tidak berlaku agar atmosfer cuaca dan tetesan air kaca tetap optimal
+      if (activeTab === 'dashboard') {
+        document.documentElement.dataset.tema = 'dark';
+        document.documentElement.classList.add('dark');
+        return;
+      }
+
       const mode = settings.tema;
       let effective = mode;
       if (mode === 'system') {
@@ -126,11 +134,11 @@ export const App: React.FC = () => {
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = () => {
-      if (settings.tema === 'system') applyTheme();
+      if (settings.tema === 'system' && activeTab !== 'dashboard') applyTheme();
     };
     media.addEventListener('change', listener);
     return () => media.removeEventListener('change', listener);
-  }, [settings.tema]);
+  }, [settings.tema, activeTab]);
 
   const handleToggleTheme = () => {
     const order: Array<'system' | 'dark' | 'light'> = ['system', 'dark', 'light'];
@@ -630,6 +638,7 @@ export const App: React.FC = () => {
   // Simulation & Audio Mode for Dashboard Demo
   const [simMode, setSimMode] = useState<SimulationMode>('live');
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Latest values for Dashboard
   const latestReading = readings[readings.length - 1];
@@ -728,21 +737,26 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col relative transition-colors duration-1000 weather-bg-${activeCondition} text-teks-utama selection:bg-cyan-500 selection:text-white overflow-x-hidden`}
+      className={`min-h-screen flex flex-col relative transition-colors duration-1000 ${
+        activeTab === 'dashboard' ? `weather-bg-${activeCondition}` : 'bg-latar'
+      } text-teks-utama selection:bg-cyan-500 selection:text-white overflow-x-hidden`}
     >
-      {/* Bottom atmospheric blue gradient */}
+      {/* Bottom atmospheric soft blue gradient */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 h-96 bottom-blue-gradient z-0" aria-hidden="true" />
 
+      {/* Realistic Soft Drifting Clouds for every weather condition */}
+      {activeTab === 'dashboard' && <SoftDriftingClouds condition={activeCondition} />}
+
       {/* Realistic Water Drops Dripping on Glass Window Pane */}
-      <RaindropGlassCanvas condition={activeCondition} />
+      {activeTab === 'dashboard' && <RaindropGlassCanvas condition={activeCondition} />}
 
       {/* Badai Lightning / Halilintar Screen Flash & Electric Bolts */}
-      <LightningFlash active={activeCondition === 'badai'} />
+      {activeTab === 'dashboard' && <LightningFlash active={activeCondition === 'badai'} />}
 
       {/* Toast Alert System */}
       <ToastContainer />
 
-      {/* Desktop Left Sidebar (>= 1024px) */}
+      {/* Sidebar: Desktop left column + Mobile Hamburger Drawer */}
       <Sidebar
         activeTab={activeTab}
         onChangeTab={setActiveTab}
@@ -750,6 +764,8 @@ export const App: React.FC = () => {
         isOnline={!isDeviceOffline}
         isRaining={effectiveWet}
         brokerStatus={brokerStatus}
+        isOpenMobile={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Container */}
@@ -768,6 +784,8 @@ export const App: React.FC = () => {
           onRequestNotif={handleRequestNotification}
           user={session.user}
           onLogout={handleLogout}
+          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
+          isDashboard={activeTab === 'dashboard'}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}

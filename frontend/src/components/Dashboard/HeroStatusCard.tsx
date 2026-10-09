@@ -106,46 +106,46 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
     );
   }
 
-  // Theme configurations for the Hero Card
+  // Harmonious slate-glass theme configurations (Non-electric, elegant)
   const theme = {
     cerah: {
-      border: 'border-blue-400/30 hover:border-blue-400/50',
-      gradient: 'from-blue-600/20 via-sky-900/20 to-slate-950',
+      border: 'border-white/10 hover:border-amber-400/30',
+      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
       accentText: 'text-amber-400',
       title: 'Cuaca Cerah — Aman Menjemur',
       subtitle: 'Tidak ada tetesan air terdeteksi. Sinar matahari optimal untuk pengeringan pakaian.',
       safetyBadge: 'Jemuran di Luar (Menjemur)',
-      badgeBg: 'bg-amber-500/20 border-amber-400/40 text-amber-300',
+      badgeBg: 'bg-amber-500/15 border-amber-400/30 text-amber-300',
       motorNotice: 'Motor DC: Siaga di area terbuka',
     },
     gerimis: {
-      border: 'border-sky-400/40 hover:border-sky-400/60',
-      gradient: 'from-sky-600/25 via-blue-900/25 to-slate-950',
+      border: 'border-white/10 hover:border-sky-400/30',
+      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
       accentText: 'text-sky-300',
       title: 'Gerimis Terdeteksi — Jemuran Aman!',
       subtitle: 'Tetesan gerimis mengenai sensor. Motor DC otomatis menarik jemuran ke bawah atap.',
       safetyBadge: 'Jemuran Aman (Di Bawah Atap)',
-      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
       motorNotice: 'Motor DC: Menarik masuk ke kanopi atap',
     },
     hujan: {
-      border: 'border-cyan-400/45 hover:border-cyan-400/70',
-      gradient: 'from-cyan-600/30 via-blue-950/30 to-slate-950',
+      border: 'border-white/10 hover:border-cyan-400/30',
+      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
       accentText: 'text-cyan-300',
       title: 'Hujan Terdeteksi — Jemuran Aman!',
       subtitle: 'Sensor mendeteksi air hujan lebat. Motor DC telah mengamankan jemuran di area terlindung.',
       safetyBadge: 'Jemuran Aman (Terlindungi)',
-      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
       motorNotice: 'Motor DC: Terkunci di bawah atap',
     },
     badai: {
-      border: 'border-purple-400/50 hover:border-purple-400/80',
-      gradient: 'from-purple-900/35 via-indigo-950/35 to-slate-950',
+      border: 'border-white/10 hover:border-purple-400/30',
+      gradient: 'from-slate-900/90 via-slate-900/70 to-slate-950/80',
       accentText: 'text-purple-300',
       title: 'Badai Petir — Jemuran Aman!',
       subtitle: 'Hujan badai disertai kilat. Motor DC memastikan jemuran ditarik rapat ke dalam naungan.',
       safetyBadge: 'Jemuran Aman (Siaga Badai)',
-      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      badgeBg: 'bg-emerald-500/15 border-emerald-400/30 text-emerald-300',
       motorNotice: 'Motor DC: Posisi aman terkunci',
     },
   }[condition];

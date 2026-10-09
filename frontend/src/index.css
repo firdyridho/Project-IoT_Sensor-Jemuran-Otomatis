@@ -113,26 +113,32 @@
   scrollbar-width: none;
 }
 
-/* Dynamic Weather Backgrounds (Blue nuansa base with atmospheric mood) */
+/* Dynamic Weather Backgrounds (Harmonious Deep Slate Blues, Non-Electric) */
 .weather-bg-cerah {
-  background: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 55%, #020617 100%);
+  background: radial-gradient(ellipse at 50% -10%, #16273f 0%, #0c1827 50%, #050b13 100%);
 }
 
 .weather-bg-gerimis {
-  background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 50%, #030712 100%);
+  background: radial-gradient(ellipse at 50% -10%, #172130 0%, #0e1622 50%, #060910 100%);
 }
 
 .weather-bg-hujan {
-  background: radial-gradient(circle at 50% 0%, #0c4a6e 0%, #0f172a 45%, #020617 100%);
+  background: radial-gradient(ellipse at 50% -10%, #101e2e 0%, #09131d 50%, #04080e 100%);
 }
 
 .weather-bg-badai {
-  background: radial-gradient(circle at 50% 0%, #312e81 0%, #0f172a 40%, #020617 100%);
+  background: radial-gradient(ellipse at 50% -10%, #1a1733 0%, #0d0c1c 50%, #05050d 100%);
 }
 
-/* Atmospheric bottom blue gradient */
+/* Atmospheric bottom soft blue gradient (Harmonious & Non-Electric) */
 .bottom-blue-gradient {
-  background: linear-gradient(to top, rgba(2, 132, 199, 0.22) 0%, rgba(30, 58, 138, 0.12) 30%, transparent 80%);
+  background: linear-gradient(to top, rgba(16, 37, 66, 0.45) 0%, rgba(10, 22, 40, 0.20) 35%, transparent 85%);
+}
+
+/* Realistic Soft Cloud Drift Animation */
+@keyframes cloudDrift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(calc(100vw + 700px), 0, 0); }
 }
 
 /* Subtle rain animation */
