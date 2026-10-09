@@ -32,18 +32,35 @@ export const BackendService = {
       const res = await fetch(url, { headers });
       if (!res.ok) return [];
       const list = await res.json();
-      return list.map((item: any) => ({
-        deviceId: item.deviceId,
-        nama: item.name,
-        brokerUrl: item.brokerUrl || 'wss://43-133-136-149.sslip.io/ws',
-        lokasiAdm4: item.lokasiAdm4 || '31.71.03.1001',
-        fwVersi: '1.0.0',
-        lastSeenTs: item.lastSeenAt ? new Date(item.lastSeenAt).getTime() : Date.now(),
-        online: item.status === 'online',
-        ambangPct: item.ambangPct || 60,
-      }));
+      return list.map((item: any) => {
+        const parsedTs = item.lastSeenAt ? new Date(item.lastSeenAt).getTime() : 0;
+        const validTs = parsedTs > 1577836800000 ? parsedTs : 0;
+        const isOnline = item.status === 'online' && validTs > 0 && Date.now() - validTs <= 15000;
+        return {
+          deviceId: item.deviceId,
+          nama: item.name,
+          brokerUrl: item.brokerUrl || 'wss://43-133-136-149.sslip.io/ws',
+          lokasiAdm4: item.lokasiAdm4 || '31.71.03.1001',
+          fwVersi: '1.0.0',
+          lastSeenTs: validTs,
+          online: isOnline,
+          ambangPct: item.ambangPct || 60,
+        };
+      });
     } catch {
       return [];
+    }
+  },
+
+  async getLatest(baseUrl: string, deviceId: string): Promise<{ status: string; isStale: boolean; lastSeenAt: string; telemetry?: any } | null> {
+    if (!baseUrl || !deviceId) return null;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices/${encodeURIComponent(deviceId)}/latest`);
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
     }
   },
 

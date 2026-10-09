@@ -113,6 +113,15 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
     * Menginjeksi telemetri ke database, Redis list cache, dan broadcast realtime event ke WebSocket Hub.
   * **Status**: Selesai diimplementasikan di `handlers/simulator.go` dan lulus pengujian `TestSimulatorWeatherEndpoint`.
 
+* [x] **BE-15: Integrasi Hardware ESP32 Custom & Realtime Dynamic Online Tracking**:
+  * **Tujuan**: Menghubungkan prototipe fisik ESP32 (Layar OLED SSD1306, Driver Stepper A4988, Sensor Hujan FC-37, dan Sensor Cahaya LDR) serta memperbaiki kalkulasi status online/offline agar benar-benar realtime.
+  * **Implementasi**:
+    * Handler `handleCustomData` di `mqtt/subscriber.go` untuk menerima format JSON `+/data` dari ESP32.
+    * Hook `MotorCommandHandler` di `handlers/motor.go` untuk mengirim string perintah `tarik` dan `dorong` ke topik `{device_id}/control`.
+    * Penyesuaian ambang batas deteksi online menjadi 15 detik pada backend dan antarmuka web, serta inisialisasi default perangkat baru ke status offline.
+    * Konfigurasi MQTT Last Will and Testament (LWT) pada firmware mikrokontroler agar pemutusan daya/koneksi terdeteksi seketika.
+  * **Status**: Selesai diimplementasikan dan terverifikasi.
+
 ---
 
 ## 3. Alur Serah Terima ke Frontend (Handoff)

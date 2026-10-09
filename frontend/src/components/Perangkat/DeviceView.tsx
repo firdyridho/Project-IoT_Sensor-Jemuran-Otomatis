@@ -89,8 +89,8 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
       brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
       lokasiAdm4: '31.71.03.1001',
       fwVersi: '1.1.0',
-      lastSeenTs: Date.now(),
-      online: true,
+      lastSeenTs: 0,
+      online: false,
       ambangPct: formAmbangPct,
     };
 
