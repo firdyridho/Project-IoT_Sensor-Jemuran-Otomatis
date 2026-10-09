@@ -124,7 +124,6 @@ jobs:
 
       - name: Set Permissions & Restart Systemd Service
         if: steps.check-creds.outputs.configured == 'true'
-        continue-on-error: true
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -135,24 +134,78 @@ jobs:
           script: |
             set +e
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-              pkill -9 -f hujan-backend-prod 2>/dev/null
-              chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux 2>/dev/null
-              if [ -d "/www/wwwroot/hujan-backend" ]; then
-                cp -f /www/wwwroot/hujan-backend-prod/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
-                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
+              chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
+              cat << 'EOF' > /etc/systemd/system/hujan-backend-prod.service
+[Unit]
+Description=HujanPantau IoT Go Backend (Production)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/wwwroot/hujan-backend-prod
+ExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux
+Restart=always
+RestartSec=5
+Environment=PORT=8081
+Environment=MQTT_BROKER=tcp://127.0.0.1:1883
+Environment=DB_TYPE=mysql
+Environment=MYSQL_USER=hujan_user
+Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
+Environment=MYSQL_DATABASE=hujan_iot_prod
+Environment=MYSQL_HOST=127.0.0.1
+Environment=MYSQL_PORT=3306
+
+[Install]
+WantedBy=multi-user.target
+EOF
+              systemctl daemon-reload
+              systemctl enable hujan-backend-prod
+              systemctl restart hujan-backend-prod
+              sleep 3
+              if ! ss -tulpn | grep -q ':8081 '; then
+                echo "MySQL not ready, fallback to SQLite for Production..."
+                sed -i 's/DB_TYPE=mysql/DB_TYPE=sqlite/' /etc/systemd/system/hujan-backend-prod.service
+                systemctl daemon-reload
+                systemctl restart hujan-backend-prod
               fi
-              systemctl restart hujan-backend-prod 2>/dev/null
-              systemctl restart hujan-backend 2>/dev/null
-              echo "✅ Backend Production berhasil diperbarui dan di-restart!"
+              echo "✅ Backend Production berhasil diperbarui dan aktif di port 8081!"
             else
-              pkill -9 -f hujan-backend-staging 2>/dev/null
-              chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux 2>/dev/null
-              if [ -d "/www/wwwroot/hujan-backend" ]; then
-                cp -f /www/wwwroot/hujan-backend-staging/hujan-backend-linux /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
-                chmod +x /www/wwwroot/hujan-backend/hujan-backend-linux 2>/dev/null
+              chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
+              cat << 'EOF' > /etc/systemd/system/hujan-backend-staging.service
+[Unit]
+Description=HujanPantau IoT Go Backend (Staging)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/www/wwwroot/hujan-backend-staging
+ExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux
+Restart=always
+RestartSec=5
+Environment=PORT=8080
+Environment=MQTT_BROKER=tcp://127.0.0.1:1883
+Environment=DB_TYPE=mysql
+Environment=MYSQL_USER=hujan_user
+Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
+Environment=MYSQL_DATABASE=hujan_iot_staging
+Environment=MYSQL_HOST=127.0.0.1
+Environment=MYSQL_PORT=3306
+
+[Install]
+WantedBy=multi-user.target
+EOF
+              systemctl daemon-reload
+              systemctl enable hujan-backend-staging
+              systemctl restart hujan-backend-staging
+              sleep 3
+              if ! ss -tulpn | grep -q ':8080 '; then
+                echo "MySQL not ready, fallback to SQLite for Staging..."
+                sed -i 's/DB_TYPE=mysql/DB_TYPE=sqlite/' /etc/systemd/system/hujan-backend-staging.service
+                systemctl daemon-reload
+                systemctl restart hujan-backend-staging
               fi
-              systemctl restart hujan-backend-staging 2>/dev/null
-              systemctl restart hujan-backend 2>/dev/null
-              echo "✅ Backend Staging berhasil diperbarui dan di-restart!"
+              echo "✅ Backend Staging berhasil diperbarui dan aktif di port 8080!"
             fi
             exit 0
