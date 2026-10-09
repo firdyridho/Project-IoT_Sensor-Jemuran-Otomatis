@@ -51,6 +51,29 @@ Kedua backend berjalan bersamaan di 1 VPS tanpa saling mengganggu, dengan total 
 
 ---
 
+### 2.1 Konfigurasi Link Staging Permanen dan Nonaktifkan Akses Request di Vercel
+
+Secara default, Vercel menghasilkan URL unik berbasis hash commit untuk setiap preview deployment dan mengaktifkan proteksi autentikasi (Deployment Protection). Agar link staging tetap permanen dan anggota tim tidak perlu meminta izin atau login setiap kali membuka web:
+
+1. **Membuat Link Staging Permanen (Branch Alias)**:
+   * Masuk ke dashboard proyek di Vercel.
+   * Buka menu **Settings** > **Domains**.
+   * Tambahkan domain atau subdomain khusus staging, misalnya: `staging-rintik.vercel.app` (atau nama pilihan lain yang tersedia).
+   * Pada kolom **Git Branch**, pilih branch `staging`.
+   * Klik **Add**.
+   * Sekarang, setiap kali branch `staging` di-push, link tersebut otomatis diperbarui dan URL-nya tidak akan pernah berganti lagi.
+   * Sebagai alternatif bawaan Vercel tanpa setting tambahan, Vercel menyediakan URL branch permanen otomatis dengan format:
+     `https://<project-name>-git-staging-<username>.vercel.app` (link ini juga tetap dan tidak berganti).
+
+2. **Mematikan Proteksi Request atau Login (Deployment Protection)**:
+   * Masuk ke dashboard proyek di Vercel.
+   * Buka menu **Settings** > **Deployment Protection**.
+   * Pada bagian **Vercel Authentication**, ubah pengaturannya menjadi **Disabled** (Nonaktif).
+   * Klik tombol **Save**.
+   * Setelah dinonaktifkan, seluruh link preview dan staging dapat langsung dibuka oleh siapa pun tanpa perlu login ke akun Vercel dan tanpa harus mengirim request akses.
+
+---
+
 ### Informasi Komponen Pendukung di VPS
 
 #### A. Redis Cache
