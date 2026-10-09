@@ -42,34 +42,37 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-01: Pembuatan Komponen Widget Prediksi Hujan AI (`AIPredictionCard.tsx`)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Backend Engineer
-  * Endpoint Backend yang Tersedia: `POST /api/ai/predict-rain` (Status: Aktif & Teruji)
-  * Spesifikasi Tampilan yang Diinginkan:
-    * Gauge / Progress Bar Lingkaran: Probabilitas Hujan (contoh: 85% Potensi Hujan).
-    * Estimasi Waktu: "Diprediksi mulai gerimis dalam ~20 menit".
-    * Badge Keyakinan: Hijau (Tinggi), Kuning (Sedang), Abu-abu (Rendah).
-    * Ringkasan Faktor: Nilai kelembapan yang melonjak dan penurunan suhu.
-    * Tombol manual "Refresh Analisis AI" dengan status loading.
-  * Dokumen Rujukan: [FRONTEND_TASKS.md](FRONTEND_TASKS.md) (Task FE-05).
-  * Status: Menunggu Implementasi UI Frontend.
-
-* [ ] **REQ-FE-02: Pembuatan Kartu Rekomendasi Jemuran Cerdas AI (`DryingAdviceCard.tsx`)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Backend Engineer
-  * Endpoint Backend yang Tersedia: `GET /api/ai/drying-advice?deviceId={ID}` (Status: Aktif & Teruji)
-  * Spesifikasi Tampilan yang Diinginkan:
-    * Status Utama: Badge besar "AMAN JEMUR" (hijau), "WASPADA JEMUR" (kuning), atau "ANGKAT SEGERA" (merah).
-    * Indikator Skor Pengeringan: "Skor Jemur: 88/100".
-    * Estimasi Jam Kering: "Estimasi pakaian kering dalam ~2.5 jam".
-    * Rentang Jam Optimal: "Waktu Jemur Optimal: 08:30 - 14:00 WIB".
-    * Teks Saran Cerdas: Ringkasan ramah pengguna berdasarkan kondisi lapangan.
-  * Dokumen Rujukan: [FRONTEND_TASKS.md](FRONTEND_TASKS.md) (Task FE-06).
-  * Status: Menunggu Implementasi UI Frontend.
+*Saat ini tidak ada permintaan aktif yang tertunda.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
 
-*Belum ada permintaan di arsip.*
+* [x] **REQ-FE-01: Pembuatan Komponen Widget Prediksi Hujan AI (`AIPredictionCard.tsx`)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-09
+  * Diselesaikan Oleh: Frontend Developer
+  * Endpoint Backend Terintegrasi: `POST /api/ai/predict-rain`
+  * Komponen: `frontend/src/components/Dashboard/AIPredictionCard.tsx`
+  * Spesifikasi Terpenuhi:
+    * Gauge lingkaran probabilitas hujan interaktif.
+    * Estimasi menit menuju hujan / kondisi stabil.
+    * Badge keyakinan (Tinggi, Sedang, Rendah).
+    * Ringkasan tren delta kelembapan, delta suhu, dan ADC sensor.
+    * Tombol refresh analisis AI terhubung ke backend & fallback lokal.
+  * Status: [x] SELESAI & Terpasang di Dashboard
+
+* [x] **REQ-FE-02: Pembuatan Kartu Rekomendasi Jemuran Cerdas AI (`DryingAdviceCard.tsx`)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-09
+  * Diselesaikan Oleh: Frontend Developer
+  * Endpoint Backend Terintegrasi: `GET /api/ai/drying-advice?deviceId={ID}`
+  * Komponen: `frontend/src/components/Dashboard/DryingAdviceCard.tsx`
+  * Spesifikasi Terpenuhi:
+    * Badge status utama: "AMAN JEMUR", "WASPADA JEMUR", atau "ANGKAT SEGERA".
+    * Circular gauge indikator Skor Jemur (0-100).
+    * Estimasi jam pakaian kering (misal: ~2.5 jam).
+    * Rentang jam jemur optimal (misal: 08:30 - 14:00 WIB).
+    * Teks saran cerdas berdasarkan data mikroklimat sensor & BMKG.
+  * Status: [x] SELESAI & Terpasang di Dashboard
+

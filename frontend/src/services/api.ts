@@ -154,12 +154,96 @@ export const BackendService = {
     }
   },
 
+  // ---------------------------------------------------------------------------
+  // AI Engine Endpoints (BE-05, BE-06)
+  // ---------------------------------------------------------------------------
+  async predictRain(
+    baseUrl: string,
+    deviceId: string,
+    lookbackMinutes: number = 30
+  ): Promise<import('../types/ai').AIPredictResponse | null> {
+    if (!baseUrl || !deviceId) return null;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/ai/predict-rain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deviceId, lookbackMinutes }),
+      });
+      if (res.ok) {
+        return (await res.json()) as import('../types/ai').AIPredictResponse;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  async getDryingAdvice(
+    baseUrl: string,
+    deviceId: string
+  ): Promise<import('../types/ai').AIDryingAdviceResponse | null> {
+    if (!baseUrl || !deviceId) return null;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(
+        `${clean}/api/ai/drying-advice?deviceId=${encodeURIComponent(deviceId)}`
+      );
+      if (res.ok) {
+        return (await res.json()) as import('../types/ai').AIDryingAdviceResponse;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  // ---------------------------------------------------------------------------
+  // Motor DC & Canopy Status/Commands (REQ-BE-01 / BE-13)
+  // ---------------------------------------------------------------------------
+  async getMotorStatus(
+    baseUrl: string,
+    deviceId: string
+  ): Promise<{ position: 'sheltered' | 'extended'; status: 'idle' | 'moving'; lastMovedTs: number } | null> {
+    if (!baseUrl || !deviceId) return null;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices/${encodeURIComponent(deviceId)}/motor`);
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
+  async commandMotor(
+    baseUrl: string,
+    deviceId: string,
+    action: 'retract' | 'extend'
+  ): Promise<boolean> {
+    if (!baseUrl || !deviceId) return false;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(`${clean}/api/devices/${encodeURIComponent(deviceId)}/motor/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
   connectWebSocket(
     baseUrl: string,
     callbacks: {
       onTelemetry?: (data: TelemetryPayload) => void;
       onState?: (data: StatePayload) => void;
       onEvent?: (data: EventPayload) => void;
+      onForecastAlert?: (data: import('../types/ai').RainForecastAlertPayload) => void;
       onStatusChange?: (connected: boolean) => void;
     }
   ): () => void {
@@ -191,6 +275,8 @@ export const BackendService = {
               callbacks.onState?.(msg.payload);
             } else if (msg.type === 'event') {
               callbacks.onEvent?.(msg.payload);
+            } else if (msg.type === 'rain_forecast_alert' || msg.alert === 'rain_forecast_alert') {
+              callbacks.onForecastAlert?.(msg.payload || msg);
             }
           } catch {
             // ignore

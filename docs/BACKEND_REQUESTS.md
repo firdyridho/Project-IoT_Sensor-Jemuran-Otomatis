@@ -42,7 +42,40 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*(Saat ini kotak masuk kosong. Seluruh permintaan dari Frontend telah selesai dikerjakan dan aktif di backend!)*
+* [ ] **REQ-BE-03: Endpoint Riwayat Log Prediksi AI & Evaluasi Akurasi (`GET /api/ai/predictions/history`)**
+  * Tanggal Diminta: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI: Diperlukan untuk menampilkan log riwayat keandalan model AI pada tab Riwayat Event (komponen `AIAccuracyView.tsx` / Task FE-07). Mengingat backend sudah memiliki tabel `ai_predictions` (BE-07), diperlukan endpoint GET untuk mengambil data riwayat tersebut beserta perbandingan status sensor fisik (apakah benar-benar terjadi hujan setelah prediksi).
+  * Usulan Endpoint: `GET /api/ai/predictions/history?deviceId={id}&limit=50`
+  * Format Response yang Diharapkan:
+    ```json
+    {
+      "status": "success",
+      "deviceId": "hs-8f3a1c9d2b70",
+      "total": 12,
+      "accuracyRatePct": 91.6,
+      "logs": [
+        {
+          "id": 1,
+          "createdAt": "2026-10-09T10:15:00Z",
+          "probabilityPct": 85,
+          "predictedRain": true,
+          "confidenceLevel": "high",
+          "actualRainOccurred": true,
+          "accuracyStatus": "tepat"
+        }
+      ]
+    }
+    ```
+  * Status: Menunggu Dikerjakan
+
+* [ ] **REQ-BE-04: Endpoint Ekspor Data Riwayat Telemetri CSV/Excel (`GET /api/telemetry/export`)**
+  * Tanggal Diminta: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI: Diperlukan untuk tombol "Ekspor Data" pada tab Grafik dan Riwayat (Task FE-08), memungkinkan pengguna mengunduh rekaman telemetri dalam format CSV langsung dari database VPS.
+  * Usulan Endpoint: `GET /api/telemetry/export?deviceId={id}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&format=csv`
+  * Format Response yang Diharapkan: Header `Content-Type: text/csv` dengan file attachment stream berisi kolom `timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi`.
+  * Status: Menunggu Dikerjakan
 
 ---
 

@@ -42,7 +42,7 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
 
 ### Fase 2: Implementasi Antarmuka Fitur AI [PRIORITAS TINGGI]
 
-* [ ] **FE-05: Komponen Widget Prediksi Hujan AI (`AIPredictionCard.tsx`)**:
+* [x] **FE-05: Komponen Widget Prediksi Hujan AI (`AIPredictionCard.tsx`)**:
   * **Lokasi**: Ditampilkan pada tab Dashboard di bawah status jemuran utama.
   * **Sumber Data**: Endpoint backend `POST /api/ai/predict-rain`.
   * **Desain UI**:
@@ -52,7 +52,7 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
     * Ringkasan Faktor: Nilai kelembapan yang melonjak dan penurunan suhu.
   * **Interaksi**: Tombol "Refresh Analisis AI" dengan status loading animasi shimmer.
 
-* [ ] **FE-06: Kartu Asisten Rekomendasi Jemuran AI (`DryingAdviceCard.tsx`)**:
+* [x] **FE-06: Kartu Asisten Rekomendasi Jemuran AI (`DryingAdviceCard.tsx`)**:
   * **Lokasi**: Ditampilkan pada tab Dashboard atau tab Cuaca.
   * **Sumber Data**: Endpoint backend `GET /api/ai/drying-advice`.
   * **Desain UI**:

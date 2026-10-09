@@ -11,6 +11,8 @@ import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas'
 import { SoftDriftingClouds } from './components/Dashboard/SoftDriftingClouds';
 import { LightningFlash } from './components/Dashboard/LightningFlash';
 import { ClotheslineMotorCard } from './components/Dashboard/ClotheslineMotorCard';
+import { AIPredictionCard } from './components/Dashboard/AIPredictionCard';
+import { DryingAdviceCard } from './components/Dashboard/DryingAdviceCard';
 import { weatherAudio } from './services/weatherAudio';
 import { RealtimeChart } from './components/Grafik/RealtimeChart';
 import { WeatherView } from './components/Cuaca/WeatherView';
@@ -441,6 +443,15 @@ export const App: React.FC = () => {
         onTelemetry: (telemetry) => handleIngestTelemetry(telemetry),
         onState: (state) => handleIngestState(state),
         onEvent: (ev) => handleIngestEvent(ev),
+        onForecastAlert: (alert) => {
+          Notifications.addToast({
+            id: 'forecast-alert-' + Date.now(),
+            type: 'warning',
+            title: '⚠️ Peringatan Hujan Mendadak (AI)',
+            message: `${alert.message} (${alert.probabilityPct}% potensi hujan dalam ~${alert.estimatedMin} menit)`,
+            timestamp: Date.now(),
+          });
+        },
         onStatusChange: (connected) => {
           if (connected) {
             setBrokerStatus('connected');
@@ -843,6 +854,20 @@ export const App: React.FC = () => {
                 <ClotheslineMotorCard
                   isRaining={effectiveWet}
                   condition={activeCondition}
+                />
+
+                {/* AI Rain Prediction Card (REQ-FE-01 / FE-05) */}
+                <AIPredictionCard
+                  backendUrl={settings.backendUrl}
+                  deviceId={activeDevice.deviceId}
+                  currentWet={effectiveWet}
+                />
+
+                {/* AI Smart Drying Advice Card (REQ-FE-02 / FE-06) */}
+                <DryingAdviceCard
+                  backendUrl={settings.backendUrl}
+                  deviceId={activeDevice.deviceId}
+                  currentWet={effectiveWet}
                 />
 
                 {/* Quick Weather Forecast Snapshot */}
