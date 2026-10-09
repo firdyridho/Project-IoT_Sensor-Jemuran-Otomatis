@@ -8,7 +8,14 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Panduan Penggunaan untuk Frontend Developer
 
-1. Lakukan `git pull origin staging` sebelum menambahkan permintaan baru.
+> **PERINGATAN SINKRONISASI (SOP ANTI-TIMPA)**:
+> Sebelum menulis permintaan baru dan sesaat sebelum melakukan push:
+> 1. Wajib jalankan `git pull origin staging` terlebih dahulu.
+> 2. Periksa apakah Backend baru saja merilis perubahan endpoint, model data, atau logika server baru agar permintaan yang diajukan tidak tumpang tindih.
+> 3. Jangan mengandalkan hasil pull tadi pagi atau kemarin. Tarik perubahan terkini tepat sebelum menulis dan tepat sebelum push!
+
+### Langkah Menulis Permintaan:
+1. Jalankan `git pull origin staging`.
 2. Tambahkan permintaan baru pada bagian **Daftar Permintaan Aktif** di bawah menggunakan format standar:
    ```markdown
    * [ ] **REQ-BE-XX: [Judul Permintaan Singkat]**
@@ -19,7 +26,7 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
      * Format Request / Response yang Diharapkan: [Contoh JSON]
      * Status: Menunggu Dikerjakan
    ```
-3. Commit dan push berkas ini ke branch staging.
+3. Lakukan `git add docs/BACKEND_REQUESTS.md`, commit, lalu jalankan `git pull origin staging` sekali lagi sebelum `git push origin staging`.
 
 ---
 

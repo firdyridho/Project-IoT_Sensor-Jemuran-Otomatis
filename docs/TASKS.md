@@ -31,12 +31,40 @@ Dokumentasi kerja pada repositori ini mengadopsi sistem pemisahan berkas mandiri
 
 ---
 
-## Aturan Kolaborasi Git
+## Aturan Kolaborasi Git & SOP Anti-Timpa (Wajib Ditaati)
 
-1. **Selalu Tarik Perubahan Terkini**:
-   Biasakan menjalankan perintah berikut sebelum mulai bekerja atau menuliskan permintaan baru:
-   ```bash
-   git pull origin staging
-   ```
-2. **Jangan Mengubah Berkas Task Milik Rekan**:
-   Frontend tidak perlu mengubah isi `BACKEND_TASKS.md`. Cukup gunakan `BACKEND_REQUESTS.md`. Demikian pula sebaliknya.
+Untuk menghindari kasus di mana developer melakukan pull saat lawan belum selesai, lalu saat sudah selesai lupa pull kembali dan langsung push sehingga menimpa pekerjaan rekan, patuhi aturan berikut:
+
+### 1. Wajib `git pull` SEBELUM Menulis di Berkas Request
+* Jangan pernah menulis permintaan baru di `BACKEND_REQUESTS.md` atau `FRONTEND_REQUESTS.md` sebelum melakukan:
+  ```bash
+  git pull origin staging
+  ```
+* Tujuannya agar Anda selalu membaca versi paling akhir dari berkas request dan tidak membuat permintaan yang sudah usang atau duplikat.
+
+### 2. Wajib Cek Perubahan Lawan SEBELUM Melakukan Push
+* **Khusus Frontend**: Sebelum melakukan push (baik kode maupun request), periksa apakah Backend baru saja merilis perubahan endpoint, skema database, atau payload baru. Selalu sinkronkan dengan perubahan backend agar frontend tidak berjalan di atas API lama.
+* **Khusus Backend**: Sebelum melakukan push, periksa apakah Frontend sedang membutuhkan data darurat di `BACKEND_REQUESTS.md`.
+
+### 3. Siklus Aman Push (Golden Push Cycle)
+Gunakan urutan perintah berikut setiap kali hendak mengirimkan pekerjaan ke remote:
+
+```bash
+# Langkah 1: Tarik perubahan rekan terlebih dahulu
+git pull origin staging
+
+# Langkah 2: Tambahkan dan commit perubahan Anda
+git add <nama_berkas>
+git commit -m "deskripsi perubahan yang jelas"
+
+# Langkah 3: Tarik sekali lagi sesaat sebelum push (memastikan tidak ada commit lawan yang baru masuk)
+git pull origin staging
+
+# Langkah 4: Push ke remote dengan aman
+git push origin staging
+```
+
+### 4. Jangan Mengubah Berkas Task Milik Rekan
+* Frontend tidak boleh mengutak-atik isi [BACKEND_TASKS.md](BACKEND_TASKS.md).
+* Backend tidak boleh mengutak-atik isi [FRONTEND_TASKS.md](FRONTEND_TASKS.md).
+* Komunikasi penambahan fitur baru HANYA dilakukan melalui berkas `*_REQUESTS.md` masing-masing.
