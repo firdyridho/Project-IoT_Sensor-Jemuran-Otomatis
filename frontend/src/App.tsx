@@ -6,6 +6,11 @@ import { ToastContainer } from './components/Layout/ToastContainer';
 import { HeroStatusCard } from './components/Dashboard/HeroStatusCard';
 import { TelemetryGrid } from './components/Dashboard/TelemetryGrid';
 import { QuickWeatherCard } from './components/Dashboard/QuickWeatherCard';
+import { ConditionChipBar, SimulationMode, WeatherCondition } from './components/Dashboard/ConditionChipBar';
+import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas';
+import { LightningFlash } from './components/Dashboard/LightningFlash';
+import { ClotheslineMotorCard } from './components/Dashboard/ClotheslineMotorCard';
+import { weatherAudio } from './services/weatherAudio';
 import { RealtimeChart } from './components/Grafik/RealtimeChart';
 import { WeatherView } from './components/Cuaca/WeatherView';
 import { HistoryView } from './components/Riwayat/HistoryView';
@@ -622,6 +627,10 @@ export const App: React.FC = () => {
     }, 600);
   };
 
+  // Simulation & Audio Mode for Dashboard Demo
+  const [simMode, setSimMode] = useState<SimulationMode>('live');
+  const [isAudioMuted, setIsAudioMuted] = useState<boolean>(true);
+
   // Latest values for Dashboard
   const latestReading = readings[readings.length - 1];
   const currentWet = latestState?.rain?.wet ?? latestReading?.wet ?? false;
@@ -629,11 +638,60 @@ export const App: React.FC = () => {
   const currentRaw = latestState?.rain?.raw ?? latestReading?.raw ?? 3800;
   const currentSinceTs = latestState?.rain?.sinceMs ?? activeDevice.lastSeenTs;
 
-  const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline
+  // Real weather condition inferred from IoT hardware sensor
+  const realCondition: WeatherCondition = !currentWet
+    ? 'cerah'
+    : currentPct > 80
+    ? 'badai'
+    : currentPct > 45
+    ? 'hujan'
+    : 'gerimis';
+
+  // Effective condition (either simulated demo or real IoT)
+  const activeCondition: WeatherCondition = simMode === 'live' ? realCondition : simMode;
+
+  const effectiveWet = simMode === 'live' ? currentWet : activeCondition !== 'cerah';
+  const effectivePct = simMode === 'live'
+    ? currentPct
+    : activeCondition === 'cerah'
+    ? 5
+    : activeCondition === 'gerimis'
+    ? 35
+    : activeCondition === 'hujan'
+    ? 78
+    : 95;
+  const effectiveRaw = simMode === 'live'
+    ? currentRaw
+    : activeCondition === 'cerah'
+    ? 3940
+    : activeCondition === 'gerimis'
+    ? 2680
+    : activeCondition === 'hujan'
+    ? 1380
+    : 610;
+
+  const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline && simMode === 'live'
     ? 'offline'
-    : currentWet
+    : effectiveWet
     ? 'hujan'
     : 'kering';
+
+  const handleToggleAudio = () => {
+    const next = !isAudioMuted;
+    setIsAudioMuted(next);
+    weatherAudio.setMuted(next);
+    if (!next) {
+      weatherAudio.play(activeCondition);
+    }
+  };
+
+  const handleChangeSimMode = (mode: SimulationMode) => {
+    setSimMode(mode);
+    const nextCondition = mode === 'live' ? realCondition : mode;
+    if (!isAudioMuted) {
+      weatherAudio.play(nextCondition);
+    }
+  };
 
   if (!session) {
     if (authView === 'login' || authView === 'register') {
@@ -669,7 +727,18 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
+    <div
+      className={`min-h-screen flex flex-col relative transition-colors duration-1000 weather-bg-${activeCondition} text-teks-utama selection:bg-cyan-500 selection:text-white overflow-x-hidden`}
+    >
+      {/* Bottom atmospheric blue gradient */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 h-96 bottom-blue-gradient z-0" aria-hidden="true" />
+
+      {/* Realistic Water Drops Dripping on Glass Window Pane */}
+      <RaindropGlassCanvas condition={activeCondition} />
+
+      {/* Badai Lightning / Halilintar Screen Flash & Electric Bolts */}
+      <LightningFlash active={activeCondition === 'badai'} />
+
       {/* Toast Alert System */}
       <ToastContainer />
 
@@ -679,12 +748,12 @@ export const App: React.FC = () => {
         onChangeTab={setActiveTab}
         deviceName={activeDevice.nama}
         isOnline={!isDeviceOffline}
-        isRaining={currentWet}
+        isRaining={effectiveWet}
         brokerStatus={brokerStatus}
       />
 
       {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:pl-64">
+      <div className="flex-1 flex flex-col lg:pl-64 relative z-10">
         {/* Sticky App Header */}
         <Header
           devices={devices}
@@ -692,7 +761,7 @@ export const App: React.FC = () => {
           onSelectDevice={handleSelectDevice}
           brokerStatus={brokerStatus}
           isOnline={!isDeviceOffline}
-          isRaining={currentWet}
+          isRaining={effectiveWet}
           theme={settings.tema}
           onToggleTheme={handleToggleTheme}
           notifPermission={notifPermission}
@@ -707,19 +776,29 @@ export const App: React.FC = () => {
             {/* 1. Dashboard Tab */}
             {activeTab === 'dashboard' && (
               <div className="space-y-4 animate-in fade-in duration-150">
+                {/* Condition Chip Bar for Demonstration / Testing */}
+                <ConditionChipBar
+                  currentMode={simMode}
+                  onChangeMode={handleChangeSimMode}
+                  isAudioMuted={isAudioMuted}
+                  onToggleAudio={handleToggleAudio}
+                />
+
                 {/* Live Status Bar */}
                 <div className="flex items-center justify-between text-xs text-teks-sekunder px-1">
                   <span className="flex items-center gap-1.5 font-medium">
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isBrokerDisconnected
+                        isBrokerDisconnected && simMode === 'live'
                           ? 'bg-red-500'
-                          : isDeviceOffline
+                          : isDeviceOffline && simMode === 'live'
                           ? 'bg-slate-400'
                           : 'bg-green-500 animate-pulse'
                       }`}
                     />
-                    {isBrokerDisconnected
+                    {simMode !== 'live'
+                      ? `Simulasi Demo: Cuaca ${activeCondition.toUpperCase()}`
+                      : isBrokerDisconnected
                       ? 'Server terputus'
                       : isDeviceOffline
                       ? 'Perangkat offline'
@@ -730,15 +809,22 @@ export const App: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Big Hero Card */}
+                {/* Big Hero Card with 3D Orb and Weather Scene */}
                 <HeroStatusCard
                   status={currentStatus}
-                  pct={currentPct}
-                  raw={currentRaw}
+                  pct={effectivePct}
+                  raw={effectiveRaw}
                   thresholdPct={activeDevice.ambangPct}
                   sinceTs={currentSinceTs}
                   lastSeenTs={lastSeenTs}
-                  brokerDisconnected={isBrokerDisconnected}
+                  brokerDisconnected={isBrokerDisconnected && simMode === 'live'}
+                  weatherCondition={activeCondition}
+                />
+
+                {/* Clothesline & DC Motor Safety Automation Card */}
+                <ClotheslineMotorCard
+                  isRaining={effectiveWet}
+                  condition={activeCondition}
                 />
 
                 {/* Quick Weather Forecast Snapshot */}
@@ -750,8 +836,8 @@ export const App: React.FC = () => {
 
                 {/* Live Telemetry Grid */}
                 <TelemetryGrid
-                  raw={currentRaw}
-                  pct={currentPct}
+                  raw={effectiveRaw}
+                  pct={effectivePct}
                   tempC={latestState?.env?.tempC ?? latestReading?.suhuC ?? null}
                   hum={latestState?.env?.hum ?? latestReading?.lembapPct ?? null}
                   vbat={latestState?.power?.vbat ?? latestReading?.bateraiV ?? null}
@@ -760,7 +846,7 @@ export const App: React.FC = () => {
                   rssi={latestState?.rssi ?? latestReading?.rssi ?? null}
                   uptimeS={latestState?.uptimeS ?? null}
                   fwVersion={latestState?.fw ?? activeDevice.fwVersi}
-                  isStale={secondsAgo > 90}
+                  isStale={secondsAgo > 90 && simMode === 'live'}
                 />
               </div>
             )}

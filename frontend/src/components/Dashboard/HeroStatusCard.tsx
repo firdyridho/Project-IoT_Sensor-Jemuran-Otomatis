@@ -1,6 +1,21 @@
 import React from 'react';
-import { CloudRain, Sun, WifiOff, AlertTriangle, Droplets, ShieldCheck, Clock } from 'lucide-react';
+import {
+  CloudRain,
+  Sun,
+  WifiOff,
+  AlertTriangle,
+  Droplets,
+  ShieldCheck,
+  Clock,
+  Umbrella,
+  CloudLightning,
+  CloudDrizzle,
+} from 'lucide-react';
 import { Card } from '../Common/Card';
+import { WeatherSphereOrb } from './WeatherSphereOrb';
+import { WeatherIllustration } from './WeatherIllustration';
+
+export type WeatherConditionType = 'cerah' | 'gerimis' | 'hujan' | 'badai';
 
 interface HeroStatusCardProps {
   status: 'kering' | 'hujan' | 'offline';
@@ -10,6 +25,7 @@ interface HeroStatusCardProps {
   sinceTs: number;
   lastSeenTs: number;
   brokerDisconnected: boolean;
+  weatherCondition?: WeatherConditionType;
 }
 
 export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
@@ -20,7 +36,13 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   sinceTs,
   lastSeenTs,
   brokerDisconnected,
+  weatherCondition,
 }) => {
+  // Infer fine-grained weather condition if not directly passed
+  const condition: WeatherConditionType =
+    weatherCondition ||
+    (status === 'hujan' ? (pct > 80 ? 'badai' : 'hujan') : 'cerah');
+
   const formatTime = (ts: number) => {
     if (!ts) return '—';
     const d = new Date(ts);
@@ -30,30 +52,30 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   const getDuration = (ts: number) => {
     if (!ts) return '';
     const diffMin = Math.max(0, Math.floor((Date.now() - ts) / 60000));
-    if (diffMin < 60) return `${diffMin} menit yang lalu`;
+    if (diffMin < 60) return `${diffMin} mnt lalu`;
     const hours = Math.floor(diffMin / 60);
     const mins = diffMin % 60;
-    return `${hours} jam ${mins} mnt yang lalu`;
+    return `${hours}j ${mins}m lalu`;
   };
 
   if (brokerDisconnected) {
     return (
-      <Card className="relative overflow-hidden border-2 border-red-500/40 bg-gradient-to-b from-red-500/10 to-transparent p-5 md:p-7">
+      <Card className="relative overflow-hidden border-2 border-red-500/40 bg-gradient-to-b from-red-500/15 via-slate-900/80 to-slate-950 p-5 sm:p-7 backdrop-blur-xl shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-semibold uppercase tracking-wider">
               <AlertTriangle className="w-3.5 h-3.5" />
               Koneksi Broker Terputus
             </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-teks-utama">
-              Tidak Terhubung ke Broker
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-heading">
+              Tidak Terhubung ke Server IoT
             </h2>
-            <p className="text-sm text-teks-sekunder max-w-lg leading-relaxed">
+            <p className="text-sm text-slate-300 max-w-lg leading-relaxed">
               Koneksi WebSocket ke broker MQTT terputus. Sistem mencoba menghubungkan ulang secara otomatis.
             </p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-red-500/10 text-red-500 shrink-0">
-            <WifiOff className="w-8 h-8 md:w-10 md:h-10 animate-pulse" />
+          <div className="p-3.5 rounded-2xl bg-red-500/20 text-red-400 shrink-0">
+            <WifiOff className="w-8 h-8 sm:w-10 sm:h-10 animate-pulse" />
           </div>
         </div>
       </Card>
@@ -62,129 +84,144 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
 
   if (status === 'offline') {
     return (
-      <Card className="relative overflow-hidden border-2 border-offline/40 bg-gradient-to-b from-offline/10 to-transparent p-5 md:p-7">
+      <Card className="relative overflow-hidden border-2 border-slate-700/60 bg-gradient-to-b from-slate-800/40 via-slate-900/80 to-slate-950 p-5 sm:p-7 backdrop-blur-xl shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-offline-subtle border border-offline/30 text-offline text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider">
               <WifiOff className="w-3.5 h-3.5" />
               Perangkat Tidak Aktif
             </div>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-teks-utama">
-              Perangkat Offline
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-heading">
+              Perangkat ESP32 Offline
             </h2>
-            <p className="text-sm text-teks-sekunder max-w-lg leading-relaxed">
-              Tidak menerima telemetry sejak {formatTime(lastSeenTs)} ({getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada ESP32 jemuran.
+            <p className="text-sm text-slate-400 max-w-lg leading-relaxed">
+              Tidak menerima telemetri sejak {formatTime(lastSeenTs)} ({getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.
             </p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-offline-subtle text-offline shrink-0">
-            <WifiOff className="w-8 h-8 md:w-10 md:h-10" />
+          <div className="p-3.5 rounded-2xl bg-slate-800 text-slate-400 shrink-0">
+            <WifiOff className="w-8 h-8 sm:w-10 sm:h-10" />
           </div>
         </div>
       </Card>
     );
   }
 
-  if (status === 'hujan') {
-    return (
-      <Card className="relative overflow-hidden border-2 border-cyan-500/60 bg-gradient-to-br from-cyan-500/20 via-cyan-900/10 to-transparent p-5 md:p-8 shadow-lg shadow-cyan-500/10">
-        {/* Rain animation background effect */}
-        <div className="absolute top-2 right-12 flex gap-3 opacity-60 pointer-events-none" aria-hidden="true">
-          <div className="w-0.5 h-6 bg-cyan-400 rounded-full animate-rain-drop-1" />
-          <div className="w-0.5 h-8 bg-cyan-300 rounded-full animate-rain-drop-2" />
-          <div className="w-0.5 h-5 bg-cyan-400 rounded-full animate-rain-drop-3" />
-        </div>
+  // Theme configurations for the Hero Card
+  const theme = {
+    cerah: {
+      border: 'border-blue-400/30 hover:border-blue-400/50',
+      gradient: 'from-blue-600/20 via-sky-900/20 to-slate-950',
+      accentText: 'text-amber-400',
+      title: 'Cuaca Cerah — Aman Menjemur',
+      subtitle: 'Tidak ada tetesan air terdeteksi. Sinar matahari optimal untuk pengeringan pakaian.',
+      safetyBadge: 'Jemuran di Luar (Menjemur)',
+      badgeBg: 'bg-amber-500/20 border-amber-400/40 text-amber-300',
+      motorNotice: 'Motor DC: Siaga di area terbuka',
+    },
+    gerimis: {
+      border: 'border-sky-400/40 hover:border-sky-400/60',
+      gradient: 'from-sky-600/25 via-blue-900/25 to-slate-950',
+      accentText: 'text-sky-300',
+      title: 'Gerimis Terdeteksi — Jemuran Aman!',
+      subtitle: 'Tetesan gerimis mengenai sensor. Motor DC otomatis menarik jemuran ke bawah atap.',
+      safetyBadge: 'Jemuran Aman (Di Bawah Atap)',
+      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      motorNotice: 'Motor DC: Menarik masuk ke kanopi atap',
+    },
+    hujan: {
+      border: 'border-cyan-400/45 hover:border-cyan-400/70',
+      gradient: 'from-cyan-600/30 via-blue-950/30 to-slate-950',
+      accentText: 'text-cyan-300',
+      title: 'Hujan Terdeteksi — Jemuran Aman!',
+      subtitle: 'Sensor mendeteksi air hujan lebat. Motor DC telah mengamankan jemuran di area terlindung.',
+      safetyBadge: 'Jemuran Aman (Terlindungi)',
+      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      motorNotice: 'Motor DC: Terkunci di bawah atap',
+    },
+    badai: {
+      border: 'border-purple-400/50 hover:border-purple-400/80',
+      gradient: 'from-purple-900/35 via-indigo-950/35 to-slate-950',
+      accentText: 'text-purple-300',
+      title: 'Badai Petir — Jemuran Aman!',
+      subtitle: 'Hujan badai disertai kilat. Motor DC memastikan jemuran ditarik rapat ke dalam naungan.',
+      safetyBadge: 'Jemuran Aman (Siaga Badai)',
+      badgeBg: 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300',
+      motorNotice: 'Motor DC: Posisi aman terkunci',
+    },
+  }[condition];
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/25 border border-cyan-400/50 text-cyan-700 dark:text-cyan-300 text-xs font-bold uppercase tracking-wider shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-              Peringatan Aktif
-            </div>
-
-            <div>
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-cyan-600 dark:text-cyan-300 font-heading">
-                HUJAN TERDETEKSI!
-              </h2>
-              <p className="text-base font-semibold text-teks-utama mt-1">
-                Segera angkat jemuran Anda dari halaman
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-teks-sekunder">
-              <span className="inline-flex items-center gap-1.5 font-medium">
-                <Clock className="w-3.5 h-3.5 text-cyan-500" />
-                Mulai hujan: {formatTime(sinceTs)} ({getDuration(sinceTs)})
-              </span>
-              <span className="text-garis">•</span>
-              <span className="inline-flex items-center gap-1.5 font-medium">
-                <Droplets className="w-3.5 h-3.5 text-cyan-500" />
-                Ambang deteksi: {thresholdPct}%
-              </span>
-            </div>
-          </div>
-
-          {/* Big Wet Percentage Visualizer */}
-          <div className="flex items-center gap-4 bg-kartu/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-cyan-500/30 shrink-0">
-            <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-500">
-              <CloudRain className="w-9 h-9 animate-bounce" />
-            </div>
-            <div>
-              <div className="text-3xl md:text-4xl font-extrabold text-cyan-600 dark:text-cyan-300 font-mono">
-                {pct}%
-              </div>
-              <div className="text-[11px] font-medium text-teks-sekunder">
-                ADC Analog: {raw}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
-
-  // Status: KERING (Default Safe State)
   return (
-    <Card className="relative overflow-hidden border-2 border-blue-500/40 bg-gradient-to-br from-blue-500/10 via-blue-900/5 to-transparent p-5 md:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-        <div className="space-y-2.5">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/15 border border-blue-400/40 text-blue-600 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
+    <Card
+      className={`relative overflow-hidden border-2 ${theme.border} bg-gradient-to-br ${theme.gradient} p-4 sm:p-7 backdrop-blur-2xl shadow-2xl transition-all duration-700`}
+    >
+      {/* Upper Section: Badges & Live Status */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3">
+        <div className="flex items-center gap-2">
+          {/* Jemuran Safety Badge */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wider ${theme.badgeBg}`}
+          >
             <ShieldCheck className="w-3.5 h-3.5" />
-            Kondisi Normal
+            <span>{theme.safetyBadge}</span>
           </div>
 
+          {/* Motor DC State Pill */}
+          <div className="hidden xs:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300 text-[11px] font-medium">
+            <Umbrella className="w-3 h-3 text-cyan-400" />
+            <span>{theme.motorNotice}</span>
+          </div>
+        </div>
+
+        {/* Live Indicator */}
+        <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+          <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+          <span>Telemetri IoT Aktif</span>
+        </div>
+      </div>
+
+      {/* Main Content Area: Responsive Flex Layout with 3D Orb & Illustration */}
+      <div className="flex flex-col lg:flex-row items-center justify-between gap-6 my-2">
+        {/* Left Information Column */}
+        <div className="space-y-3 text-center lg:text-left flex-1">
           <div>
-            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-blue-600 dark:text-blue-400 font-heading">
-              Kering — Aman Menjemur
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white font-heading leading-tight drop-shadow-sm">
+              {theme.title}
             </h2>
-            <p className="text-sm md:text-base font-medium text-teks-sekunder mt-1">
-              Sensor jemuran tidak mendeteksi tetesan air hujan
+            <p className="text-sm sm:text-base text-slate-300 mt-1.5 max-w-xl leading-relaxed">
+              {theme.subtitle}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-teks-sekunder">
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
-              Kering sejak: {formatTime(sinceTs)}
+          {/* Telemetry Metrics Bar */}
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
+              <Clock className="w-3.5 h-3.5 text-blue-400" />
+              Waktu: {formatTime(sinceTs)} ({getDuration(sinceTs)})
             </span>
-            <span className="text-garis">•</span>
-            <span className="inline-flex items-center gap-1.5 font-medium">
-              <Droplets className="w-3.5 h-3.5 text-blue-500" />
-              Ambang batas: {thresholdPct}%
+            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
+              <Droplets className="w-3.5 h-3.5 text-cyan-400" />
+              Ambang Batas: {thresholdPct}%
+            </span>
+            <span className="inline-flex items-center gap-1.5 font-medium px-2.5 py-1 rounded-lg bg-slate-900/60 border border-slate-800">
+              <span className="font-mono text-cyan-300">ADC: {raw}</span>
             </span>
           </div>
         </div>
 
-        {/* Status Percentage Badge */}
-        <div className="flex items-center gap-4 bg-kartu/80 dark:bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl border border-blue-500/20 shrink-0">
-          <div className="p-3 rounded-2xl bg-blue-500/15 text-blue-500">
-            <Sun className="w-9 h-9" />
-          </div>
-          <div>
-            <div className="text-3xl md:text-4xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+        {/* Center: Dynamic SVG Weather Illustration (Awan, Matahari, Gerimis, Badai) */}
+        <div className="shrink-0 relative py-2">
+          <WeatherIllustration condition={condition} className="w-44 h-28 sm:w-52 sm:h-32" />
+        </div>
+
+        {/* Right: 3D Glossy Spherical Orb Widget (Inspired by User's Reference Image) */}
+        <div className="shrink-0 flex flex-col items-center justify-center bg-slate-950/50 p-4 rounded-3xl border border-white/10 backdrop-blur-xl shadow-inner">
+          <WeatherSphereOrb condition={condition} size="md" showLabel={false} />
+          <div className="mt-2 text-center">
+            <div className="text-2xl sm:text-3xl font-extrabold text-white font-mono tracking-tight">
               {pct}%
             </div>
-            <div className="text-[11px] font-medium text-teks-sekunder">
-              ADC Analog: {raw}
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              Tingkat Kebasahan
             </div>
           </div>
         </div>

@@ -42,7 +42,23 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*(Saat ini kotak masuk kosong. Seluruh endpoint backend yang dibutuhkan telah aktif dan tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md).)*
+* [ ] **REQ-BE-01: API & MQTT Status/Kontrol Motor DC Jemuran (Otomasi Kanopi Atap)**
+  * Tanggal Diminta: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI: Frontend telah memiliki kartu antarmuka `ClotheslineMotorCard.tsx` yang menampilkan posisi rel jemuran (di bawah atap kanopi vs di luar ruangan) dan status Motor DC (L298N) saat hujan terdeteksi. Dibutuhkan sinkronisasi data aktual dari firmware ESP32 dan backend.
+  * Usulan Endpoint:
+    * `GET /api/devices/:id/motor` -> mengembalikan `{ "position": "sheltered" | "extended", "status": "idle" | "moving", "lastMovedTs": 1775702400000 }`
+    * (Opsional v2) `POST /api/devices/:id/motor/command` dengan payload `{"action": "retract" | "extend"}`
+  * Format Telemetri Tambahan di MQTT `state`:
+    * Menambahkan field objek `motor` pada payload state telemetri MQTT `hujansensor/{id}/state`.
+  * Status: Menunggu Dikerjakan
+
+* [ ] **REQ-BE-02: Endpoint Injeksi Telemetri Simulasi Cuaca (Demo Mode Hub)**
+  * Tanggal Diminta: 2026-10-09
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI: Frontend kini memiliki Chip Bar Demo (Cerah, Gerimis, Hujan, Badai) untuk pengujian efek audio, petir halilintar, dan pergerakan jemuran. Jika backend menyediakan endpoint injeksi telemetri virtual ke broker WebSocket staging, tim QA dapat melakukan pengujian otomatis tanpa hardware ESP32 fisik.
+  * Usulan Endpoint: `POST /api/simulator/weather` dengan payload `{ "deviceId": "hs-xxx", "condition": "cerah" | "gerimis" | "hujan" | "badai" }`
+  * Status: Menunggu Dikerjakan
 
 ---
 

@@ -104,6 +104,37 @@
   padding-top: max(0.75rem, env(safe-area-inset-top));
 }
 
+/* Hide scrollbar for clean chip bar */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Dynamic Weather Backgrounds (Blue nuansa base with atmospheric mood) */
+.weather-bg-cerah {
+  background: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 55%, #020617 100%);
+}
+
+.weather-bg-gerimis {
+  background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 50%, #030712 100%);
+}
+
+.weather-bg-hujan {
+  background: radial-gradient(circle at 50% 0%, #0c4a6e 0%, #0f172a 45%, #020617 100%);
+}
+
+.weather-bg-badai {
+  background: radial-gradient(circle at 50% 0%, #312e81 0%, #0f172a 40%, #020617 100%);
+}
+
+/* Atmospheric bottom blue gradient */
+.bottom-blue-gradient {
+  background: linear-gradient(to top, rgba(2, 132, 199, 0.22) 0%, rgba(30, 58, 138, 0.12) 30%, transparent 80%);
+}
+
 /* Subtle rain animation */
 @keyframes rain-fall {
   0% { transform: translateY(-10px); opacity: 0; }
