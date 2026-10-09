@@ -135,30 +135,7 @@ jobs:
             set +e
             if [ "${{ github.ref }}" = "refs/heads/main" ]; then
               chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux
-              cat << 'EOF' > /etc/systemd/system/hujan-backend-prod.service
-[Unit]
-Description=HujanPantau IoT Go Backend (Production)
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/www/wwwroot/hujan-backend-prod
-ExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux
-Restart=always
-RestartSec=5
-Environment=PORT=8081
-Environment=MQTT_BROKER=tcp://127.0.0.1:1883
-Environment=DB_TYPE=mysql
-Environment=MYSQL_USER=hujan_user
-Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
-Environment=MYSQL_DATABASE=hujan_iot_prod
-Environment=MYSQL_HOST=127.0.0.1
-Environment=MYSQL_PORT=3306
-
-[Install]
-WantedBy=multi-user.target
-EOF
+              printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Production)\nAfter=network.target\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-prod\nExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8081\nEnvironment=MQTT_BROKER=tcp://127.0.0.1:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_user\nEnvironment=MYSQL_PASSWORD=dieBWzRk7si447bZ\nEnvironment=MYSQL_DATABASE=hujan_iot_prod\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/hujan-backend-prod.service
               systemctl daemon-reload
               systemctl enable hujan-backend-prod
               systemctl restart hujan-backend-prod
@@ -169,33 +146,10 @@ EOF
                 systemctl daemon-reload
                 systemctl restart hujan-backend-prod
               fi
-              echo "✅ Backend Production berhasil diperbarui dan aktif di port 8081!"
+              echo "Backend Production berhasil diperbarui dan aktif di port 8081!"
             else
               chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux
-              cat << 'EOF' > /etc/systemd/system/hujan-backend-staging.service
-[Unit]
-Description=HujanPantau IoT Go Backend (Staging)
-After=network.target
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/www/wwwroot/hujan-backend-staging
-ExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux
-Restart=always
-RestartSec=5
-Environment=PORT=8080
-Environment=MQTT_BROKER=tcp://127.0.0.1:1883
-Environment=DB_TYPE=mysql
-Environment=MYSQL_USER=hujan_user
-Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
-Environment=MYSQL_DATABASE=hujan_iot_staging
-Environment=MYSQL_HOST=127.0.0.1
-Environment=MYSQL_PORT=3306
-
-[Install]
-WantedBy=multi-user.target
-EOF
+              printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Staging)\nAfter=network.target\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-staging\nExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8080\nEnvironment=MQTT_BROKER=tcp://127.0.0.1:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_user\nEnvironment=MYSQL_PASSWORD=dieBWzRk7si447bZ\nEnvironment=MYSQL_DATABASE=hujan_iot_staging\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\n\n[Install]\nWantedBy=multi-user.target\n' > /etc/systemd/system/hujan-backend-staging.service
               systemctl daemon-reload
               systemctl enable hujan-backend-staging
               systemctl restart hujan-backend-staging
@@ -206,6 +160,6 @@ EOF
                 systemctl daemon-reload
                 systemctl restart hujan-backend-staging
               fi
-              echo "✅ Backend Staging berhasil diperbarui dan aktif di port 8080!"
+              echo "Backend Staging berhasil diperbarui dan aktif di port 8080!"
             fi
             exit 0
