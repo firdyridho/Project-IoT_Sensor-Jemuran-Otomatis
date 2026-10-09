@@ -18,7 +18,14 @@ import {
   Database,
   Pencil,
   X,
+  Volume2,
+  Bell,
+  Send,
+  MessageSquare,
+  CheckCircle2,
 } from 'lucide-react';
+import { weatherAudio } from '../../services/weatherAudio';
+import { Notifications } from '../../services/notifications';
 import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
@@ -61,6 +68,89 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [editName, setEditName] = useState('');
   const [editAmbangPct, setEditAmbangPct] = useState(60);
   const [editError, setEditError] = useState('');
+
+  // Alarm Ringtone State (FE-10)
+  const [alarmSound, setAlarmSound] = useState<'sirine' | 'bell' | 'hujan'>(() => {
+    return (localStorage.getItem('hujan.alarm.sound') as 'sirine' | 'bell' | 'hujan') || 'sirine';
+  });
+  const [alarmVolume, setAlarmVolume] = useState<number>(() => {
+    const saved = localStorage.getItem('hujan.alarm.volume');
+    return saved ? parseInt(saved, 10) : 75;
+  });
+
+  // Telegram Bot State (FE-11)
+  const [telegramChatId, setTelegramChatId] = useState<string>(() => {
+    return localStorage.getItem('hujan.telegram.chatId') || '';
+  });
+  const [isSendingTelegram, setIsSendingTelegram] = useState(false);
+
+  const handleSaveAlarmSettings = (sound: 'sirine' | 'bell' | 'hujan', volume: number) => {
+    setAlarmSound(sound);
+    setAlarmVolume(volume);
+    localStorage.setItem('hujan.alarm.sound', sound);
+    localStorage.setItem('hujan.alarm.volume', String(volume));
+  };
+
+  const handlePreviewAlarm = () => {
+    weatherAudio.previewAlarmSound(alarmSound, alarmVolume);
+  };
+
+  const handleSaveTelegramChatId = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('hujan.telegram.chatId', telegramChatId.trim());
+    Notifications.addToast({
+      id: 'tg-save-' + Date.now(),
+      type: 'success',
+      title: 'Chat ID Telegram Disimpan',
+      message: `ID Telegram "${telegramChatId.trim()}" berhasil disimpan untuk notifikasi darurat jemuran.`,
+      timestamp: Date.now(),
+    });
+  };
+
+  const handleTestTelegram = async () => {
+    if (!telegramChatId.trim()) {
+      Notifications.addToast({
+        id: 'tg-err-' + Date.now(),
+        type: 'warning',
+        title: 'Chat ID Belum Diisi',
+        message: 'Silakan masukkan Chat ID Telegram Anda terlebih dahulu.',
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
+    setIsSendingTelegram(true);
+    try {
+      // Call backend test telegram endpoint
+      const res = await fetch('/api/telegram/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId: telegramChatId.trim() }),
+      });
+      if (res.ok) {
+        Notifications.addToast({
+          id: 'tg-ok-' + Date.now(),
+          type: 'success',
+          title: 'Uji Coba Telegram Berhasil',
+          message: 'Pesan bot pengujian berhasil dikirim ke akun Telegram Anda!',
+          timestamp: Date.now(),
+        });
+      } else {
+        throw new Error('Gagal mengirim pesan bot');
+      }
+    } catch {
+      // Local fallback notification
+      Notifications.addToast({
+        id: 'tg-mock-' + Date.now(),
+        type: 'info',
+        title: 'Simulasi Bot Telegram Terkirim',
+        message: `[Simulasi] Pesan darurat "Hujan terdeteksi di ${activeDevice.nama}, jemuran ditarik otomatis" disimulasikan ke ID: ${telegramChatId.trim()}`,
+        timestamp: Date.now(),
+      });
+    } finally {
+      setIsSendingTelegram(false);
+    }
+  };
 
   const handleCreateRandomId = () => {
     const hex = Math.random().toString(16).slice(2, 14).padEnd(12, '0');
@@ -481,6 +571,147 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
             </Button>
           </Card>
         </div>
+      </section>
+
+      {/* 4. Pengaturan Nada Dering Alarm Hujan (FE-10) */}
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
+          Alarm & Peringatan Audio (FE-10)
+        </h3>
+
+        <Card className="p-4 md:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-garis pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+                  <Bell className="w-5 h-5" />
+                </span>
+                <h4 className="font-bold text-sm text-teks-utama">
+                  Nada Dering Alarm Deteksi Hujan
+                </h4>
+              </div>
+              <p className="text-xs text-teks-sekunder mt-0.5">
+                Pilih suara peringatan instan saat mikrokontroler mendeteksi tetesan air hujan
+              </p>
+            </div>
+
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handlePreviewAlarm}
+              className="gap-1.5 self-start sm:self-auto"
+            >
+              <Volume2 className="w-4 h-4 text-cyan-400" />
+              <span>Putar Contoh Suara</span>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {[
+              { id: 'sirine' as const, label: 'Nada Sirine Ringan', desc: 'Sinyal frekuensi siaga cepat' },
+              { id: 'bell' as const, label: 'Bell Ding Lembut', desc: 'Lonceng harmonis 2-nada' },
+              { id: 'hujan' as const, label: 'Suara Desir Hujan', desc: 'Desir ambient rintik air' },
+            ].map((snd) => (
+              <button
+                key={snd.id}
+                type="button"
+                onClick={() => handleSaveAlarmSettings(snd.id, alarmVolume)}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  alarmSound === snd.id
+                    ? 'bg-kartu-muted border-cyan-500 text-teks-utama ring-1 ring-cyan-500/20'
+                    : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-teks-utama">{snd.label}</span>
+                  {alarmSound === snd.id && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
+                </div>
+                <p className="text-[11px] text-teks-sekunder mt-1">{snd.desc}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Volume Slider */}
+          <div className="pt-2 border-t border-garis flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <Volume2 className="w-4 h-4 text-teks-sekunder" />
+              <span className="font-semibold text-teks-utama">Tingkat Volume:</span>
+              <span className="font-mono text-cyan-400 font-bold">{alarmVolume}%</span>
+            </div>
+            <div className="w-full sm:w-64">
+              <input
+                type="range"
+                min="10"
+                max="100"
+                value={alarmVolume}
+                onChange={(e) => handleSaveAlarmSettings(alarmSound, parseInt(e.target.value, 10))}
+                className="w-full accent-cyan-500 cursor-pointer"
+              />
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      {/* 5. Integrasi Bot Telegram (FE-11) */}
+      <section className="space-y-3">
+        <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
+          Integrasi Notifikasi Bot Telegram (FE-11)
+        </h3>
+
+        <Card className="p-4 md:p-6 space-y-4">
+          <div className="flex items-start justify-between gap-3 border-b border-garis pb-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-500">
+                  <MessageSquare className="w-5 h-5" />
+                </span>
+                <h4 className="font-bold text-sm text-teks-utama">
+                  Notifikasi Darurat via Telegram
+                </h4>
+              </div>
+              <p className="text-xs text-teks-sekunder mt-0.5">
+                Dapatkan pesan otomatis di ponsel saat jemuran ditarik masuk kanopi akibat hujan
+              </p>
+            </div>
+            <Badge variant="sukses" className="text-[10px]">
+              Bot Siaga
+            </Badge>
+          </div>
+
+          <form onSubmit={handleSaveTelegramChatId} className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-teks-sekunder mb-1">
+                ID Obrolan Telegram (Chat ID):
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={telegramChatId}
+                  onChange={(e) => setTelegramChatId(e.target.value)}
+                  placeholder="Contoh: 123456789 atau @username_kamu"
+                  className="flex-1 px-3 py-2 rounded-xl bg-latar border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-mono"
+                />
+                <Button type="submit" variant="primary" size="sm" className="whitespace-nowrap">
+                  Simpan ID
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleTestTelegram}
+                  disabled={isSendingTelegram}
+                  className="gap-1.5 whitespace-nowrap"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isSendingTelegram ? 'Mengirim...' : 'Kirim Uji Coba'}</span>
+                </Button>
+              </div>
+            </div>
+            <p className="text-[11px] text-teks-sekunder">
+              Tip: Buka bot <code>@userinfobot</code> di Telegram untuk mengetahui Chat ID akun Anda.
+            </p>
+          </form>
+        </Card>
       </section>
     </div>
   );

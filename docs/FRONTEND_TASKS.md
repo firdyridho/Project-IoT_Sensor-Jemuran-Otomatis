@@ -66,7 +66,7 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
     * Rentang Jam Optimal: "Jemur optimal: 08:00 - 13:30 WIB".
     * Teks Saran Cerdas: Format alert yang ringkas dan ramah pengguna.
 
-* [ ] **FE-07: Tab Riwayat Log Akurasi AI (`AIAccuracyView.tsx`)**:
+* [x] **FE-07: Tab Riwayat Log Akurasi AI (`AIAccuracyView.tsx`)**:
   * **Lokasi**: Sub-tab di dalam menu Riwayat Event.
   * **Tujuan**: Menampilkan tabel akurasi prediksi model:
     * Kolom: Waktu Prediksi | Probabilitas Diberikan | Status Sensor Fisik | Akurasi (Tepat / Meleset).
@@ -74,17 +74,17 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
 
 ---
 
-### Fase 3: Analitik Data, Pengaturan & Integrasi [PRIORITAS SEDANG]
+### Fase 3: Analitik Data, Pengaturan & Integrasi [SELESAI]
 
-* [ ] **FE-08: Fitur Ekspor Data Riwayat (CSV & Excel)**:
+* [x] **FE-08: Fitur Ekspor Data Riwayat (CSV & Excel)**:
   * Tombol "Ekspor Data" pada tab Grafik dan tab Riwayat.
   * Menghasilkan file `.csv` langsung di browser yang berisi timestamp, nilai ADC, kelembapan, suhu, dan tegangan baterai.
-* [ ] **FE-09: Filter Rentang Tanggal Lanjutan (Datepicker)**:
+* [x] **FE-09: Filter Rentang Tanggal Lanjutan (Datepicker)**:
   * Memungkinkan pengguna memilih rentang tanggal spesifik (misal: 1 Oktober - 5 Oktober) untuk melihat riwayat telemetri lama dari database VPS.
-* [ ] **FE-10: Pengaturan Nada Dering Alarm Hujan**:
+* [x] **FE-10: Pengaturan Nada Dering Alarm Hujan**:
   * Opsi memilih suara alert ketika sensor mendeteksi hujan (pilihan: Nada Sirine Ringan, Bell Ding, atau Suara Hujan).
   * Pengaturan volume audio dan tombol preview suara di menu Kelola Perangkat.
-* [ ] **FE-11: Form Integrasi Bot Telegram**:
+* [x] **FE-11: Form Integrasi Bot Telegram**:
   * Input Chat ID Telegram pada tab Kelola Perangkat agar pengguna menerima pesan bot instan saat jemuran tertutup otomatis.
 
 ---

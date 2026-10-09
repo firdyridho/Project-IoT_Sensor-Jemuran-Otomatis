@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { PembacaanHujan } from '../../types/iot';
 import { Card } from '../Common/Card';
-import { Activity, Droplets, Thermometer, Gauge } from 'lucide-react';
+import { Activity, Droplets, Thermometer, Gauge, Download, FileSpreadsheet } from 'lucide-react';
+import { Button } from '../Common/Button';
 
 export type ChartSeries = 'pct' | 'raw' | 'tempC' | 'hum';
 export type ChartRange = '5m' | '1h' | 'session';
@@ -18,6 +19,23 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
   const [range, setRange] = useState<ChartRange>('1h');
   const [activeSeries, setActiveSeries] = useState<ChartSeries>('pct');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  // Export Telemetry CSV (FE-08)
+  const handleExportTelemetryCSV = () => {
+    if (readings.length === 0) return;
+    const header = 'Waktu,Timestamp_MS,DeviceId,Wet_Pct,ADC_Raw,Is_Wet,Suhu_C,Kelembapan_Pct,Baterai_V,Baterai_Pct,RSSI\r\n';
+    const rows = readings.map((r) => {
+      const d = new Date(r.ts).toISOString();
+      return `"${d}",${r.ts},"${r.deviceId}",${r.pct},${r.raw},${r.wet},${r.suhuC ?? ''},${r.lembapPct ?? ''},${r.bateraiV ?? ''},${r.bateraiPct ?? ''},${r.rssi ?? ''}`;
+    });
+    const blob = new Blob([header + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `telemetri-hujan-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Filter points according to selected range
   const filteredData = useMemo(() => {
@@ -130,27 +148,41 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
           </p>
         </div>
 
-        {/* Range Buttons (5m, 1h, Seluruh Sesi) */}
-        <div className="flex items-center gap-1.5 bg-kartu-muted p-1 rounded-xl border border-garis self-start sm:self-auto">
-          {(
-            [
-              { id: '5m', label: '5 Menit' },
-              { id: '1h', label: '1 Jam' },
-              { id: 'session', label: 'Sesi Ini' },
-            ] as const
-          ).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setRange(item.id)}
-              className={`min-h-9 px-3 py-1 rounded-lg text-xs font-semibold transition-all focus:outline-none ${
-                range === item.id
-                  ? 'bg-kartu text-teks-utama shadow-xs border border-garis'
-                  : 'text-teks-sekunder hover:text-teks-utama'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        {/* Range Buttons & Export Button */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-kartu-muted p-1 rounded-xl border border-garis">
+            {(
+              [
+                { id: '5m', label: '5 Menit' },
+                { id: '1h', label: '1 Jam' },
+                { id: 'session', label: 'Sesi Ini' },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setRange(item.id)}
+                className={`min-h-9 px-3 py-1 rounded-lg text-xs font-semibold transition-all focus:outline-none ${
+                  range === item.id
+                    ? 'bg-kartu text-teks-utama shadow-xs border border-garis'
+                    : 'text-teks-sekunder hover:text-teks-utama'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportTelemetryCSV}
+            disabled={readings.length === 0}
+            className="gap-1.5"
+            title="Ekspor CSV Telemetri Sensor"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-green-500" />
+            <span className="hidden xs:inline">Ekspor CSV</span>
+          </Button>
         </div>
       </div>
 

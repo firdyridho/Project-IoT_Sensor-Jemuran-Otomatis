@@ -214,6 +214,68 @@ class WeatherAudioSynthesizer {
       }, 500);
     }
   }
+
+  /**
+   * Preview rain alarm sound for settings (FE-10)
+   */
+  public previewAlarmSound(type: 'sirine' | 'bell' | 'hujan', volumePct: number = 70) {
+    this.initContext();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const gain = this.ctx.createGain();
+    const vol = Math.max(0.05, Math.min(1, volumePct / 100));
+    gain.connect(this.ctx.destination);
+
+    if (type === 'sirine') {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.linearRampToValueAtTime(950, now + 0.3);
+      osc.frequency.linearRampToValueAtTime(600, now + 0.6);
+      osc.frequency.linearRampToValueAtTime(950, now + 0.9);
+      osc.frequency.linearRampToValueAtTime(600, now + 1.2);
+
+      gain.gain.setValueAtTime(vol * 0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.3);
+
+      osc.connect(gain);
+      osc.start(now);
+      osc.stop(now + 1.3);
+    } else if (type === 'bell') {
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      osc1.frequency.setValueAtTime(880, now); // A5
+      osc2.frequency.setValueAtTime(1760, now); // A6 overtone
+
+      gain.gain.setValueAtTime(vol * 0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 1.5);
+      osc2.stop(now + 1.5);
+    } else {
+      // type === 'hujan'
+      if (!this.noiseBuffer) return;
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = this.noiseBuffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1200, now);
+
+      gain.gain.setValueAtTime(vol * 0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+      noise.connect(filter);
+      filter.connect(gain);
+      noise.start(now);
+      noise.stop(now + 2.0);
+    }
+  }
 }
 
 export const weatherAudio = new WeatherAudioSynthesizer();
