@@ -131,14 +131,19 @@ func Login(c *gin.Context) {
 
 	var user models.User
 	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		RecordFailedLogin(c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau kata sandi salah"})
 		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		RecordFailedLogin(c.ClientIP())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Username atau kata sandi salah"})
 		return
 	}
+
+	// Login berhasil, reset counter kegagalan
+	ResetFailedLogin(c.ClientIP())
 
 	token := generateToken(user.ID, user.Username)
 	c.JSON(http.StatusOK, AuthResponse{

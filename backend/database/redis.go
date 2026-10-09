@@ -70,3 +70,33 @@ func GetCachedLatestTelemetry(deviceID string) (string, error) {
 	key := fmt.Sprintf("hujan:latest:%s", deviceID)
 	return RedisClient.Get(ctx, key).Result()
 }
+
+// PushTelemetryList pushes telemetry to Redis List and trims to keep latest 100 entries (BE-09)
+func PushTelemetryList(deviceID string, payload interface{}) {
+	if RedisClient == nil {
+		return
+	}
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	key := fmt.Sprintf("hujan:list:%s", deviceID)
+	pipe := RedisClient.Pipeline()
+	pipe.LPush(ctx, key, string(bytes))
+	pipe.LTrim(ctx, key, 0, 99) // Pertahankan 100 telemetri terkini
+	pipe.Expire(ctx, key, 7*24*time.Hour)
+	_, _ = pipe.Exec(ctx)
+}
+
+// GetCachedTelemetryList retrieves up to `limit` entries from Redis List
+func GetCachedTelemetryList(deviceID string, limit int64) ([]string, error) {
+	if RedisClient == nil {
+		return nil, fmt.Errorf("redis tidak aktif")
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 100
+	}
+	key := fmt.Sprintf("hujan:list:%s", deviceID)
+	return RedisClient.LRange(ctx, key, 0, limit-1).Result()
+}
+

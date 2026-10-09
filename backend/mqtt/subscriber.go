@@ -116,8 +116,9 @@ func (s *MqttSubscriber) handleTelemetry(raw []byte) {
 	// 3. Broadcast to all active browser WebSockets
 	handlers.Hub.Broadcast("telemetry", p)
 
-	// 4. Cache latest telemetry in Redis (microsecond memory lookup)
+	// 4. Cache latest telemetry in Redis (microsecond memory lookup & list history BE-09)
 	database.CacheLatestTelemetry(p.DeviceID, p)
+	database.PushTelemetryList(p.DeviceID, p)
 }
 
 func (s *MqttSubscriber) handleState(raw []byte) {
@@ -159,8 +160,8 @@ func (s *MqttSubscriber) handleEvent(raw []byte) {
 
 	database.DB.Create(&eventRecord)
 
-	// Trigger Telegram alert on rain_start (with 10-minute cooldown)
-	if ev.Type == "rain_start" {
+	// Trigger Telegram alert on rain_start or HUJAN_TERDETEKSI (with 10-minute cooldown) (BE-11)
+	if ev.Type == "rain_start" || ev.Type == "HUJAN_TERDETEKSI" {
 		s.triggerTelegramAlert(ev)
 	}
 

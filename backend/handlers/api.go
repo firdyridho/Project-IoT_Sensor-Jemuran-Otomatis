@@ -225,6 +225,10 @@ func IngestTelemetry(c *gin.Context) {
 		"last_seen_at": time.Now(),
 	})
 
+	// Caching kilat Redis (BE-09)
+	database.CacheLatestTelemetry(p.DeviceID, p)
+	database.PushTelemetryList(p.DeviceID, p)
+
 	Hub.Broadcast("telemetry", p)
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

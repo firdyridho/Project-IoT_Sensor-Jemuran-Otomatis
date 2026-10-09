@@ -47,9 +47,15 @@ func main() {
 		}
 	}()
 
-	// 3. Setup Gin Web Server
+	// 3. Jalankan Background Worker Pemantau Cuaca Ekstrem (BE-08)
+	handlers.StartWeatherAlertWorker()
+
+	// 4. Setup Gin Web Server
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	// Rate Limiting Umum 120 req/menit (BE-10)
+	r.Use(handlers.RateLimiterMiddleware())
 
 	// Izinkan CORS dari Vercel / domain luar
 	corsConfig := cors.DefaultConfig()
@@ -73,10 +79,14 @@ func main() {
 	// REST API Routes
 	api := r.Group("/api")
 	{
-		// Authentication endpoints (Multi-User)
+		// Authentication endpoints (Multi-User) dengan proteksi brute-force (BE-10)
 		api.POST("/auth/register", handlers.Register)
-		api.POST("/auth/login", handlers.Login)
+		api.POST("/auth/login", handlers.LoginBruteForceMiddleware(), handlers.Login)
 		api.GET("/auth/me", handlers.GetMe)
+
+		// Fitur Kecerdasan Buatan (AI Engine & Predictions) (BE-05 & BE-06)
+		api.POST("/ai/predict-rain", handlers.PredictRain)
+		api.GET("/ai/drying-advice", handlers.GetDryingAdvice)
 
 		api.GET("/devices", handlers.GetDevices)
 		api.POST("/devices", handlers.CreateDevice)

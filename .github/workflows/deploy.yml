@@ -52,6 +52,10 @@ jobs:
         working-directory: ./backend
         run: go mod verify
 
+      - name: Run Backend Unit Tests (BE-12)
+        working-directory: ./backend
+        run: go test -v ./...
+
       - name: Compile Linux Binary (Zero CGO)
         working-directory: ./backend
         run: |

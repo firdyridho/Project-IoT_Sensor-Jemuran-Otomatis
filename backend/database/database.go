@@ -79,12 +79,13 @@ func InitDB() (*gorm.DB, error) {
 		return nil, fmt.Errorf("gagal membuka database: %w", err)
 	}
 
-	// Auto-migrate tables (User, Devices, Telemetry, Events)
+	// Auto-migrate tables (User, Devices, Telemetry, Events, AIPrediction)
 	err = db.AutoMigrate(
 		&models.User{},
 		&models.Device{},
 		&models.Telemetry{},
 		&models.Event{},
+		&models.AIPrediction{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("gagal migrasi tabel: %w", err)
