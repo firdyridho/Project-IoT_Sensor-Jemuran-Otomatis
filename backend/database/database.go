@@ -76,7 +76,24 @@ func InitDB() (*gorm.DB, error) {
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("gagal membuka database: %w", err)
+		if dbType == "mysql" {
+			log.Printf("[Database WARNING] Gagal konek MySQL (%v). Beralih ke fallback SQLite ./hujan.db...", err)
+			dbPath := os.Getenv("DB_PATH")
+			if dbPath == "" {
+				dbPath = "./hujan.db"
+			}
+			dialector = sqlite.Open(dbPath)
+			db, err = gorm.Open(dialector, &gorm.Config{
+				Logger: logger.Default.LogMode(logger.Warn),
+			})
+			if err != nil {
+				return nil, fmt.Errorf("gagal membuka database SQLite fallback: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("gagal membuka database: %w", err)
+		}
+	} else if dbType == "mysql" {
+		log.Printf("[Database SUCCESS] Berhasil terhubung ke MySQL!")
 	}
 
 	// Auto-migrate tables (User, Devices, Telemetry, Events, AIPrediction)
@@ -90,6 +107,7 @@ func InitDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("gagal migrasi tabel: %w", err)
 	}
+	log.Printf("[Database SUCCESS] AutoMigrate tabel selesai (users, devices, telemetries, events, ai_predictions siap)!")
 
 	// Connection pool
 	sqlDB, err := db.DB()
