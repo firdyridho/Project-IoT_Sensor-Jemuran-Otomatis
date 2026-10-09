@@ -35,7 +35,7 @@ export const BackendService = {
       return list.map((item: any) => ({
         deviceId: item.deviceId,
         nama: item.name,
-        brokerUrl: item.brokerUrl || 'wss://test.mosquitto.org:8081/mqtt',
+        brokerUrl: item.brokerUrl || 'wss://43-133-136-149.sslip.io/ws',
         lokasiAdm4: item.lokasiAdm4 || '31.71.03.1001',
         fwVersi: '1.0.0',
         lastSeenTs: item.lastSeenAt ? new Date(item.lastSeenAt).getTime() : Date.now(),

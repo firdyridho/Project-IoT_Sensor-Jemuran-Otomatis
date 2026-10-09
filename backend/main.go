@@ -21,7 +21,7 @@ func getEnv(key, defaultVal string) string {
 
 func main() {
 	port := getEnv("PORT", "8080")
-	mqttBroker := getEnv("MQTT_BROKER", "tcp://test.mosquitto.org:1883")
+	mqttBroker := getEnv("MQTT_BROKER", "tcp://127.0.0.1:1883")
 	tgBot := getEnv("TELEGRAM_BOT_TOKEN", "")
 	tgChat := getEnv("TELEGRAM_CHAT_ID", "")
 

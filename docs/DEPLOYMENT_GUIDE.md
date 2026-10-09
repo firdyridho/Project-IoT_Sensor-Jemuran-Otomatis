@@ -118,7 +118,7 @@ ExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux
 Restart=always
 RestartSec=5
 Environment=PORT=8080
-Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+Environment=MQTT_BROKER=tcp://127.0.0.1:1883
 Environment=DB_TYPE=mysql
 Environment=MYSQL_USER=hujan_user
 Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ
@@ -145,7 +145,7 @@ ExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux
 Restart=always
 RestartSec=5
 Environment=PORT=8081
-Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+Environment=MQTT_BROKER=tcp://127.0.0.1:1883
 Environment=DB_TYPE=mysql
 Environment=MYSQL_USER=hujan_user
 Environment=MYSQL_PASSWORD=dieBWzRk7si447bZ

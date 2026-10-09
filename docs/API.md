@@ -26,15 +26,14 @@ Dokumen ini mengikat tiga antarmuka eksternal yang dipakai **HujanPantau**: MQTT
 
 Keduanya terhubung ke **broker yang sama**, hanya protokolnya berbeda. Browser tidak bisa memakai port 1883 karena berada di luar kemampuan WebSocket.
 
-### A.2 Broker cadangan
+### A.2 Server Broker & Endpoint
 
-| Broker | WSS | TCP | Catatan |
+| Tipe | Endpoint / URL | Port / Protokol | Keterangan |
 |---|---|---|---|
-| EMQX | `wss://broker.emqx.io:8884/mqtt` | `broker.emqx.io:1883` | Pilihan utama |
-| HiveMQ | `wss://broker.hivemq.com:8884/mqtt` | `broker.hivemq.com:1883` | Cadangan |
-| Mosquitto | `wss://test.mosquitto.org:8081/mqtt` | `test.mosquitto.org:1883` | Cadangan terakhir |
-
-Semua broker publik di atas menerima koneksi anonim dan **tidak menyediakan isolasi per-tenant**. Lihat `PRD.md` bagian 13.3 untuk implikasi keamanannya.
+| Private Server VPS (Utama) | `wss://43-133-136-149.sslip.io/ws` | WSS (443 SSL) | Server Golang WebSocket Dedicated |
+| Private MQTT VPS (ESP32) | `43.133.136.149` | 1883 (TCP MQTT) | Broker Lokal Tencent Cloud |
+| EMQX (Fallback) | `wss://broker.emqx.io:8884/mqtt` | 8884 (WSS) | Broker cadangan opsional |
+| HiveMQ (Fallback) | `wss://broker.hivemq.com:8884/mqtt` | 8884 (WSS) | Broker cadangan opsional |
 
 ### A.3 Struktur topik
 

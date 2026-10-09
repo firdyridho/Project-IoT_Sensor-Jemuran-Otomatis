@@ -10,17 +10,35 @@ export interface BmkgFetchResult {
   statusCode?: number;
 }
 
-export const ADM4_PRESETS: { code: string; label: string; reg: string }[] = [
-  { code: '31.71.03.1001', label: 'Kemayoran, Jakarta Pusat', reg: 'DKI Jakarta' },
-  { code: '31.71.01.1001', label: 'Gambir, Jakarta Pusat', reg: 'DKI Jakarta' },
-  { code: '32.75.01.1001', label: 'Bekasi Timur, Kota Bekasi', reg: 'Jawa Barat' },
-  { code: '32.73.09.1001', label: 'Bandung Wetan, Kota Bandung', reg: 'Jawa Barat' },
-  { code: '35.78.09.1001', label: 'Gubeng, Kota Surabaya', reg: 'Jawa Timur' },
-  { code: '51.71.01.1001', label: 'Denpasar Selatan, Denpasar', reg: 'Bali' },
-  { code: '15.71.01.1001', label: 'Telanaipura, Kota Jambi', reg: 'Jambi' },
-  { code: '12.71.04.1001', label: 'Medan Petisah, Medan', reg: 'Sumatera Utara' },
-  { code: '73.71.04.1001', label: 'Ujung Pandang, Makassar', reg: 'Sulawesi Selatan' },
+export const ADM4_PRESETS: { code: string; label: string; reg: string; lat: number; lon: number }[] = [
+  { code: '31.71.03.1001', label: 'Kemayoran, Jakarta Pusat', reg: 'DKI Jakarta', lat: -6.16, lon: 106.85 },
+  { code: '31.71.01.1001', label: 'Gambir, Jakarta Pusat', reg: 'DKI Jakarta', lat: -6.18, lon: 106.83 },
+  { code: '32.75.01.1001', label: 'Bekasi Timur, Kota Bekasi', reg: 'Jawa Barat', lat: -6.24, lon: 107.01 },
+  { code: '32.73.09.1001', label: 'Bandung Wetan, Kota Bandung', reg: 'Jawa Barat', lat: -6.90, lon: 107.61 },
+  { code: '33.74.01.1001', label: 'Semarang Tengah, Kota Semarang', reg: 'Jawa Tengah', lat: -6.98, lon: 110.42 },
+  { code: '34.71.01.1001', label: 'Danurejan, Kota Yogyakarta', reg: 'DI Yogyakarta', lat: -7.79, lon: 110.37 },
+  { code: '35.78.09.1001', label: 'Gubeng, Kota Surabaya', reg: 'Jawa Timur', lat: -7.27, lon: 112.75 },
+  { code: '51.71.01.1001', label: 'Denpasar Selatan, Denpasar', reg: 'Bali', lat: -8.69, lon: 115.22 },
+  { code: '15.71.01.1001', label: 'Telanaipura, Kota Jambi', reg: 'Jambi', lat: -1.61, lon: 103.59 },
+  { code: '12.71.04.1001', label: 'Medan Petisah, Medan', reg: 'Sumatera Utara', lat: 3.59, lon: 98.66 },
+  { code: '73.71.04.1001', label: 'Ujung Pandang, Makassar', reg: 'Sulawesi Selatan', lat: -5.14, lon: 119.41 },
 ];
+
+export function findNearestAdm4(userLat: number, userLon: number) {
+  let nearest = ADM4_PRESETS[0];
+  let minDistance = Infinity;
+
+  for (const p of ADM4_PRESETS) {
+    const dLat = userLat - p.lat;
+    const dLon = userLon - p.lon;
+    const dist = dLat * dLat + dLon * dLon;
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = p;
+    }
+  }
+  return nearest;
+}
 
 export async function fetchBmkgWeather(adm4: string, forceRefresh = false): Promise<BmkgFetchResult> {
   const cleanCode = adm4.trim();

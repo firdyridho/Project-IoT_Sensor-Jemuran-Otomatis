@@ -41,9 +41,7 @@ self.addEventListener('fetch', (event) => {
   // Never cache API or broker requests
   if (
     url.hostname.includes('bmkg.go.id') ||
-    url.hostname.includes('emqx.io') ||
-    url.hostname.includes('hivemq.com') ||
-    url.hostname.includes('mosquitto.org') ||
+    url.hostname.includes('sslip.io') ||
     url.protocol.startsWith('ws')
   ) {
     return;

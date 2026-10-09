@@ -33,6 +33,9 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 * [x] **BE-04: Migrasi Skema & Seeding**:
   * Integrasi `AutoMigrate` pada database MySQL aaPanel (`hujan_iot_staging` dan `hujan_iot_prod`).
   * Seeding default demo user: username `admin` / kata sandi `admin123`.
+* [x] **BE-04b: Migrasi Endpoint Broker Internal & Folder IoT**:
+  * Mengalihkan broker default perangkat ke VPS WebSocket `wss://43-133-136-149.sslip.io/ws` dan TCP local `127.0.0.1:1883`.
+  * Membuat direktori `iot/` berisi firmware ESP32 (`iot/hujan_esp32.ino`), template konfigurasi (`iot/config.h.example`), dan panduan skematik hardware (`iot/README.md`).
 
 ---
 

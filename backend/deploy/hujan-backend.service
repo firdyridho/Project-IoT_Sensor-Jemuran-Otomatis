@@ -10,7 +10,7 @@ ExecStart=/www/wwwroot/hujan-backend/hujan-backend-linux
 Restart=always
 RestartSec=5
 Environment=PORT=8080
-Environment=MQTT_BROKER=tcp://test.mosquitto.org:1883
+Environment=MQTT_BROKER=tcp://127.0.0.1:1883
 
 # --- PILIHAN DATABASE (PILIH SALAH SATU) ---
 # Opsi 1: Pakai MySQL aaPanel (Hapus tanda '#' untuk mengaktifkan):

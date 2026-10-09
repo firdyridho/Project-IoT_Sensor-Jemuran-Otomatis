@@ -14,9 +14,9 @@ const KEYS = {
 const DEFAULT_DEVICE: Perangkat = {
   deviceId: 'hs-8f3a1c9d2b70',
   nama: 'Jemuran Utama',
-  brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
+  brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
   lokasiAdm4: '31.71.03.1001',
-  fwVersi: '1.0.0',
+  fwVersi: '1.1.0',
   lastSeenTs: Date.now(),
   online: true,
   ambangPct: 60,

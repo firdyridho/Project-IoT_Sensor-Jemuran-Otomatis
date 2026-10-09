@@ -31,6 +31,12 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Penyimpanan perangkat tersimpan per akun pengguna: `hujan.devices.${userId}`.
 * [x] **FE-04: Transisi Branding WebSocket**:
   * Pembaruan status koneksi dari MQTT ke `Server Cloud Realtime (WebSocket)`.
+* [x] **FE-04b: Simplifikasi Manajemen Perangkat**:
+  * Menghapus input manual URL broker Mosquitto dan kode ADM4 pada formulir tambah/edit perangkat fisik.
+  * Menambahkan slider sensitivitas ambang hujan (persentase) langsung saat mendaftarkan perangkat.
+* [x] **FE-04c: Fitur 1-Klik Deteksi Lokasi GPS Cuaca BMKG**:
+  * Menggunakan `navigator.geolocation` browser untuk menghitung jarak terdekat ke preset wilayah BMKG.
+  * Menampilkan banner konfirmasi wilayah terdeteksi.
 
 ---
 

@@ -1,0 +1,40 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+// =============================================================================
+// Konfigurasi Jaringan WiFi & Perangkat ESP32 Jemuran Otomatis
+// Salin berkas ini ke 'config.h' lalu sesuaikan parameter di bawah.
+// =============================================================================
+
+// 1. Kredensial Jaringan WiFi
+#define WIFI_SSID           "NAMA_WIFI_KAMU"
+#define WIFI_PASSWORD       "PASSWORD_WIFI_KAMU"
+
+// 2. Identitas Perangkat (Harus cocok dengan ID di Dashboard Web)
+#define DEVICE_ID           "hs-8f3a1c9d2b70"
+#define DEVICE_NAME         "Jemuran Cerdas Teras"
+#define FIRMWARE_VERSION    "1.1.0"
+
+// 3. Konfigurasi Broker MQTT (Dedicated Server VPS)
+#define MQTT_SERVER         "43.133.136.149"
+#define MQTT_PORT           1883
+#define MQTT_USER           ""            // Kosongkan jika tanpa auth internal
+#define MQTT_PASS           ""
+
+// 4. Konfigurasi HTTP REST Backup (Bila MQTT terblokir firewall)
+#define HTTP_SERVER_URL     "https://43-133-136-149.sslip.io/api/telemetry"
+
+// 5. Pinout Hardware ESP32
+#define PIN_RAIN_ANALOG     34   // ADC1 GPIO 34 (Sensor Hujan FC-37 / YL-83)
+#define PIN_DHT             4    // GPIO 4 (Sensor Suhu & Kelembapan DHT22)
+#define PIN_SERVO           18   // GPIO 18 (PWM Motor Servo SG90/MG90S)
+#define PIN_LED_STATUS      2    // GPIO 2 (LED Bawaan ESP32)
+#define PIN_BUZZER          19   // GPIO 19 (Buzzer Peringatan Hujan)
+
+// 6. Kalibrasi & Parameter Operasional
+#define DEFAULT_THRESHOLD   60   // Ambang batas persentase hujan (0 - 100%)
+#define DRY_RAW_ADC         4095 // Nilai ADC saat pelat sensor kering total
+#define WET_RAW_ADC         800  // Nilai ADC saat pelat sensor basah tergenang
+#define TELEMETRY_INTERVAL  5000 // Interval kirim telemetri (milidetik)
+
+#endif // CONFIG_H

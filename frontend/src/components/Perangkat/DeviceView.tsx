@@ -50,18 +50,15 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
-  // Form states for Add Device
+  // Form states for Add Device (Simplified: No Mosquitto URL or ADM4 required)
   const [formName, setFormName] = useState('');
   const [formId, setFormId] = useState('');
-  const [formBroker, setFormBroker] = useState('wss://test.mosquitto.org:8081/mqtt');
-  const [formAdm4, setFormAdm4] = useState('31.71.03.1001');
+  const [formAmbangPct, setFormAmbangPct] = useState(60);
   const [formError, setFormError] = useState('');
 
   // Form states for Edit Device
   const [editingDevice, setEditingDevice] = useState<Perangkat | null>(null);
   const [editName, setEditName] = useState('');
-  const [editBroker, setEditBroker] = useState('');
-  const [editAdm4, setEditAdm4] = useState('');
   const [editAmbangPct, setEditAmbangPct] = useState(60);
   const [editError, setEditError] = useState('');
 
@@ -89,25 +86,24 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
     const newDevice: Perangkat = {
       deviceId: cleanId,
       nama: formName.trim(),
-      brokerUrl: formBroker.trim(),
-      lokasiAdm4: formAdm4.trim(),
-      fwVersi: '1.0.0',
+      brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
+      lokasiAdm4: '31.71.03.1001',
+      fwVersi: '1.1.0',
       lastSeenTs: Date.now(),
       online: true,
-      ambangPct: 60,
+      ambangPct: formAmbangPct,
     };
 
     onAddDevice(newDevice);
     setShowAddForm(false);
     setFormName('');
     setFormId('');
+    setFormAmbangPct(60);
   };
 
   const handleStartEdit = (device: Perangkat) => {
     setEditingDevice(device);
     setEditName(device.nama);
-    setEditBroker(device.brokerUrl);
-    setEditAdm4(device.lokasiAdm4);
     setEditAmbangPct(device.ambangPct || 60);
     setEditError('');
     setShowAddForm(false);
@@ -127,20 +123,10 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
       setEditError('Nama perangkat tidak boleh kosong');
       return;
     }
-    if (!editBroker.trim()) {
-      setEditError('URL broker tidak boleh kosong');
-      return;
-    }
-    if (!editAdm4.trim()) {
-      setEditError('Kode ADM4 tidak boleh kosong');
-      return;
-    }
 
     const updated: Perangkat = {
       ...editingDevice,
       nama: editName.trim(),
-      brokerUrl: editBroker.trim(),
-      lokasiAdm4: editAdm4.trim(),
       ambangPct: Number(editAmbangPct) || 60,
     };
 
@@ -234,31 +220,28 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-teks-sekunder mb-1">
-                  URL Broker WSS
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-medium text-teks-sekunder">
+                  Ambang Sensitivitas Hujan (% Basah)
                 </label>
-                <input
-                  type="text"
-                  value={formBroker}
-                  onChange={(e) => setFormBroker(e.target.value)}
-                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  required
-                />
+                <span className="text-xs font-bold font-mono text-cyan-600 dark:text-cyan-400">
+                  {formAmbangPct}%
+                </span>
               </div>
-
-              <div>
-                <label className="block text-xs font-medium text-teks-sekunder mb-1">
-                  Kode ADM4 Wilayah
-                </label>
-                <input
-                  type="text"
-                  value={formAdm4}
-                  onChange={(e) => setFormAdm4(e.target.value)}
-                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  required
-                />
+              <input
+                type="range"
+                min="20"
+                max="90"
+                step="5"
+                value={formAmbangPct}
+                onChange={(e) => setFormAmbangPct(Number(e.target.value))}
+                className="w-full accent-cyan-500"
+              />
+              <div className="flex justify-between text-[10px] text-teks-sekunder mt-0.5">
+                <span>Lebih Cepat Tutup (20%)</span>
+                <span>Standar (60%)</span>
+                <span>Hujan Deras (90%)</span>
               </div>
             </div>
 
@@ -309,43 +292,6 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                 className="w-full bg-kartu-muted border border-garis rounded-xl text-xs px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-medium text-teks-sekunder">
-                    URL Broker WSS
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setEditBroker('wss://test.mosquitto.org:8081/mqtt')}
-                    className="text-[10px] text-blue-500 hover:underline"
-                  >
-                    Set Mosquitto
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  value={editBroker}
-                  onChange={(e) => setEditBroker(e.target.value)}
-                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-teks-sekunder mb-1">
-                  Kode ADM4 Wilayah
-                </label>
-                <input
-                  type="text"
-                  value={editAdm4}
-                  onChange={(e) => setEditAdm4(e.target.value)}
-                  className="w-full bg-kartu-muted border border-garis rounded-xl text-xs font-mono px-3 py-2 text-teks-utama focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
             </div>
 
             <div>
@@ -462,16 +408,16 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
 
                 <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-3 gap-2">
                   <div className="truncate">
-                    <span>Broker: </span>
-                    <strong className="text-teks-utama">{device.brokerUrl.split('//')[1]?.split(':')[0] || 'Mosquitto'}</strong>
+                    <span>Server: </span>
+                    <strong className="text-cyan-600 dark:text-cyan-400 font-medium">Cloud VPS</strong>
                   </div>
                   <div className="truncate text-center">
-                    <span>Ambang: </span>
-                    <strong className="text-cyan-600 dark:text-cyan-400 font-mono">{device.ambangPct || 60}%</strong>
+                    <span>Sensitivitas: </span>
+                    <strong className="text-teks-utama font-mono">{device.ambangPct || 60}%</strong>
                   </div>
                   <div className="truncate text-right">
-                    <span>ADM4: </span>
-                    <strong className="text-teks-utama font-mono">{device.lokasiAdm4}</strong>
+                    <span>Koneksi: </span>
+                    <strong className="text-emerald-500 font-medium">Realtime</strong>
                   </div>
                 </div>
               </Card>

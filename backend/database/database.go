@@ -126,7 +126,7 @@ func InitDB() (*gorm.DB, error) {
 			ID:         "hs-8f3a1c9d2b70",
 			UserID:     "usr-demo-admin",
 			Name:       "Jemuran Utama",
-			BrokerURL:  "wss://test.mosquitto.org:8081/mqtt",
+			BrokerURL:  "wss://43-133-136-149.sslip.io/ws",
 			LokasiADM4: "31.71.03.1001",
 			AmbangPct:  60,
 			Status:     "online",

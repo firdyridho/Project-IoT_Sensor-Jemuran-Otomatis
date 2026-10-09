@@ -11,9 +11,10 @@ import {
   Cloud,
   Eye,
   CheckCircle2,
+  LocateFixed,
 } from 'lucide-react';
 import { BmkgResponse, Slot, ikonAman, berpotensiHujan, semuaSlot } from '../../types/bmkg';
-import { ADM4_PRESETS } from '../../services/bmkg';
+import { ADM4_PRESETS, findNearestAdm4 } from '../../services/bmkg';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
@@ -39,6 +40,32 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
 }) => {
   const [customCode, setCustomCode] = useState(currentAdm4);
   const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationNotice, setLocationNotice] = useState<string | null>(null);
+
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationNotice('Perangkat Anda tidak mendukung fitur deteksi lokasi GPS.');
+      return;
+    }
+    setIsLocating(true);
+    setLocationNotice('Mendeteksi koordinat GPS wilayah Anda...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const { latitude, longitude } = pos.coords;
+        const nearest = findNearestAdm4(latitude, longitude);
+        setCustomCode(nearest.code);
+        onSelectAdm4(nearest.code);
+        setLocationNotice(`Lokasi terdeteksi: ${nearest.label}`);
+      },
+      () => {
+        setIsLocating(false);
+        setLocationNotice('Izin lokasi ditolak di browser. Silakan pilih wilayah dari menu daftar.');
+      },
+      { timeout: 10000 }
+    );
+  };
 
   // Group slots by day
   const daysData = weatherData?.data?.[0]?.cuaca || [];
@@ -107,11 +134,23 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
 
         {/* Location selector / ADM4 switcher */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-garis">
-          {/* Preset dropdown */}
+          {/* Preset dropdown & GPS detector */}
           <div>
-            <label className="block text-xs font-medium text-teks-sekunder mb-1">
-              Pilih Wilayah Populer
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-teks-sekunder">
+                Pilih Wilayah Populer
+              </label>
+              <button
+                type="button"
+                onClick={handleDetectLocation}
+                disabled={isLocating}
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-cyan-500 hover:text-cyan-400 disabled:opacity-50 cursor-pointer transition-colors"
+                title="Deteksi wilayah terdekat via koordinat GPS perangkat"
+              >
+                <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
+                <span>{isLocating ? 'Mencari GPS...' : 'Deteksi Lokasi GPS'}</span>
+              </button>
+            </div>
             <select
               value={currentAdm4}
               onChange={(e) => {
@@ -148,6 +187,23 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
             </Button>
           </form>
         </div>
+
+        {/* Location Notice Banner */}
+        {locationNotice && (
+          <div className="text-xs px-3 py-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-between gap-2 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <LocateFixed className="w-3.5 h-3.5 shrink-0 text-cyan-400" />
+              <span>{locationNotice}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLocationNotice(null)}
+              className="text-teks-muted hover:text-teks-utama text-[11px] ml-2"
+            >
+              Tutup
+            </button>
+          </div>
+        )}
 
         {/* Current Location Badge and Info */}
         {weatherData && (

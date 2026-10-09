@@ -56,7 +56,7 @@ export const App: React.FC = () => {
     devices[0] || {
       deviceId: 'hs-8f3a1c9d2b70',
       nama: 'Jemuran Utama',
-      brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
+      brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
       lokasiAdm4: '31.71.03.1001',
       fwVersi: '1.0.0',
       lastSeenTs: Date.now(),
@@ -554,7 +554,7 @@ export const App: React.FC = () => {
       const cleanDefault: Perangkat = {
         deviceId: 'hs-' + Math.random().toString(16).slice(2, 14).padEnd(12, '0'),
         nama: 'Jemuran Utama',
-        brokerUrl: 'wss://test.mosquitto.org:8081/mqtt',
+        brokerUrl: 'wss://43-133-136-149.sslip.io/ws',
         lokasiAdm4: '31.71.03.1001',
         fwVersi: '1.0.0',
         lastSeenTs: Date.now(),

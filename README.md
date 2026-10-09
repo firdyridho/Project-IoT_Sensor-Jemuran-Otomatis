@@ -40,8 +40,8 @@ graph TD
         ESP32 -->|PWM Signal| Servo
     end
 
-    subgraph Broker ["MQTT Message Broker"]
-        Mosquitto["test.mosquitto.org:1883 TCP<br/>wss://test.mosquitto.org:8081 WSS"]
+    subgraph Broker ["Dedicated Cloud Broker & WebSocket"]
+        CloudBroker["Private VPS Broker (TCP 1883)<br/>WSS Gateway (/ws)"]
     end
 
     subgraph VPS ["Lighthouse VPS Server"]
@@ -67,13 +67,12 @@ graph TD
 
         Vercel --> WebSPA
         Nginx -->|WebSocket & REST API| WebSPA
-        Mosquitto -.->|Direct MQTT Fallback| WebSPA
         WebSPA --> BMKG
         MQTTSub --> Telegram
     end
 
-    ESP32 -->|Publish Telemetry & Event| Mosquitto
-    Mosquitto -->|Subscribe Topic| MQTTSub
+    ESP32 -->|Publish Telemetry & Event| CloudBroker
+    CloudBroker -->|Subscribe Topic| MQTTSub
 ```
 
 ---
@@ -129,7 +128,7 @@ Iot Sensor Hujan/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml            # Pipeline CI/CD GitHub Actions
-├── backend/                      # Layanan Backend Golang
+├── backend/                      # Layanan Backend Golang (API, WebSocket, DB)
 │   ├── database/                 # Driver MySQL (GORM) dan Redis cache
 │   ├── deploy/                   # Service unit systemd dan konfigurasi Nginx
 │   ├── handlers/                 # Handler REST API dan WebSocket hub
@@ -138,13 +137,21 @@ Iot Sensor Hujan/
 │   ├── hujan-backend-linux       # Binary executable Linux AMD64
 │   ├── go.mod
 │   └── main.go
-├── frontend/                     # Dashboard SPA React
+├── frontend/                     # Dashboard SPA React 19 & Tailwind CSS v4
 │   ├── src/                      # Source code aplikasi, hooks, dan state manager
 │   ├── public/                   # Asset statis, ikon, dan manifest PWA
 │   ├── vercel.json               # Konfigurasi routing SPA dan HTTP security headers
 │   └── package.json
-└── docs/
-    └── DEPLOYMENT_GUIDE.md       # Panduan lengkap deployment infrastruktur server
+├── iot/                          # Firmware & Skematik Hardware Mikrokontroler
+│   ├── hujan_esp32.ino           # Firmware Arduino C++ ESP32 sensor hujan & servo
+│   ├── config.h.example          # Template konfigurasi WiFi & broker perangkat
+│   └── README.md                 # Panduan wiring diagram, BOM, pinout & flashing
+└── docs/                         # Dokumentasi Arsitektur, API & Manajemen Task
+    ├── BACKEND_TASKS.md          # Task khusus pengembangan backend & server
+    ├── FRONTEND_TASKS.md         # Task khusus antarmuka pengguna & komponen UI
+    ├── TASKS.md                  # Pintu gerbang pembagian tugas tim
+    ├── DEPLOYMENT_GUIDE.md       # Panduan deployment VPS Tencent Cloud
+    └── API.md                    # Kontrak endpoint REST API & format paket data
 ```
 
 ---
