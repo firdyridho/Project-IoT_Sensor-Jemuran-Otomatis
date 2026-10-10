@@ -254,6 +254,9 @@ func TestTelegram(c *gin.Context) {
 	if botToken == "" {
 		botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
 	}
+	if botToken == "" {
+		botToken = "8823338938:AAG969OA9yWwB-Ujj-UGSMTcQnhFVk45_pI"
+	}
 
 	chatID := strings.TrimSpace(req.ChatID)
 	if chatID == "" {
@@ -262,7 +265,7 @@ func TestTelegram(c *gin.Context) {
 
 	if botToken == "" || chatID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Bot Token atau Chat ID belum diisi. Masukkan Bot Token & Chat ID atau atur TELEGRAM_BOT_TOKEN di server.",
+			"error": "Chat ID belum diisi. Masukkan Chat ID akun Telegram Anda.",
 		})
 		return
 	}
@@ -301,9 +304,12 @@ func TestTelegram(c *gin.Context) {
 // GetTelegramConfig mengembalikan informasi status konfigurasi bot Telegram server
 func GetTelegramConfig(c *gin.Context) {
 	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	if botToken == "" {
+		botToken = "8823338938:AAG969OA9yWwB-Ujj-UGSMTcQnhFVk45_pI"
+	}
 	botUsername := os.Getenv("TELEGRAM_BOT_USERNAME")
 	if botUsername == "" {
-		botUsername = "rintik_iot_bot"
+		botUsername = "Rintik_Iot_Bot"
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"configured":  botToken != "",

@@ -85,7 +85,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [telegramChatId, setTelegramChatId] = useState<string>(() => {
     return localStorage.getItem('hujan.telegram.chatId') || '';
   });
-  const [botUsername, setBotUsername] = useState<string>('rintik_iot_bot');
+  const [botUsername, setBotUsername] = useState<string>('Rintik_Iot_Bot');
   const [isBotConfigured, setIsBotConfigured] = useState<boolean>(true);
   const [isSendingTelegram, setIsSendingTelegram] = useState(false);
   const [isSavingTelegram, setIsSavingTelegram] = useState(false);
