@@ -125,12 +125,15 @@ jobs:
       - name: Set Permissions & Restart Systemd Service
         if: steps.check-creds.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          TG_SECRET: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME || 'root' }}
           password: ${{ secrets.VPS_PASSWORD }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          envs: TG_SECRET
           script: |
             set +e
 
@@ -161,11 +164,17 @@ jobs:
             chmod +x /www/wwwroot/hujan-backend-staging/hujan-backend-linux 2>/dev/null || true
             chmod +x /www/wwwroot/hujan-backend-prod/hujan-backend-linux 2>/dev/null || true
 
+            # Ambil Token Telegram dari Secrets CI/CD atau pertahankan token yang sudah aktif di VPS jika ada
+            TG_TOKEN="$TG_SECRET"
+            if [ -z "$TG_TOKEN" ]; then
+              TG_TOKEN=$(grep -oP '(?<=Environment=TELEGRAM_BOT_TOKEN=).*' /etc/systemd/system/hujan-backend-staging.service 2>/dev/null || echo "")
+            fi
+
             # 4. Pasang & Aktifkan Unit Service Staging (Port 8080) -> Database hujan_iot_staging
-            printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Staging)\nAfter=network.target mysql.service\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-staging\nExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8080\nEnvironment=MQTT_BROKER=tcp://test.mosquitto.org:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_iot_staging\nEnvironment=MYSQL_PASSWORD=%s\nEnvironment=MYSQL_DATABASE=hujan_iot_staging\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\nEnvironment=TELEGRAM_BOT_TOKEN=8823338938:AAG969OA9yWwB-Ujj-UGSMTcQnhFVk45_pI\nEnvironment=TELEGRAM_BOT_USERNAME=Rintik_Iot_Bot\n\n[Install]\nWantedBy=multi-user.target\n' "$STAGING_PW" > /etc/systemd/system/hujan-backend-staging.service
+            printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Staging)\nAfter=network.target mysql.service\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-staging\nExecStart=/www/wwwroot/hujan-backend-staging/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8080\nEnvironment=MQTT_BROKER=tcp://test.mosquitto.org:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_iot_staging\nEnvironment=MYSQL_PASSWORD=%s\nEnvironment=MYSQL_DATABASE=hujan_iot_staging\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\nEnvironment=TELEGRAM_BOT_TOKEN=%s\nEnvironment=TELEGRAM_BOT_USERNAME=Rintik_Iot_Bot\n\n[Install]\nWantedBy=multi-user.target\n' "$STAGING_PW" "$TG_TOKEN" > /etc/systemd/system/hujan-backend-staging.service
 
             # 5. Pasang & Aktifkan Unit Service Production (Port 8081) -> Database hujan_iot_prod
-            printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Production)\nAfter=network.target mysql.service\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-prod\nExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8081\nEnvironment=MQTT_BROKER=tcp://test.mosquitto.org:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_iot_prod\nEnvironment=MYSQL_PASSWORD=%s\nEnvironment=MYSQL_DATABASE=hujan_iot_prod\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\nEnvironment=TELEGRAM_BOT_TOKEN=8823338938:AAG969OA9yWwB-Ujj-UGSMTcQnhFVk45_pI\nEnvironment=TELEGRAM_BOT_USERNAME=Rintik_Iot_Bot\n\n[Install]\nWantedBy=multi-user.target\n' "$PROD_PW" > /etc/systemd/system/hujan-backend-prod.service
+            printf '[Unit]\nDescription=HujanPantau IoT Go Backend (Production)\nAfter=network.target mysql.service\n\n[Service]\nType=simple\nUser=root\nWorkingDirectory=/www/wwwroot/hujan-backend-prod\nExecStart=/www/wwwroot/hujan-backend-prod/hujan-backend-linux\nRestart=always\nRestartSec=5\nEnvironment=PORT=8081\nEnvironment=MQTT_BROKER=tcp://test.mosquitto.org:1883\nEnvironment=DB_TYPE=mysql\nEnvironment=MYSQL_USER=hujan_iot_prod\nEnvironment=MYSQL_PASSWORD=%s\nEnvironment=MYSQL_DATABASE=hujan_iot_prod\nEnvironment=MYSQL_HOST=127.0.0.1\nEnvironment=MYSQL_PORT=3306\nEnvironment=TELEGRAM_BOT_TOKEN=%s\nEnvironment=TELEGRAM_BOT_USERNAME=Rintik_Iot_Bot\n\n[Install]\nWantedBy=multi-user.target\n' "$PROD_PW" "$TG_TOKEN" > /etc/systemd/system/hujan-backend-prod.service
 
             systemctl daemon-reload
             systemctl enable hujan-backend-staging hujan-backend-prod
