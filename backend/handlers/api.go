@@ -297,3 +297,50 @@ func TestTelegram(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Notifikasi Telegram berhasil terkirim!"})
 }
+
+// GetTelegramConfig mengembalikan informasi status konfigurasi bot Telegram server
+func GetTelegramConfig(c *gin.Context) {
+	botToken := os.Getenv("TELEGRAM_BOT_TOKEN")
+	botUsername := os.Getenv("TELEGRAM_BOT_USERNAME")
+	if botUsername == "" {
+		botUsername = "rintik_iot_bot"
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"configured":  botToken != "",
+		"botUsername": botUsername,
+		"botName":     "Rintik",
+	})
+}
+
+// SaveDeviceTelegram menyimpan ID Obrolan Telegram langsung ke database untuk perangkat tertentu
+func SaveDeviceTelegram(c *gin.Context) {
+	deviceID := c.Param("id")
+	var req struct {
+		ChatID string `json:"chatId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format request tidak valid: " + err.Error()})
+		return
+	}
+
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", deviceID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Perangkat tidak ditemukan"})
+		return
+	}
+
+	dev.TelegramChatID = strings.TrimSpace(req.ChatID)
+	database.DB.Save(&dev)
+
+	// Siarkan event ke dashboard web
+	Hub.Broadcast("telegram_saved", gin.H{
+		"deviceId": dev.ID,
+		"chatId":   dev.TelegramChatID,
+	})
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Chat ID Telegram berhasil disimpan ke perangkat",
+		"deviceId": dev.ID,
+		"chatId":   dev.TelegramChatID,
+	})
+}

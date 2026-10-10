@@ -10,6 +10,7 @@ import (
 	"hujan-backend/database"
 	"hujan-backend/handlers"
 	"hujan-backend/mqtt"
+	"hujan-backend/telegram"
 )
 
 func getEnv(key, defaultVal string) string {
@@ -50,7 +51,10 @@ func main() {
 	// 3. Jalankan Background Worker Pemantau Cuaca Ekstrem (BE-08)
 	handlers.StartWeatherAlertWorker()
 
-	// 4. Setup Gin Web Server
+	// 4. Jalankan Bot Telegram Poller untuk Auto-Connect 1-Klik jika token disetel
+	telegram.StartBotPoller(tgBot)
+
+	// 5. Setup Gin Web Server
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -96,6 +100,7 @@ func main() {
 		api.GET("/devices/:id/telemetry", handlers.GetTelemetry)
 		api.GET("/devices/:id/events", handlers.GetEvents)
 		api.GET("/devices/:id/latest", handlers.GetLatest)
+		api.POST("/devices/:id/telegram", handlers.SaveDeviceTelegram)
 
 		// Motor DC / Jemuran Kanopi Status & Kendali (REQ-BE-01)
 		api.GET("/devices/:id/motor", handlers.GetMotorStatus)
@@ -107,7 +112,8 @@ func main() {
 		// Direct HTTP ingestion backup
 		api.POST("/telemetry", handlers.IngestTelemetry)
 
-		// Test telegram bot
+		// Telegram bot config & test
+		api.GET("/telegram/config", handlers.GetTelegramConfig)
 		api.POST("/telegram/test", handlers.TestTelegram)
 	}
 

@@ -220,7 +220,20 @@ func (s *MqttSubscriber) handleEvent(raw []byte) {
 }
 
 func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
-	if s.telegramBot == "" || s.telegramChat == "" {
+	if s.telegramBot == "" {
+		return
+	}
+
+	targetChat := s.telegramChat
+	// Cek apakah perangkat ini memiliki Chat ID khusus yang terhubung di database
+	if ev.DeviceID != "" && database.DB != nil {
+		var dev models.Device
+		if err := database.DB.First(&dev, "id = ?", ev.DeviceID).Error; err == nil && dev.TelegramChatID != "" {
+			targetChat = dev.TelegramChatID
+		}
+	}
+
+	if targetChat == "" {
 		return
 	}
 
@@ -236,7 +249,7 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 	go func() {
 		url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", s.telegramBot)
 		body, _ := json.Marshal(map[string]interface{}{
-			"chat_id":    s.telegramChat,
+			"chat_id":    targetChat,
 			"text":       text,
 			"parse_mode": "HTML",
 		})

@@ -26,6 +26,7 @@ type Device struct {
 	MotorPosition    string    `gorm:"size:32;default:'extended'" json:"motorPosition"` // "sheltered" or "extended"
 	MotorStatus      string    `gorm:"size:32;default:'idle'" json:"motorStatus"`         // "idle" or "moving"
 	MotorLastMovedAt time.Time `json:"motorLastMovedAt"`
+	TelegramChatID   string    `gorm:"size:64" json:"telegramChatId"`
 	LastSeenAt       time.Time `json:"lastSeenAt"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
