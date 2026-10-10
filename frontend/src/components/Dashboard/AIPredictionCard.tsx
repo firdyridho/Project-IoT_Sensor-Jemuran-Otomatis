@@ -78,9 +78,11 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
     fetchPrediction();
   }, [deviceId, currentWet, backendUrl]);
 
+  // Hook must be called unconditionally before any early returns to satisfy React Rules of Hooks
+  const [displayProb, countUpRef] = useCountUp(data?.probabilityPct ?? 0);
+
   if (!data) return null;
 
-  const [displayProb, countUpRef] = useCountUp(data.probabilityPct);
   const prob = data.probabilityPct;
   const isHighRisk = prob >= 70;
   const isMedRisk = prob >= 40 && prob < 70;

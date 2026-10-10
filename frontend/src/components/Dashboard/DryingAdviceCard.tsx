@@ -67,6 +67,9 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
     fetchAdvice();
   }, [deviceId, currentWet, backendUrl]);
 
+  // Hook must be called unconditionally before any early returns to satisfy React Rules of Hooks
+  const [displayScore, scoreRef] = useCountUp(data?.dryingScore ?? 0);
+
   if (!data) return null;
 
   const recConfig = isCerah
@@ -140,7 +143,6 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
   const RecIcon = recConfig.icon;
 
   // Gauge calculations for dryingScore (0 to 100) with scroll count-up animation
-  const [displayScore, scoreRef] = useCountUp(data.dryingScore);
   const radius = 34;
   const circ = 2 * Math.PI * radius;
   const scoreOffset = circ - (Math.min(100, Math.max(0, displayScore)) / 100) * circ;

@@ -14,7 +14,7 @@ export function useCountUp(
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) {
+    if (!el || typeof window === 'undefined' || !('IntersectionObserver' in window)) {
       setCount(target);
       return;
     }
