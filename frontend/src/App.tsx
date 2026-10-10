@@ -973,6 +973,7 @@ export const App: React.FC = () => {
                 <HistoryView
                   events={events}
                   device={activeDevice}
+                  backendUrl={settings.backendUrl}
                   onClearEvents={() => {
                     setEvents([]);
                     StorageService.saveEvents(activeDevice.deviceId, []);

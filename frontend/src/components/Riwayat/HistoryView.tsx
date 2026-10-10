@@ -25,12 +25,14 @@ interface HistoryViewProps {
   events: Peristiwa[];
   device: Perangkat;
   onClearEvents: () => void;
+  backendUrl?: string;
 }
 
 export const HistoryView: React.FC<HistoryViewProps> = ({
   events,
   device,
   onClearEvents,
+  backendUrl,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'events' | 'ai-accuracy'>('events');
   const [filterType, setFilterType] = useState<string>('all');
@@ -197,7 +199,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
       {/* Render Sub-Tab 2: AI Accuracy View (FE-07) */}
       {activeSubTab === 'ai-accuracy' && (
-        <AIAccuracyView deviceId={device.deviceId} />
+        <AIAccuracyView deviceId={device.deviceId} backendUrl={backendUrl} />
       )}
 
       {/* Render Sub-Tab 1: Log Peristiwa IoT & Sensor */}

@@ -218,6 +218,25 @@ export const BackendService = {
     }
   },
 
+  async getAIPredictionsHistory(
+    baseUrl: string,
+    deviceId: string
+  ): Promise<{ status?: string; total?: number; accuracyRatePct?: number; logs?: any[] } | null> {
+    if (!baseUrl || !deviceId) return null;
+    try {
+      const clean = baseUrl.replace(/\/+$/, '');
+      const res = await fetch(
+        `${clean}/api/ai/predictions/history?deviceId=${encodeURIComponent(deviceId)}&limit=50`
+      );
+      if (res.ok) {
+        return await res.json();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
+
   // ---------------------------------------------------------------------------
   // Motor DC & Canopy Status/Commands (REQ-BE-01 / BE-13)
   // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BrainCircuit,
   CheckCircle2,
@@ -9,10 +9,12 @@ import {
   Filter,
   Download,
   AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 import { Badge } from '../Common/Badge';
 import { Button } from '../Common/Button';
+import { BackendService } from '../../services/api';
 
 export interface AIPredictionAccuracyLog {
   id: string;
@@ -105,11 +107,49 @@ const DEFAULT_LOGS: AIPredictionAccuracyLog[] = [
 
 interface AIAccuracyViewProps {
   deviceId: string;
+  backendUrl?: string;
 }
 
-export const AIAccuracyView: React.FC<AIAccuracyViewProps> = ({ deviceId }) => {
+export const AIAccuracyView: React.FC<AIAccuracyViewProps> = ({ deviceId, backendUrl }) => {
   const [logs, setLogs] = useState<AIPredictionAccuracyLog[]>(DEFAULT_LOGS);
   const [filterAccuracy, setFilterAccuracy] = useState<'all' | 'tepat' | 'meleset'>('all');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const loadLogs = async () => {
+    if (!backendUrl) return;
+    setIsLoading(true);
+    try {
+      const data = await BackendService.getAIPredictionsHistory(backendUrl, deviceId);
+      if (data?.logs && Array.isArray(data.logs) && data.logs.length > 0) {
+        const formatted: AIPredictionAccuracyLog[] = data.logs.map((item: any, idx: number) => {
+          const ts = item.createdAt ? new Date(item.createdAt).getTime() : Date.now() - idx * 600000;
+          return {
+            id: String(item.id || `log-${idx}`),
+            timestamp: ts,
+            probabilityPct: item.probabilityPct ?? item.probability ?? 75,
+            predictedRain: item.predictedRain ?? item.willRain ?? true,
+            confidenceLevel: item.confidenceLevel || 'high',
+            actualRainOccurred: item.actualRainOccurred ?? true,
+            accuracyStatus: item.accuracyStatus || 'tepat',
+            humidityDelta: item.humidityDelta || '+10.0%',
+            tempDelta: item.tempDelta || '-1.5°C',
+            notes: item.notes || item.summary || 'Hasil evaluasi model AI.',
+          };
+        });
+        setLogs(formatted);
+      }
+    } catch {
+      // Keep DEFAULT_LOGS on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (backendUrl) {
+      loadLogs();
+    }
+  }, [backendUrl, deviceId]);
 
   const filteredLogs = logs.filter((log) => {
     if (filterAccuracy === 'all') return true;
@@ -224,15 +264,29 @@ export const AIAccuracyView: React.FC<AIAccuracyViewProps> = ({ deviceId }) => {
           </div>
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleExportCSV}
-          className="gap-1.5"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Ekspor Log AI (CSV)
-        </Button>
+        <div className="flex items-center gap-2">
+          {backendUrl && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={loadLogs}
+              disabled={isLoading}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Memuat...' : 'Segarkan'}
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExportCSV}
+            className="gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Ekspor Log AI (CSV)
+          </Button>
+        </div>
       </Card>
 
       {/* 3. Log Table */}
