@@ -303,21 +303,25 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 1. Header */}
-      <Card className="p-4 md:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 1. Header with Gradient Accent */}
+      <Card className="p-4 md:p-6 space-y-4 relative overflow-hidden">
+        <div className="absolute -top-14 -right-14 w-40 h-40 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 p-4 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-transparent border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25">
                 <Cpu className="w-5 h-5" />
               </span>
-              <h2 className="text-lg font-bold text-teks-utama font-heading">
-                Kelola Perangkat & Pengaturan
-              </h2>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-teks-utama font-heading tracking-tight leading-tight">
+                  Kelola Perangkat & Pengaturan
+                </h2>
+                <p className="text-xs text-teks-sekunder mt-0.5 font-medium">
+                  Konfigurasi perangkat ESP32, broker MQTT, emulator pengujian, dan tema tampilan
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-teks-sekunder mt-0.5">
-              Konfigurasi perangkat ESP32, broker MQTT, emulator pengujian, dan tema tampilan
-            </p>
           </div>
 
           <Button
@@ -327,7 +331,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
               handleCreateRandomId();
               setShowAddForm(true);
             }}
-            className="gap-1.5 self-start sm:self-auto"
+            className="gap-1.5 self-start sm:self-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold shadow-md shadow-cyan-500/20 border border-cyan-400/30"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Perangkat</span>
@@ -535,8 +539,8 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                   key={device.deviceId}
                   className={`p-4 transition-all relative ${
                     isSelected
-                      ? 'border-2 border-blue-500/70 bg-blue-500/5'
-                      : 'hover:border-garis/90'
+                      ? 'border-2 border-cyan-500/70 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/20'
+                      : 'hover:border-cyan-500/30 hover:shadow-xs transition-all duration-200'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -546,9 +550,9 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                           {device.nama}
                         </h4>
                         {isSelected && (
-                          <Badge variant="kering" className="text-[10px]">
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs">
                             Aktif
-                          </Badge>
+                          </span>
                         )}
                       </div>
                       <p className="text-xs font-mono text-teks-sekunder truncate">
@@ -563,7 +567,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                           variant="secondary"
                           size="sm"
                           onClick={() => onSelectDevice(device.deviceId)}
-                          className="text-xs"
+                          className="text-xs font-bold hover:border-cyan-500/40"
                         >
                           Pilih
                         </Button>
@@ -572,7 +576,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleStartEdit(device)}
-                        className="text-blue-500 hover:text-blue-600 p-2 min-w-9 min-h-9"
+                        className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 p-2 min-w-9 min-h-9 rounded-xl"
                         title="Edit perangkat"
                         aria-label={`Edit ${device.nama}`}
                       >
@@ -582,7 +586,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDeleteDevice(device.deviceId)}
-                        className="text-red-500 hover:text-red-600 p-2 min-w-9 min-h-9"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10 p-2 min-w-9 min-h-9 rounded-xl"
                         title="Hapus perangkat"
                         aria-label={`Hapus ${device.nama}`}
                       >
@@ -594,15 +598,15 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                   <div className="mt-3 pt-3 border-t border-garis/60 text-[11px] text-teks-sekunder grid grid-cols-3 gap-2">
                     <div className="truncate">
                       <span>Server: </span>
-                      <strong className="text-cyan-600 dark:text-cyan-400 font-medium">Cloud VPS</strong>
+                      <strong className="text-cyan-600 dark:text-cyan-400 font-bold">Cloud VPS</strong>
                     </div>
                     <div className="truncate text-center">
                       <span>Sensitivitas: </span>
-                      <strong className="text-teks-utama font-mono">{device.ambangPct || 60}%</strong>
+                      <strong className="text-teks-utama font-mono font-bold">{device.ambangPct || 60}%</strong>
                     </div>
                     <div className="truncate text-right">
                       <span>Koneksi: </span>
-                      <strong className="text-emerald-500 font-medium">Realtime</strong>
+                      <strong className="text-emerald-500 font-bold">Realtime</strong>
                     </div>
                   </div>
                 </Card>
@@ -712,10 +716,10 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
                 key={snd.id}
                 type="button"
                 onClick={() => handleSaveAlarmSettings(snd.id, alarmVolume)}
-                className={`p-3 rounded-xl border text-left transition-all ${
+                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                   alarmSound === snd.id
-                    ? 'bg-kartu-muted border-cyan-500 text-teks-utama ring-1 ring-cyan-500/20'
-                    : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
+                    ? 'bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-transparent border-cyan-500 text-teks-utama ring-1 ring-cyan-500/30 shadow-xs'
+                    : 'bg-kartu border-garis text-teks-sekunder hover:border-cyan-500/30 hover:text-teks-utama'
                 }`}
               >
                 <div className="flex items-center justify-between">

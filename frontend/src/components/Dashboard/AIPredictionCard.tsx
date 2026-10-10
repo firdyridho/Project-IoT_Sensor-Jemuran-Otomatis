@@ -3,6 +3,7 @@ import { Sparkles, RefreshCw, AlertTriangle, ArrowUpRight, ArrowDownRight, Minus
 import { Card } from '../Common/Card';
 import { AIPredictResponse } from '../../types/ai';
 import { BackendService } from '../../services/api';
+import { useCountUp } from '../../hooks/useCountUp';
 
 interface AIPredictionCardProps {
   backendUrl?: string;
@@ -79,6 +80,7 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
 
   if (!data) return null;
 
+  const [displayProb, countUpRef] = useCountUp(data.probabilityPct);
   const prob = data.probabilityPct;
   const isHighRisk = prob >= 70;
   const isMedRisk = prob >= 40 && prob < 70;
@@ -98,7 +100,7 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
   // SVG Circular progress radius & circumference
   const radius = 38;
   const circ = 2 * Math.PI * radius;
-  const strokeDashoffset = circ - (prob / 100) * circ;
+  const strokeDashoffset = circ - (displayProb / 100) * circ;
 
   const cardClass = isCerah
     ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
@@ -195,9 +197,9 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
             </svg>
 
             {/* Inner Circular Value */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div ref={countUpRef} className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className={`text-2xl font-black font-mono tracking-tight ${isCerah ? 'text-slate-900' : 'text-white'}`}>
-                {prob}%
+                {displayProb}%
               </span>
               <span className={`text-[10px] font-semibold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>
                 Potensi

@@ -135,25 +135,34 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
   const activePoint = hoverIndex !== null && points[hoverIndex] ? points[hoverIndex] : null;
 
   return (
-    <Card className="space-y-4 p-4 md:p-6">
+    <Card className="space-y-4 p-4 md:p-6 relative overflow-hidden border">
+      {/* Decorative ambient gradient corner glow */}
+      <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br from-cyan-500/15 via-blue-500/10 to-transparent blur-3xl pointer-events-none" />
+
       {/* Header with Series Selector & Range Chips */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-garis pb-4">
+      <div className="relative z-10 p-4 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-indigo-500/10 border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
         <div>
-          <h2 className="text-base font-bold text-teks-utama flex items-center gap-2">
-            <Activity className="w-4 h-4 text-cyan-500" />
-            Grafik Realtime
-          </h2>
-          <p className="text-xs text-teks-sekunder">
-            {filteredData.length} titik pengukuran • Terhubung langsung ke telemetry
-          </p>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25">
+              <Activity className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-teks-utama font-heading tracking-tight leading-tight">
+                Grafik Telemetri Realtime
+              </h2>
+              <p className="text-xs text-teks-sekunder mt-0.5 font-medium">
+                {filteredData.length} data point • Live streaming dari ESP32
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Range Buttons & Export Button */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-          <div className="flex items-center gap-1.5 bg-kartu-muted p-1 rounded-xl border border-garis">
+          <div className="flex items-center gap-1 bg-kartu/80 backdrop-blur-xs p-1 rounded-xl border border-garis shadow-xs">
             {(
               [
-                { id: '5m', label: '5 Menit' },
+                { id: '5m', label: '5m' },
                 { id: '1h', label: '1 Jam' },
                 { id: 'session', label: 'Sesi Ini' },
               ] as const
@@ -161,9 +170,9 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
               <button
                 key={item.id}
                 onClick={() => setRange(item.id)}
-                className={`min-h-9 px-3 py-1 rounded-lg text-xs font-semibold transition-all focus:outline-none ${
+                className={`min-h-8 px-3 py-1 rounded-lg text-xs font-bold transition-all focus:outline-none cursor-pointer ${
                   range === item.id
-                    ? 'bg-kartu text-teks-utama shadow-xs border border-garis'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-xs'
                     : 'text-teks-sekunder hover:text-teks-utama'
                 }`}
               >
@@ -177,36 +186,39 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
             size="sm"
             onClick={handleExportTelemetryCSV}
             disabled={readings.length === 0}
-            className="gap-1.5"
+            className="gap-1.5 shadow-xs bg-kartu/90 hover:bg-kartu"
             title="Ekspor CSV Telemetri Sensor"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-green-500" />
-            <span className="hidden xs:inline">Ekspor CSV</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="hidden xs:inline font-bold">Ekspor CSV</span>
           </Button>
         </div>
       </div>
 
-      {/* Series Metric Pills (Horizontal scroll-free chips) */}
-      <div className="flex flex-wrap gap-2">
+      {/* Series Metric Pills with Modern Gradient Styles */}
+      <div className="flex flex-wrap gap-2 pt-1">
         {(['pct', 'raw', 'tempC', 'hum'] as const).map((s) => {
           const cfg = seriesConfig[s];
           const Icon = cfg.icon;
           const isSelected = activeSeries === s;
+          const activeGradients: Record<string, string> = {
+            pct: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20 border-cyan-400',
+            raw: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20 border-blue-400',
+            tempC: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/20 border-amber-400',
+            hum: 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20 border-emerald-400',
+          };
+
           return (
             <button
               key={s}
               onClick={() => setActiveSeries(s)}
-              className={`min-h-11 px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${
+              className={`min-h-10 px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all cursor-pointer ${
                 isSelected
-                  ? 'bg-kartu-muted border-cyan-500/50 text-teks-utama shadow-xs ring-1 ring-cyan-500/20'
-                  : 'bg-kartu border-garis text-teks-sekunder hover:bg-kartu-muted hover:text-teks-utama'
+                  ? activeGradients[s]
+                  : 'bg-kartu/80 border-garis text-teks-sekunder hover:bg-kartu-muted hover:text-teks-utama'
               }`}
             >
-              <span
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: cfg.color }}
-              />
-              <Icon className="w-3.5 h-3.5 opacity-80" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{cfg.label}</span>
             </button>
           );
@@ -371,25 +383,25 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
         )}
       </div>
 
-      {/* Chart Footer summary */}
-      <div className="grid grid-cols-3 gap-2 pt-1 text-center text-xs">
-        <div className="p-2 rounded-xl bg-kartu-muted border border-garis">
-          <span className="text-[11px] text-teks-sekunder">Nilai Terakhir</span>
-          <p className="font-bold text-sm text-teks-utama mt-0.5">
+      {/* Chart Footer summary with Modern Gradient Accents */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-center text-xs">
+        <div className="p-3 rounded-2xl bg-gradient-to-b from-cyan-500/10 to-transparent border border-cyan-500/20 shadow-2xs">
+          <span className="text-[11px] font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">Nilai Terakhir</span>
+          <p className="font-black font-mono text-base text-teks-utama mt-1">
             {filteredData[filteredData.length - 1]
               ? `${activeSeries === 'pct' ? filteredData[filteredData.length - 1].pct : activeSeries === 'raw' ? filteredData[filteredData.length - 1].raw : activeSeries === 'tempC' ? filteredData[filteredData.length - 1].suhuC : filteredData[filteredData.length - 1].lembapPct} ${currentCfg.unit}`
               : '—'}
           </p>
         </div>
-        <div className="p-2 rounded-xl bg-kartu-muted border border-garis">
-          <span className="text-[11px] text-teks-sekunder">Titik Terendah</span>
-          <p className="font-bold text-sm text-teks-utama mt-0.5">
+        <div className="p-3 rounded-2xl bg-gradient-to-b from-blue-500/10 to-transparent border border-blue-500/20 shadow-2xs">
+          <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Titik Terendah</span>
+          <p className="font-black font-mono text-base text-teks-utama mt-1">
             {minVal} {currentCfg.unit}
           </p>
         </div>
-        <div className="p-2 rounded-xl bg-kartu-muted border border-garis">
-          <span className="text-[11px] text-teks-sekunder">Titik Tertinggi</span>
-          <p className="font-bold text-sm text-teks-utama mt-0.5">
+        <div className="p-3 rounded-2xl bg-gradient-to-b from-indigo-500/10 to-transparent border border-indigo-500/20 shadow-2xs">
+          <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Titik Tertinggi</span>
+          <p className="font-black font-mono text-base text-teks-utama mt-1">
             {maxVal} {currentCfg.unit}
           </p>
         </div>

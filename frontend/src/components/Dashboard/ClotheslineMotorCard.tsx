@@ -375,8 +375,8 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isCerah ? 'text-slate-950' : 'text-white'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center items-start gap-1.5 sm:gap-2">
+              <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1.5 leading-tight ${isCerah ? 'text-slate-950' : 'text-white'}`}>
                 {controlMode === 'manual' ? (
                   <>
                     <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -390,11 +390,11 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
                 )}
               </span>
               {controlMode === 'manual' ? (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black shadow-xs">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black shadow-xs shrink-0">
                   KONTROL MANUAL
                 </span>
               ) : (
-                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500 text-white font-black shadow-xs">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500 text-white font-black shadow-xs shrink-0">
                   AUTO SENSOR
                 </span>
               )}

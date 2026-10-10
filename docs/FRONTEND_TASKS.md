@@ -63,6 +63,11 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Memastikan kartu pop-up 100% solid (tidak transparan) dengan skema warna yang dinamis mengikuti kondisi cuaca di dashboard atau tema yang dipilih user di halaman lain.
   * Mengintegrasikan library Lenis untuk animasi scrolling halaman web yang halus dan buttery-smooth.
   * Menerapkan custom scrollbar CSS yang warnanya otomatis beradaptasi dengan kondisi cuaca pada dashboard (Cerah, Mendung, Hujan, Badai) serta tema light/dark pada halaman lainnya.
+* [x] **FE-04i: Layout Mobile Panel Manual Bersih, Animasi Count-Up Persentase saat Scroll, Modal Close Kiri Atas & Elevasi Gradient UI**:
+  * Pada mobile view kartu Motor Jemuran, judul Panel Kendali Tombol Manual dibuat full-width dan badge KONTROL MANUAL diturunkan ke bawahnya agar bersih dan tidak terbagi 2 kolom sempit.
+  * Menambahkan hook animasi angka gerak (count-up dari 0 ke target) dengan IntersectionObserver saat di-scroll pada widget persentase Prediksi Hujan Cerdas AI, Skor Rekomendasi Jemuran AI (0-100), dan Sensor Kebasahan Fisik ADC (%).
+  * Memodifikasi pop-up modal SweetAlert2 di desktop agar tombol "Mengerti / OK" dihilangkan dan tombol close silang (X) diletakkan di sudut kiri atas.
+  * Mempercantik antarmuka dan layout halaman Grafik Realtime, Perkiraan BMKG, Riwayat & Log Event, dan Kelola Perangkat dengan aksen gradient modern, glowing status pills, efek hover interaktif, dan visual estetis yang user friendly serta tidak monoton.
 
 
 

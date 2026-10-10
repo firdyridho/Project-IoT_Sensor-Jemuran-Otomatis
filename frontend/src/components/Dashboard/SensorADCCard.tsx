@@ -2,6 +2,7 @@ import React from 'react';
 import { Droplets, ShieldCheck, AlertTriangle, Activity } from 'lucide-react';
 import { Card } from '../Common/Card';
 import { WeatherSphereOrb } from './WeatherSphereOrb';
+import { useCountUp } from '../../hooks/useCountUp';
 
 interface SensorADCCardProps {
   condition: 'cerah' | 'mendung' | 'gerimis' | 'hujan' | 'badai';
@@ -19,6 +20,7 @@ export const SensorADCCard: React.FC<SensorADCCardProps> = ({
   isWet,
 }) => {
   const isCerah = condition === 'cerah';
+  const [displayPct, pctRef] = useCountUp(pct);
 
   const cardClass = isCerah
     ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
@@ -71,9 +73,9 @@ export const SensorADCCard: React.FC<SensorADCCardProps> = ({
 
         {/* Center: Big Percentage & Subtitle */}
         <div className="text-center sm:text-left space-y-1">
-          <div className="flex items-baseline justify-center sm:justify-start gap-1">
+          <div ref={pctRef} className="flex items-baseline justify-center sm:justify-start gap-1">
             <span className="text-5xl sm:text-6xl font-black font-mono tracking-tight leading-none">
-              {pct}%
+              {displayPct}%
             </span>
             <span className="text-xs uppercase tracking-wider font-bold opacity-60">
               Tingkat Kebasahan

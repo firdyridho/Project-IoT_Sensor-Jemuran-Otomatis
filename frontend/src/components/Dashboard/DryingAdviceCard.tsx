@@ -3,6 +3,7 @@ import { Sun, AlertTriangle, ShieldCheck, Clock, Calendar, Wind, RefreshCw, Shir
 import { Card } from '../Common/Card';
 import { AIDryingAdviceResponse } from '../../types/ai';
 import { BackendService } from '../../services/api';
+import { useCountUp } from '../../hooks/useCountUp';
 
 interface DryingAdviceCardProps {
   backendUrl?: string;
@@ -138,10 +139,11 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
 
   const RecIcon = recConfig.icon;
 
-  // Gauge calculations for dryingScore (0 to 100)
+  // Gauge calculations for dryingScore (0 to 100) with scroll count-up animation
+  const [displayScore, scoreRef] = useCountUp(data.dryingScore);
   const radius = 34;
   const circ = 2 * Math.PI * radius;
-  const scoreOffset = circ - (Math.min(100, Math.max(0, data.dryingScore)) / 100) * circ;
+  const scoreOffset = circ - (Math.min(100, Math.max(0, displayScore)) / 100) * circ;
 
   const cardClass = isCerah
     ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
@@ -246,9 +248,9 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
                 className="transition-all duration-1000 ease-out"
               />
             </svg>
-            <div className="absolute flex flex-col items-center justify-center text-center">
+            <div ref={scoreRef} className="absolute flex flex-col items-center justify-center text-center">
               <span className={`text-lg font-black leading-none ${isCerah ? 'text-slate-900' : 'text-white'}`}>
-                {data.dryingScore}
+                {displayScore}
               </span>
               <span className={`text-[9px] uppercase tracking-wider mt-0.5 font-bold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>
                 Skor

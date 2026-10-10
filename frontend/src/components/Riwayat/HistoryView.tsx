@@ -165,33 +165,33 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   return (
     <div className="space-y-4">
       {/* 1. Sub-Tab Switcher (FE-07: Tab Riwayat Log Akurasi AI) */}
-      <div className="flex items-center gap-2 border-b border-garis pb-2">
+      <div className="flex items-center gap-2 border-b border-garis pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveSubTab('events')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeSubTab === 'events'
-              ? 'bg-cyan-500 text-white shadow-md'
-              : 'bg-kartu text-teks-sekunder hover:text-teks-utama border border-garis'
+              ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 border border-cyan-400/40'
+              : 'bg-kartu text-teks-sekunder hover:text-teks-utama border border-garis hover:bg-kartu-muted'
           }`}
         >
           <History className="w-4 h-4" />
           <span>Log Peristiwa IoT</span>
-          <span className="text-xs px-1.5 py-0.2 rounded-full bg-white/20">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 font-mono">
             {events.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveSubTab('ai-accuracy')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
             activeSubTab === 'ai-accuracy'
-              ? 'bg-indigo-600 text-white shadow-md'
-              : 'bg-kartu text-teks-sekunder hover:text-teks-utama border border-garis'
+              ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25 border border-indigo-400/40'
+              : 'bg-kartu text-teks-sekunder hover:text-teks-utama border border-garis hover:bg-kartu-muted'
           }`}
         >
           <BrainCircuit className="w-4 h-4 text-indigo-300" />
           <span>Log Akurasi AI</span>
-          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-400/20">
+          <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-200 border border-indigo-400/20">
             Cerdas
           </span>
         </button>
@@ -205,33 +205,37 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       {/* Render Sub-Tab 1: Log Peristiwa IoT & Sensor */}
       {activeSubTab === 'events' && (
         <>
-          {/* Header and Actions */}
-          <Card className="p-4 md:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Header and Actions with Modern Gradient */}
+          <Card className="p-4 md:p-6 space-y-4 relative overflow-hidden">
+            <div className="absolute -top-14 -right-14 w-40 h-40 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 p-4 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/5 to-transparent border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+                <div className="flex items-center gap-2.5">
+                  <span className="p-2.5 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25">
                     <History className="w-5 h-5" />
                   </span>
-                  <h2 className="text-lg font-bold text-teks-utama font-heading">
-                    Riwayat & Log Peristiwa
-                  </h2>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-teks-utama font-heading tracking-tight leading-tight">
+                      Riwayat & Log Peristiwa
+                    </h2>
+                    <p className="text-xs text-teks-sekunder mt-0.5">
+                      Catatan kejadian hujan, online/offline, dan boot mikrokontroler jemuran
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-teks-sekunder mt-0.5">
-                  Catatan kejadian hujan, online/offline, dan boot mikrokontroler jemuran
-                </p>
               </div>
 
-              {/* Export buttons (FE-08) */}
+              {/* Export buttons (FE-08) with modern gradient touches */}
               <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
                   onClick={handleExportCSV}
                   disabled={filteredEvents.length === 0}
-                  className="gap-1.5"
+                  className="gap-1.5 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-green-500" />
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
                   <span>Ekspor CSV</span>
                 </Button>
                 <Button
@@ -239,9 +243,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   size="sm"
                   onClick={handleExportJSON}
                   disabled={filteredEvents.length === 0}
-                  className="gap-1.5"
+                  className="gap-1.5 bg-gradient-to-r from-sky-500/10 to-blue-500/10 hover:from-sky-500/20 hover:to-blue-500/20 border-sky-500/30 text-sky-600 dark:text-sky-400 font-bold"
                 >
-                  <FileJson className="w-3.5 h-3.5 text-blue-500" />
+                  <FileJson className="w-3.5 h-3.5 text-sky-500" />
                   <span>JSON</span>
                 </Button>
                 {events.length > 0 && (
@@ -249,7 +253,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={onClearEvents}
-                    className="text-red-500 hover:text-red-600 gap-1"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10 gap-1 rounded-xl"
                     title="Hapus riwayat lokal"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -259,9 +263,9 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
             </div>
 
             {/* Datepicker Range Filter (FE-09) */}
-            <div className="p-3 rounded-2xl bg-latar border border-garis flex flex-wrap items-center justify-between gap-3">
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-kartu-muted/60 to-kartu-muted/30 border border-garis flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-semibold text-teks-sekunder flex items-center gap-1">
+                <span className="font-semibold text-teks-sekunder flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-cyan-500" />
                   Rentang Tanggal:
                 </span>
@@ -269,14 +273,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="px-2.5 py-1 rounded-lg bg-kartu border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500"
+                  className="px-2.5 py-1.5 rounded-xl bg-kartu border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-medium shadow-2xs"
                 />
-                <span className="text-teks-sekunder">s/d</span>
+                <span className="text-teks-sekunder font-medium">s/d</span>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="px-2.5 py-1 rounded-lg bg-kartu border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500"
+                  className="px-2.5 py-1.5 rounded-xl bg-kartu border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-medium shadow-2xs"
                 />
                 {(startDate || endDate) && (
                   <button
@@ -284,22 +288,22 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                       setStartDate('');
                       setEndDate('');
                     }}
-                    className="p-1 rounded-lg hover:bg-kartu-muted text-teks-sekunder hover:text-teks-utama transition-colors"
+                    className="p-1.5 rounded-xl hover:bg-kartu-muted text-teks-sekunder hover:text-teks-utama transition-colors border border-garis/60"
                     title="Reset Filter Tanggal"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
-              <div className="text-xs text-teks-sekunder font-mono">
-                Menampilkan <strong className="text-teks-utama">{filteredEvents.length}</strong> dari {events.length} event
+              <div className="text-xs text-teks-sekunder font-mono bg-kartu px-2.5 py-1 rounded-lg border border-garis">
+                Menampilkan <strong className="text-cyan-500">{filteredEvents.length}</strong> dari {events.length} event
               </div>
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pt-2 border-t border-garis">
-              <span className="text-xs font-semibold text-teks-sekunder flex items-center gap-1 mr-2 shrink-0">
-                <Filter className="w-3.5 h-3.5" /> Filter Event:
+            {/* Filter Pills with Gradient Accent */}
+            <div className="flex items-center gap-2 overflow-x-auto pt-2 border-t border-garis">
+              <span className="text-xs font-semibold text-teks-sekunder flex items-center gap-1 mr-1 shrink-0">
+                <Filter className="w-3.5 h-3.5 text-cyan-500" /> Filter Event:
               </span>
               {[
                 { id: 'all', label: `Semua` },
@@ -311,10 +315,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                 <button
                   key={f.id}
                   onClick={() => setFilterType(f.id)}
-                  className={`min-h-9 px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                  className={`min-h-9 px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                     filterType === f.id
-                      ? 'bg-kartu-muted border-cyan-500/40 text-teks-utama border ring-1 ring-cyan-500/20'
-                      : 'bg-kartu border-garis text-teks-sekunder border hover:text-teks-utama'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-sm shadow-cyan-500/25 border border-cyan-400/40'
+                      : 'bg-kartu border-garis text-teks-sekunder border hover:bg-kartu-muted hover:text-teks-utama'
                   }`}
                 >
                   {f.label}
@@ -325,10 +329,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
 
           {/* Event List */}
           {filteredEvents.length === 0 ? (
-            <Card className="p-8 text-center text-teks-sekunder">
-              <History className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm font-medium">Tidak ada peristiwa tercatat</p>
-              <p className="text-xs mt-1 opacity-70">
+            <Card className="p-8 text-center text-teks-sekunder border-dashed border-2 border-garis/80">
+              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-500 w-fit mx-auto mb-3">
+                <History className="w-7 h-7" />
+              </div>
+              <p className="text-sm font-bold text-teks-utama">Tidak ada peristiwa tercatat</p>
+              <p className="text-xs mt-1 text-teks-sekunder max-w-sm mx-auto">
                 {filterType !== 'all' || startDate || endDate
                   ? 'Coba atur ulang filter pencarian Anda'
                   : 'Event hujan dan status koneksi perangkat akan otomatis muncul di sini'}
@@ -351,13 +357,25 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   year: 'numeric',
                 });
 
+                // Modern color styling based on event type
+                const cardAccentClass =
+                  ev.jenis === 'rain_start'
+                    ? 'border-l-4 border-l-cyan-500 bg-gradient-to-r from-cyan-500/5 to-transparent'
+                    : ev.jenis === 'rain_stop'
+                    ? 'border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-500/5 to-transparent'
+                    : ev.jenis === 'device_online'
+                    ? 'border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-500/5 to-transparent'
+                    : ev.jenis === 'device_offline' || ev.jenis === 'wifi_fail'
+                    ? 'border-l-4 border-l-rose-500 bg-gradient-to-r from-rose-500/5 to-transparent'
+                    : 'border-l-4 border-l-blue-400/50 bg-gradient-to-r from-blue-500/5 to-transparent';
+
                 return (
                   <Card
                     key={`${ev.deviceId}-${ev.ts}-${idx}`}
-                    className="p-3.5 sm:p-4 hover:border-cyan-500/30 transition-all flex items-start gap-3.5"
+                    className={`p-3.5 sm:p-4 hover:border-cyan-500/40 hover:translate-x-1 transition-all duration-200 flex items-start gap-3.5 shadow-2xs ${cardAccentClass}`}
                   >
-                    <div className="p-2.5 rounded-2xl bg-latar border border-garis shrink-0 mt-0.5">
-                      <Icon className="w-4 h-4 text-cyan-400" />
+                    <div className="p-2.5 rounded-2xl bg-kartu border border-garis shrink-0 mt-0.5 shadow-xs">
+                      <Icon className="w-4 h-4 text-cyan-500" />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -375,12 +393,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         </span>
                       </div>
 
-                      <p className="text-xs text-teks-sekunder mt-0.5">
+                      <p className="text-xs text-teks-sekunder mt-1">
                         {meta.desc}
                       </p>
 
                       {ev.data && Object.keys(ev.data).length > 0 && (
-                        <div className="mt-2 p-2 rounded-xl bg-latar border border-garis text-[11px] font-mono text-teks-sekunder flex flex-wrap gap-x-4 gap-y-1">
+                        <div className="mt-2.5 p-2.5 rounded-xl bg-latar border border-garis/80 text-[11px] font-mono text-teks-sekunder flex flex-wrap gap-x-4 gap-y-1">
                           {Object.entries(ev.data).map(([k, v]) => (
                             <span key={k}>
                               <strong className="text-teks-utama">{k}:</strong> {String(v)}

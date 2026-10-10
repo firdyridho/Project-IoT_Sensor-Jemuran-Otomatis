@@ -150,21 +150,10 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
               </p>
             </div>
 
-            {/* Confirmation Button */}
-            <div className="mt-6 flex justify-center">
-              <button
-                type="button"
-                onClick={() => Notifications.dismissToast(activeDesktopToast.id)}
-                className={`w-full py-3 px-6 rounded-2xl text-sm font-black tracking-wide uppercase shadow-lg transition-all active:scale-95 cursor-pointer ${style.btnClass}`}
-              >
-                Mengerti / OK
-              </button>
-            </div>
-
-            {/* Optional Small Top-Right Close Button */}
+            {/* Close Button at Top-Left */}
             <button
               onClick={() => Notifications.dismissToast(activeDesktopToast.id)}
-              className={`absolute top-4 right-4 p-2 rounded-xl transition-all ${style.closeBtn}`}
+              className={`absolute top-4 left-4 p-2 rounded-xl transition-all cursor-pointer ${style.closeBtn}`}
               aria-label="Tutup notifikasi"
             >
               <X className="w-5 h-5" />

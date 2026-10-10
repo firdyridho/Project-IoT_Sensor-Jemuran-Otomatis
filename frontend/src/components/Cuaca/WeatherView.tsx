@@ -99,21 +99,25 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* 1. Header & Location Selector */}
-      <Card className="p-4 md:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* 1. Header & Location Selector with Modern Gradient Accent */}
+      <Card className="p-4 md:p-6 space-y-4 relative overflow-hidden border">
+        <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-gradient-to-br from-sky-500/15 via-cyan-500/10 to-transparent blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 p-4 rounded-2xl bg-gradient-to-r from-sky-500/10 via-cyan-500/5 to-blue-500/10 border border-sky-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
+            <div className="flex items-center gap-2.5">
+              <span className="p-2.5 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25">
                 <CloudSun className="w-5 h-5" />
               </span>
-              <h2 className="text-lg font-bold text-teks-utama font-heading">
-                Prakiraan Cuaca Resmi BMKG
-              </h2>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-teks-utama font-heading tracking-tight leading-tight">
+                  Prakiraan Cuaca Resmi BMKG
+                </h2>
+                <p className="text-xs text-teks-sekunder mt-0.5 font-medium">
+                  Sinkronisasi data 3 hari per 3 jam dari server meteorologi BMKG
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-teks-sekunder mt-0.5">
-              Data terbuka 3 hari per 3 jam dari Badan Meteorologi, Klimatologi, dan Geofisika
-            </p>
           </div>
 
           {/* Refresh button */}
@@ -123,10 +127,10 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
               size="sm"
               onClick={() => onRefresh()}
               disabled={isLoading}
-              className="gap-2 shrink-0"
+              className="gap-2 shrink-0 bg-kartu/90 hover:bg-kartu shadow-xs font-bold"
               aria-label="Perbarui data cuaca"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-sky-500 ${isLoading ? 'animate-spin' : ''}`} />
               <span>{isLoading ? 'Memuat...' : 'Perbarui'}</span>
             </Button>
           </div>
@@ -293,15 +297,15 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
             <button
               key={idx}
               onClick={() => setActiveDayIndex(idx)}
-              className={`min-h-11 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all focus:outline-none shrink-0 ${
+              className={`min-h-10 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all focus:outline-none shrink-0 cursor-pointer ${
                 isSelected
-                  ? 'bg-kartu-muted border-cyan-500 text-teks-utama ring-1 ring-cyan-500/20 shadow-xs'
-                  : 'bg-kartu border-garis text-teks-sekunder hover:text-teks-utama'
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white border-sky-400 shadow-md shadow-sky-500/25'
+                  : 'bg-kartu/80 border-garis text-teks-sekunder hover:bg-kartu-muted hover:text-teks-utama'
               }`}
             >
               <span>{getDayHeader(firstSlot)}</span>
               {hasRain && (
-                <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" title="Ada potensi hujan" />
+                <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-cyan-200' : 'bg-cyan-500'}`} title="Ada potensi hujan" />
               )}
             </button>
           );
@@ -318,10 +322,10 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
           return (
             <Card
               key={sIdx}
-              className={`p-3.5 space-y-2.5 transition-all ${
+              className={`p-3.5 space-y-2.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                 isRain
-                  ? 'border-cyan-500/50 bg-cyan-500/5 hover:border-cyan-500'
-                  : 'hover:border-garis/80'
+                  ? 'border-sky-500/50 bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-transparent hover:border-sky-400'
+                  : 'hover:border-sky-500/30'
               }`}
             >
               {/* Slot Header: Time & Risk Badge */}
