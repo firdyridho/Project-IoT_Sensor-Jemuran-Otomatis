@@ -34,25 +34,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   let indicatorColor = '';
 
   if (isDashboard) {
-    // Khusus di Dashboard: Footernya sesuaikan dengan kondisi cuaca secara solid (tanpa glassmorphism)
     if (weatherCondition === 'cerah') {
-      navBgClass = 'bg-white/90 border-slate-200/80 text-slate-900 shadow-xl backdrop-blur-2xl';
+      navBgClass = 'bg-white/80 border-slate-200/80 text-slate-900 shadow-xl backdrop-blur-xl';
       activeTextClass = 'text-amber-600 font-black';
       inactiveTextClass = 'text-slate-500 hover:text-slate-900 font-semibold';
       indicatorColor = 'bg-amber-500';
     } else if (weatherCondition === 'mendung') {
-      navBgClass = 'bg-[#1e293b] border-slate-700 text-white shadow-2xl';
+      navBgClass = 'bg-[#1e293b]/85 border-slate-700/80 text-white shadow-2xl backdrop-blur-xl';
       activeTextClass = 'text-amber-300 font-black';
       inactiveTextClass = 'text-slate-400 hover:text-slate-200';
       indicatorColor = 'bg-amber-400';
     } else if (weatherCondition === 'badai') {
-      navBgClass = 'bg-[#0f071f] border-purple-900/60 text-white shadow-2xl';
+      navBgClass = 'bg-[#0f071f]/85 border-purple-900/60 text-white shadow-2xl backdrop-blur-xl';
       activeTextClass = 'text-purple-300 font-black';
       inactiveTextClass = 'text-purple-300/60 hover:text-white';
       indicatorColor = 'bg-purple-400';
     } else {
       // Hujan
-      navBgClass = 'bg-[#0b1329] border-slate-800 text-white shadow-2xl';
+      navBgClass = 'bg-[#0b1329]/85 border-slate-800/80 text-white shadow-2xl backdrop-blur-xl';
       activeTextClass = 'text-cyan-300 font-black';
       inactiveTextClass = 'text-slate-400 hover:text-white';
       indicatorColor = 'bg-cyan-400';

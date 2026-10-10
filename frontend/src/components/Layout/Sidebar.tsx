@@ -60,44 +60,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   if (isDashboard) {
     if (weatherCondition === 'cerah') {
-      sidebarBgClass = 'bg-white/90 backdrop-blur-2xl text-slate-900 shadow-xl';
+      sidebarBgClass = 'bg-white/80 backdrop-blur-xl text-slate-900 shadow-xl';
       borderClass = 'border-slate-200/80';
       activeTabClass = 'bg-amber-500/15 text-amber-800 font-bold border-amber-300/60 shadow-xs';
       inactiveTabClass = 'text-slate-600 hover:bg-slate-100/90 hover:text-slate-950';
       activeIconClass = 'text-amber-600 scale-110';
       inactiveIconClass = 'text-slate-500';
-      deviceCardClass = 'bg-slate-50/90 border-slate-200/90 text-slate-900';
+      deviceCardClass = 'bg-slate-50/80 backdrop-blur-sm border-slate-200/90 text-slate-900';
       textMutedClass = 'text-slate-500';
       toggleBtnClass = 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-slate-200/80';
     } else if (weatherCondition === 'mendung') {
-      sidebarBgClass = 'bg-[#1e293b] text-white shadow-2xl';
-      borderClass = 'border-slate-700';
+      sidebarBgClass = 'bg-[#1e293b]/85 backdrop-blur-xl text-white shadow-2xl';
+      borderClass = 'border-slate-700/80';
       activeTabClass = 'bg-amber-400/20 text-amber-200 font-bold border-amber-400/30 shadow-xs';
       inactiveTabClass = 'text-slate-300 hover:bg-white/5 hover:text-white';
       activeIconClass = 'text-amber-300 scale-110';
       inactiveIconClass = 'text-slate-400';
-      deviceCardClass = 'bg-white/5 border-white/10 text-white';
+      deviceCardClass = 'bg-white/10 backdrop-blur-sm border-white/15 text-white';
       textMutedClass = 'text-slate-400';
       toggleBtnClass = 'text-slate-300 hover:text-white hover:bg-white/10 border-white/10';
     } else if (weatherCondition === 'badai') {
-      sidebarBgClass = 'bg-[#0f071f] text-white shadow-2xl';
+      sidebarBgClass = 'bg-[#0f071f]/85 backdrop-blur-xl text-white shadow-2xl';
       borderClass = 'border-purple-900/60';
       activeTabClass = 'bg-purple-500/25 text-purple-200 font-bold border-purple-400/40 shadow-xs';
       inactiveTabClass = 'text-purple-300/70 hover:bg-white/5 hover:text-white';
       activeIconClass = 'text-purple-300 scale-110';
       inactiveIconClass = 'text-purple-400/60';
-      deviceCardClass = 'bg-white/5 border-white/10 text-white';
+      deviceCardClass = 'bg-white/10 backdrop-blur-sm border-white/15 text-white';
       textMutedClass = 'text-purple-300/60';
       toggleBtnClass = 'text-purple-300 hover:text-white hover:bg-white/10 border-purple-800/40';
     } else {
       // Hujan
-      sidebarBgClass = 'bg-[#0b1329] text-white shadow-2xl';
-      borderClass = 'border-slate-800';
+      sidebarBgClass = 'bg-[#0b1329]/85 backdrop-blur-xl text-white shadow-2xl';
+      borderClass = 'border-slate-800/80';
       activeTabClass = 'bg-blue-500/20 text-cyan-200 font-bold border-blue-400/40 shadow-xs';
       inactiveTabClass = 'text-slate-300 hover:bg-white/5 hover:text-white';
       activeIconClass = 'text-cyan-400 scale-110';
       inactiveIconClass = 'text-slate-400';
-      deviceCardClass = 'bg-white/5 border-white/10 text-white';
+      deviceCardClass = 'bg-white/10 backdrop-blur-sm border-white/15 text-white';
       textMutedClass = 'text-slate-400';
       toggleBtnClass = 'text-slate-300 hover:text-white hover:bg-white/10 border-white/10';
     }

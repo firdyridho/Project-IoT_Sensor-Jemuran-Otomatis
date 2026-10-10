@@ -14,6 +14,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  SlidersHorizontal,
+  Zap,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 import { BackendService } from '../../services/api';
@@ -297,11 +299,9 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
         >
           <div className="flex items-center gap-2">
             <div
-              className={`p-1.5 rounded-lg transition-all ${
-                isCerah
-                  ? 'bg-slate-950 text-white'
-                  : 'bg-blue-500/20 text-blue-400'
-              } ${isProcessing ? 'animate-spin' : ''}`}
+              className={`p-1.5 rounded-lg transition-all bg-blue-500/20 text-blue-400 ${
+                isProcessing ? 'animate-spin' : ''
+              }`}
             >
               <Cog className="w-4 h-4" />
             </div>
@@ -332,8 +332,6 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
               className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-md shadow-xs ${
                 isSheltered
                   ? 'bg-emerald-400 text-slate-950 border border-emerald-300'
-                  : isCerah
-                  ? 'bg-slate-950 text-amber-300 border border-slate-800'
                   : 'bg-amber-400 text-slate-950 border border-amber-300'
               }`}
             >
@@ -368,8 +366,18 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className={`text-xs font-black uppercase tracking-wider ${isCerah ? 'text-slate-950' : 'text-white'}`}>
-                {controlMode === 'manual' ? '🎮 Panel Kendali Tombol Manual' : '⚡ Otomasi Sensor Pintar Aktif'}
+              <span className={`text-xs font-black uppercase tracking-wider flex items-center gap-1.5 ${isCerah ? 'text-slate-950' : 'text-white'}`}>
+                {controlMode === 'manual' ? (
+                  <>
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span>Panel Kendali Tombol Manual</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>Otomasi Sensor Pintar Aktif</span>
+                  </>
+                )}
               </span>
               {controlMode === 'manual' ? (
                 <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black shadow-xs">
