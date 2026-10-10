@@ -57,24 +57,24 @@ export const Header: React.FC<HeaderProps> = ({
 
   if (isDashboard) {
     if (weatherCondition === 'cerah') {
-      headerBgClass = 'bg-white/90 backdrop-blur-2xl text-slate-900 shadow-sm';
+      headerBgClass = 'bg-white/80 backdrop-blur-xl text-slate-900 shadow-sm';
       borderClass = 'border-slate-200/80';
       buttonBgClass = 'bg-slate-100 hover:bg-slate-200/80 text-slate-800 border-slate-200 shadow-xs';
       selectBgClass = 'bg-white text-slate-900 border-slate-200 shadow-xs font-bold';
     } else if (weatherCondition === 'mendung') {
-      headerBgClass = 'bg-[#1e293b] text-white shadow-xl';
-      borderClass = 'border-slate-700';
+      headerBgClass = 'bg-[#1e293b]/85 backdrop-blur-xl text-white shadow-xl';
+      borderClass = 'border-slate-700/80';
       buttonBgClass = 'bg-slate-800 hover:bg-slate-700 text-slate-100 border-slate-600';
       selectBgClass = 'bg-slate-800 text-white border-slate-600';
     } else if (weatherCondition === 'badai') {
-      headerBgClass = 'bg-[#0f071f] text-white shadow-xl';
+      headerBgClass = 'bg-[#0f071f]/85 backdrop-blur-xl text-white shadow-xl';
       borderClass = 'border-purple-900/60';
       buttonBgClass = 'bg-white/10 hover:bg-white/20 text-purple-200 border-purple-500/30';
       selectBgClass = 'bg-purple-950/60 text-white border-purple-800/40';
     } else {
       // Hujan
-      headerBgClass = 'bg-[#0b1329] text-white shadow-xl';
-      borderClass = 'border-slate-800';
+      headerBgClass = 'bg-[#0b1329]/85 backdrop-blur-xl text-white shadow-xl';
+      borderClass = 'border-slate-800/80';
       buttonBgClass = 'bg-white/10 hover:bg-white/20 text-cyan-200 border-white/15';
       selectBgClass = 'bg-slate-900 text-white border-slate-700';
     }

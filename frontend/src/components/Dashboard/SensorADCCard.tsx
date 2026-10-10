@@ -41,22 +41,22 @@ export const SensorADCCard: React.FC<SensorADCCardProps> = ({
   return (
     <Card className={`relative overflow-hidden rounded-3xl border p-4 sm:p-6 transition-all duration-700 ${cardClass}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
-        <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-xl border ${isCerah ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-500/20 text-blue-300 border-blue-400/30'}`}>
+      <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b pb-3 mb-4 ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className={`p-1.5 rounded-xl border shrink-0 ${isCerah ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-500/20 text-blue-300 border-blue-400/30'}`}>
             <Activity className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className={`text-sm sm:text-base font-bold tracking-wide ${isCerah ? 'text-slate-900' : 'text-white'}`}>
+          <div className="min-w-0 flex-1">
+            <h3 className={`text-sm sm:text-base font-bold tracking-wide leading-tight ${isCerah ? 'text-slate-900' : 'text-white'}`}>
               Sensor Kebasahan Fisik (ADC)
             </h3>
-            <p className={`text-xs ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-300 font-semibold'}`}>
+            <p className={`text-xs mt-0.5 leading-normal ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-300 font-semibold'}`}>
               Deteksi tetesan air hujan mikrokontroler ESP32
             </p>
           </div>
         </div>
 
-        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase ${statusBadge.bg}`}>
+        <div className={`self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-black tracking-wider uppercase shrink-0 ${statusBadge.bg}`}>
           <StatusIcon className="w-3.5 h-3.5" />
           <span>{statusBadge.label}</span>
         </div>

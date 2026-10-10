@@ -51,6 +51,13 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Mengganti seluruh emoticon pada judul Panel Kendali Tombol Manual (`🎮` & `⚡`) dengan ikon vektor Lucide (`SlidersHorizontal` & `Zap`).
   * Menerapkan transparansi halus (opacity ~85% + backdrop-blur) pada sidebar desktop dan kartu perangkat agar efek awan latar belakang terlihat samar tanpa mengurangi keterbacaan ikon dan menu.
   * Menyelaraskan warna ikon dan badge "Motor DC: Siaga di Luar (Idle)" pada kondisi cerah agar identik dengan tema kondisi mendung (`bg-blue-500/20 text-blue-400` dan badge amber).
+* [x] **FE-04g: Optimasi Responsif Mobile Slider Rel Jemuran, Header Sensor ADC & Status Offline Merah**:
+  * Memindahkan info panjang rel ke bawah toggle bar agar bersih dan luas.
+  * Menyederhanakan label menjadi "Area Teduh" dan "Area Terbuka", memperbesar ikon di mobile dengan label teks ringkas terpusat di bawahnya.
+  * Memperbaiki translasi toggle bar slider: di mobile tidak terpotong (pas di dalam rel) dan di desktop bergeser sempurna hingga ujung kanan tanpa kelebihan atau kekurangan.
+  * Mengatur tata letak Motor DC dan Sensor Kebasahan Fisik (ADC) pada mobile menjadi full-width, meletakkan badge status setelah deskripsi teks tanpa membagi dua kolom yang sempit.
+  * Menyelaraskan transparansi glassmorphism header & footer (mobile & desktop) agar identik dengan sidebar desktop.
+  * Memberi warna merah pada teks dan ikon "Perangkat Tidak Aktif" saat status perangkat IoT offline.
 
 
 ---

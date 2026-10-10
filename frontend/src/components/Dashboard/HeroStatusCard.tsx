@@ -93,8 +93,8 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
       <Card className="relative overflow-hidden border-2 border-slate-700/60 bg-gradient-to-b from-slate-800/40 via-slate-900/80 to-slate-950 p-5 sm:p-7 backdrop-blur-xl shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-xs font-semibold uppercase tracking-wider">
-              <WifiOff className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-bold uppercase tracking-wider">
+              <WifiOff className="w-3.5 h-3.5 text-red-500" />
               Perangkat Tidak Aktif
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-heading">
@@ -104,8 +104,8 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
               Tidak menerima telemetri sejak {formatTime(lastSeenTs)} ({getDuration(lastSeenTs)}). Periksa daya atau sinyal WiFi pada mikrokontroler jemuran.
             </p>
           </div>
-          <div className="p-3.5 rounded-2xl bg-slate-800 text-slate-400 shrink-0">
-            <WifiOff className="w-8 h-8 sm:w-10 sm:h-10" />
+          <div className="p-3.5 rounded-2xl bg-red-500/20 text-red-400 shrink-0">
+            <WifiOff className="w-8 h-8 sm:w-10 sm:h-10 text-red-500" />
           </div>
         </div>
       </Card>

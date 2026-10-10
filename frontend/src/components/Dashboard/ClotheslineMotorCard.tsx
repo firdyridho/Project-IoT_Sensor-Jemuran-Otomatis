@@ -245,69 +245,78 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             : 'bg-slate-950/70 border-slate-800'
         }`}
       >
+        {/* Area Teduh & Area Terbuka Labels */}
         <div
-          className={`flex items-center justify-between text-xs mb-3 px-1 ${
+          className={`flex items-center justify-between mb-2.5 px-1 ${
             isCerah ? 'text-slate-900 font-bold' : 'text-slate-300'
           }`}
         >
-          <span className="flex items-center gap-1.5 font-black text-emerald-600 dark:text-emerald-400">
-            <Home className="w-3.5 h-3.5" /> Area Teduh / Atap
-          </span>
-          <span className="text-[11px] font-mono font-bold opacity-80">
-            Panjang Rel: 2.5 Meter • Motor Stepper
-          </span>
-          <span className="flex items-center gap-1.5 font-black text-amber-600 dark:text-amber-400">
-            <CloudSun className="w-3.5 h-3.5" /> Area Terbuka
-          </span>
+          {/* Area Teduh: Icon on top, centered text below on mobile */}
+          <div className="flex flex-col items-center justify-center text-center font-black text-emerald-600 dark:text-emerald-400">
+            <Home className="w-5 h-5 sm:w-4 sm:h-4" />
+            <span className="text-[10px] sm:text-xs mt-0.5 tracking-tight">Area Teduh</span>
+          </div>
+
+          {/* Area Terbuka: Icon on top, centered text below on mobile */}
+          <div className="flex flex-col items-center justify-center text-center font-black text-amber-600 dark:text-amber-400">
+            <CloudSun className="w-5 h-5 sm:w-4 sm:h-4" />
+            <span className="text-[10px] sm:text-xs mt-0.5 tracking-tight">Area Terbuka</span>
+          </div>
         </div>
 
         {/* The Track Rail */}
         <div
-          className={`relative h-7 rounded-full border overflow-hidden flex items-center px-1 transition-colors duration-500 ${
+          className={`relative h-8 sm:h-9 w-full rounded-full border overflow-hidden transition-colors duration-500 ${
             isCerah
-              ? 'bg-slate-200 border-slate-300'
+              ? 'bg-slate-200/90 border-slate-300'
               : 'bg-slate-800/80 border-slate-700/60'
           }`}
         >
-          {/* Track Guides */}
+          {/* Track Guides Line in Center */}
           <div
-            className={`absolute inset-x-2 h-1 rounded-full ${
-              isCerah ? 'bg-slate-400' : 'bg-slate-700'
+            className={`absolute inset-x-3 top-1/2 -translate-y-1/2 h-1 rounded-full ${
+              isCerah ? 'bg-slate-300' : 'bg-slate-700'
             }`}
           />
 
-          {/* Motorized Cart / Hanger Slider */}
+          {/* Motorized Cart / Hanger Slider (Responsive Left-to-Right Precision) */}
           <div
-            className={`relative flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black shadow-lg transition-all duration-1000 transform ${
+            className={`absolute top-1 bottom-1 flex items-center gap-1.5 px-3 rounded-full text-xs font-black shadow-lg transition-all duration-700 ease-in-out select-none ${
               isSheltered
-                ? 'translate-x-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-2 ring-emerald-300 shadow-emerald-500/20'
-                : 'translate-x-[calc(100%-8px)] sm:translate-x-[calc(260px)] md:translate-x-[calc(380px)] bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 ring-2 ring-amber-300 shadow-amber-500/20'
+                ? 'left-1 translate-x-0 bg-gradient-to-r from-emerald-500 to-teal-500 text-white ring-2 ring-emerald-300 shadow-emerald-500/20'
+                : 'left-[calc(100%-4px)] -translate-x-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 ring-2 ring-amber-300 shadow-amber-500/20'
             }`}
           >
             <Umbrella className="w-3.5 h-3.5 shrink-0" />
-            <span className="whitespace-nowrap">
+            <span className="whitespace-nowrap text-[11px] sm:text-xs">
               {isSheltered ? 'Posisi: Bawah Atap' : 'Posisi: Luar Terbuka'}
             </span>
           </div>
         </div>
 
+        {/* Teks Panjang Rel dipindah ke bawah toggle bar agar clean */}
+        <div className={`text-center mt-2 text-[10px] sm:text-[11px] font-mono font-bold ${isCerah ? 'text-slate-600' : 'text-slate-400'}`}>
+          Panjang Rel: 2.5 Meter • Motor Stepper
+        </div>
+
         {/* Movement Direction Indicator & Status */}
         <div
-          className={`flex items-center justify-between mt-3 pt-2 text-xs border-t ${
-            isCerah ? 'border-slate-200' : 'border-slate-900'
+          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mt-3 pt-2.5 text-xs border-t ${
+            isCerah ? 'border-slate-200' : 'border-slate-800/80'
           }`}
         >
-          <div className="flex items-center gap-2">
+          {/* Motor DC Text - Full Width on Mobile */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <div
-              className={`p-1.5 rounded-lg transition-all bg-blue-500/20 text-blue-400 ${
+              className={`p-2 rounded-xl transition-all bg-blue-500/20 text-blue-400 shrink-0 ${
                 isProcessing ? 'animate-spin' : ''
               }`}
             >
               <Cog className="w-4 h-4" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div
-                className={`text-xs font-black ${
+                className={`text-xs font-black leading-tight ${
                   isCerah ? 'text-slate-950' : 'text-slate-100'
                 }`}
               >
@@ -318,7 +327,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
                   : 'Motor DC: Siaga di Luar (Idle)'}
               </div>
               <div
-                className={`text-[10px] ${
+                className={`text-[10px] mt-0.5 leading-normal ${
                   isCerah ? 'text-slate-700 font-bold' : 'text-slate-300'
                 }`}
               >
@@ -327,7 +336,8 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             </div>
           </div>
 
-          <div className="text-right">
+          {/* Badge Terbentang di Luar / Di Bawah Atap - Diposisikan setelah teks di mobile */}
+          <div className="self-start sm:self-auto shrink-0">
             <span
               className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-md shadow-xs ${
                 isSheltered
