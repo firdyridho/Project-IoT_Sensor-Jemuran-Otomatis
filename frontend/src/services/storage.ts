@@ -114,7 +114,7 @@ export const StorageService = {
 
   saveDevices(devices: Perangkat[], userId?: string): void {
     const key = userId ? `${KEYS.DEVICES}.${userId}` : KEYS.DEVICES;
-    const trimmed = devices.slice(0, 5); // Max 5 devices
+    const trimmed = devices.slice(0, 50); // Allow up to 50 devices
     safeSetItem(key, JSON.stringify(trimmed));
   },
 

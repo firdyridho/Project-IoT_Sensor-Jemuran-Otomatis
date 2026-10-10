@@ -380,22 +380,28 @@ export const App: React.FC = () => {
         if (!isMounted) return;
 
         if (remoteDevices) {
-          setDevices(remoteDevices);
-          StorageService.saveDevices(remoteDevices, session.user.id);
+          setDevices((prevDevices) => {
+            const map = new Map<string, Perangkat>();
+            remoteDevices.forEach((d) => map.set(d.deviceId, d));
+            // Jaga perangkat yang baru ditambahkan di lokal agar tidak hilang tertimpa
+            prevDevices.forEach((d) => {
+              if (!map.has(d.deviceId)) {
+                map.set(d.deviceId, d);
+              }
+            });
+            const merged = Array.from(map.values());
+            StorageService.saveDevices(merged, session.user.id);
 
-          // Pastikan active device sinkron jika daftar berubah
-          setSettings((prevSettings) => {
-            if (remoteDevices.length > 0 && !remoteDevices.some((d) => d.deviceId === prevSettings.deviceIdActive)) {
-              const updatedSettings = { ...prevSettings, deviceIdActive: remoteDevices[0].deviceId };
-              StorageService.saveSettings(updatedSettings);
-              return updatedSettings;
-            }
-            if (remoteDevices.length === 0 && prevSettings.deviceIdActive !== '') {
-              const updatedSettings = { ...prevSettings, deviceIdActive: '' };
-              StorageService.saveSettings(updatedSettings);
-              return updatedSettings;
-            }
-            return prevSettings;
+            setSettings((prevSettings) => {
+              if (merged.length > 0 && !merged.some((d) => d.deviceId === prevSettings.deviceIdActive)) {
+                const updatedSettings = { ...prevSettings, deviceIdActive: merged[0].deviceId };
+                StorageService.saveSettings(updatedSettings);
+                return updatedSettings;
+              }
+              return prevSettings;
+            });
+
+            return merged;
           });
         }
       } catch (err) {
@@ -511,8 +517,8 @@ export const App: React.FC = () => {
   };
 
   // Add Device
-  const handleAddDevice = (newDevice: Perangkat) => {
-    const updated = [...devices, newDevice];
+  const handleAddDevice = async (newDevice: Perangkat) => {
+    const updated = [...devices.filter((d) => d.deviceId !== newDevice.deviceId), newDevice];
     setDevices(updated);
     StorageService.saveDevices(updated, session?.user?.id);
     handleSelectDevice(newDevice.deviceId);
@@ -521,20 +527,22 @@ export const App: React.FC = () => {
       id: 'dev-add-' + Date.now(),
       type: 'success',
       title: 'Perangkat Berhasil Ditambahkan',
-      message: `Perangkat "${newDevice.nama}" (${newDevice.deviceId}) berhasil didaftarkan dan disinkronkan ke database MySQL VPS.`,
+      message: `Perangkat "${newDevice.nama}" (${newDevice.deviceId}) berhasil didaftarkan dan disimpan.`,
       timestamp: Date.now(),
     });
 
     // Sync to MySQL Database on VPS
     if (settings.backendUrl) {
-      BackendService.createDevice(
-        settings.backendUrl,
-        newDevice,
-        session?.user?.id,
-        session?.token
-      ).catch((err) => {
+      try {
+        await BackendService.createDevice(
+          settings.backendUrl,
+          newDevice,
+          session?.user?.id,
+          session?.token
+        );
+      } catch (err) {
         console.warn('Gagal menyimpan perangkat ke database backend:', err);
-      });
+      }
     }
   };
 

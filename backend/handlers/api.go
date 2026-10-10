@@ -71,8 +71,29 @@ func CreateDevice(c *gin.Context) {
 		req.AmbangPct = 60
 	}
 
+	// Cek jika perangkat sudah ada di database, lakukan update (upsert) agar tidak gagal
+	var existing models.Device
+	if err := database.DB.First(&existing, "id = ?", req.ID).Error; err == nil {
+		existing.Name = req.Name
+		if req.UserID != "" {
+			existing.UserID = req.UserID
+		}
+		if req.BrokerURL != "" {
+			existing.BrokerURL = req.BrokerURL
+		}
+		if req.LokasiADM4 != "" {
+			existing.LokasiADM4 = req.LokasiADM4
+		}
+		if req.AmbangPct > 0 {
+			existing.AmbangPct = req.AmbangPct
+		}
+		database.DB.Save(&existing)
+		c.JSON(http.StatusOK, existing)
+		return
+	}
+
 	if err := database.DB.Create(&req).Error; err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "ID Perangkat sudah terdaftar"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan perangkat: " + err.Error()})
 		return
 	}
 
