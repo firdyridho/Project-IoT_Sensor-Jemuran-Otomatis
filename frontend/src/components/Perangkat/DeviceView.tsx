@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { weatherAudio } from '../../services/weatherAudio';
 import { Notifications } from '../../services/notifications';
+import { getDefaultBackendUrl } from '../../services/storage';
 import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
@@ -82,6 +83,9 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [telegramChatId, setTelegramChatId] = useState<string>(() => {
     return localStorage.getItem('hujan.telegram.chatId') || '';
   });
+  const [telegramBotToken, setTelegramBotToken] = useState<string>(() => {
+    return localStorage.getItem('hujan.telegram.botToken') || '';
+  });
   const [isSendingTelegram, setIsSendingTelegram] = useState(false);
 
   const handleSaveAlarmSettings = (sound: 'sirine' | 'bell' | 'hujan', volume: number) => {
@@ -98,11 +102,12 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const handleSaveTelegramChatId = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('hujan.telegram.chatId', telegramChatId.trim());
+    localStorage.setItem('hujan.telegram.botToken', telegramBotToken.trim());
     Notifications.addToast({
       id: 'tg-save-' + Date.now(),
       type: 'success',
-      title: 'Chat ID Telegram Disimpan',
-      message: `ID Telegram "${telegramChatId.trim()}" berhasil disimpan untuk notifikasi darurat jemuran.`,
+      title: 'Pengaturan Telegram Disimpan',
+      message: `Konfigurasi Telegram berhasil disimpan di peramban Anda.`,
       timestamp: Date.now(),
     });
   };
@@ -121,30 +126,41 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
 
     setIsSendingTelegram(true);
     try {
-      // Call backend test telegram endpoint
-      const res = await fetch('/api/telegram/test', {
+      const backendBase = getDefaultBackendUrl().replace(/\/+$/, '');
+      const res = await fetch(`${backendBase}/api/telegram/test`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId: telegramChatId.trim() }),
+        body: JSON.stringify({
+          chatId: telegramChatId.trim(),
+          botToken: telegramBotToken.trim(),
+        }),
       });
+
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
         Notifications.addToast({
           id: 'tg-ok-' + Date.now(),
           type: 'success',
           title: 'Uji Coba Telegram Berhasil',
-          message: 'Pesan bot pengujian berhasil dikirim ke akun Telegram Anda!',
+          message: 'Pesan bot pengujian berhasil dikirim ke akun Telegram Anda! Periksa aplikasi Telegram Anda.',
           timestamp: Date.now(),
         });
       } else {
-        throw new Error('Gagal mengirim pesan bot');
+        Notifications.addToast({
+          id: 'tg-err-' + Date.now(),
+          type: 'danger',
+          title: 'Gagal Mengirim Telegram',
+          message: data.error || 'Pastikan Bot Token & Chat ID benar, serta sudah menekan START pada bot Anda di Telegram.',
+          timestamp: Date.now(),
+        });
       }
-    } catch {
-      // Local fallback notification
+    } catch (err: any) {
       Notifications.addToast({
         id: 'tg-mock-' + Date.now(),
         type: 'info',
-        title: 'Simulasi Bot Telegram Terkirim',
-        message: `[Simulasi] Pesan darurat "Hujan terdeteksi di ${activeDevice.nama}, jemuran ditarik otomatis" disimulasikan ke ID: ${telegramChatId.trim()}`,
+        title: 'Gagal Menghubungi Server',
+        message: err.message || 'Tidak dapat terhubung ke endpoint backend Telegram.',
         timestamp: Date.now(),
       });
     } finally {
@@ -697,38 +713,70 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
             </Badge>
           </div>
 
-          <form onSubmit={handleSaveTelegramChatId} className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-teks-sekunder mb-1">
-                ID Obrolan Telegram (Chat ID):
-              </label>
-              <div className="flex flex-col sm:flex-row gap-2">
+          <form onSubmit={handleSaveTelegramChatId} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-teks-sekunder mb-1">
+                  ID Obrolan Telegram (Chat ID): <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={telegramChatId}
                   onChange={(e) => setTelegramChatId(e.target.value)}
-                  placeholder="Contoh: 123456789 atau @username_kamu"
-                  className="flex-1 px-3 py-2 rounded-xl bg-latar border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-mono"
+                  placeholder="Contoh: 123456789 atau -100xxxxxxxxxx"
+                  className="w-full px-3 py-2 rounded-xl bg-latar border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-mono"
+                  required
                 />
-                <Button type="submit" variant="primary" size="sm" className="whitespace-nowrap">
-                  Simpan ID
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleTestTelegram}
-                  disabled={isSendingTelegram}
-                  className="gap-1.5 whitespace-nowrap"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSendingTelegram ? 'Mengirim...' : 'Kirim Uji Coba'}</span>
-                </Button>
+                <p className="text-[10px] text-teks-sekunder mt-1">
+                  Buka bot <code>@userinfobot</code> di Telegram untuk cek Chat ID Anda.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-teks-sekunder mb-1">
+                  Bot Token Telegram: <span className="text-[10px] text-teks-sekunder font-normal">(Opsional / Custom)</span>
+                </label>
+                <input
+                  type="password"
+                  value={telegramBotToken}
+                  onChange={(e) => setTelegramBotToken(e.target.value)}
+                  placeholder="Contoh: 7123456789:AAFlmQ9xAbCd..."
+                  className="w-full px-3 py-2 rounded-xl bg-latar border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-mono"
+                />
+                <p className="text-[10px] text-teks-sekunder mt-1">
+                  Token bot dari <code>@BotFather</code>. Kosongkan jika memakai bot bawaan server.
+                </p>
               </div>
             </div>
-            <p className="text-[11px] text-teks-sekunder">
-              Tip: Buka bot <code>@userinfobot</code> di Telegram untuk mengetahui Chat ID akun Anda.
-            </p>
+
+            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-xs text-teks-sekunder space-y-1">
+              <div className="font-bold text-sky-400 flex items-center gap-1.5">
+                <span>💡 Panduan Cepat Menghubungkan Telegram:</span>
+              </div>
+              <ol className="list-decimal list-inside space-y-0.5 text-[11px] leading-relaxed">
+                <li>Buka Telegram, cari bot <code>@BotFather</code> lalu kirim <code>/newbot</code> untuk membuat bot dan mendapatkan token.</li>
+                <li>Buka bot yang baru Anda buat, lalu <strong>tekan START / MULAI</strong> (wajib agar bot diizinkan mengirim pesan ke Anda).</li>
+                <li>Buka <code>@userinfobot</code> untuk melihat Chat ID akun Anda, lalu masukkan di kolom atas dan tekan <strong>Kirim Uji Coba</strong>.</li>
+              </ol>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <Button type="submit" variant="primary" size="sm" className="gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Simpan Konfigurasi</span>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleTestTelegram}
+                disabled={isSendingTelegram}
+                className="gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{isSendingTelegram ? 'Mengirim Pesan...' : 'Kirim Uji Coba Telegram'}</span>
+              </Button>
+            </div>
           </form>
         </Card>
       </section>

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -249,28 +250,48 @@ func TestTelegram(c *gin.Context) {
 		return
 	}
 
-	if req.BotToken == "" || req.ChatID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "BotToken dan ChatID wajib diisi"})
+	botToken := strings.TrimSpace(req.BotToken)
+	if botToken == "" {
+		botToken = os.Getenv("TELEGRAM_BOT_TOKEN")
+	}
+
+	chatID := strings.TrimSpace(req.ChatID)
+	if chatID == "" {
+		chatID = os.Getenv("TELEGRAM_CHAT_ID")
+	}
+
+	if botToken == "" || chatID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bot Token atau Chat ID belum diisi. Masukkan Bot Token & Chat ID atau atur TELEGRAM_BOT_TOKEN di server.",
+		})
 		return
 	}
 
-	text := "🌧️ <b>Tes Notifikasi HujanPantau!</b>\nKoneksi bot Telegram dari backend berhasil aktif."
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", req.BotToken)
+	text := "🌧️ <b>Tes Notifikasi HujanPantau!</b>\nKoneksi bot Telegram dari backend berhasil aktif.\n\nSistem siap mengirimkan peringatan darurat otomatis saat jemuran ditarik akibat hujan!"
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
 	body, _ := json.Marshal(map[string]interface{}{
-		"chat_id":    req.ChatID,
+		"chat_id":    chatID,
 		"text":       text,
 		"parse_mode": "HTML",
 	})
 
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal terhubung ke Telegram API: " + err.Error()})
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		c.JSON(resp.StatusCode, gin.H{"error": fmt.Sprintf("Telegram merespons dengan status HTTP %d", resp.StatusCode)})
+		var tgErr struct {
+			Description string `json:"description"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&tgErr)
+		errMsg := tgErr.Description
+		if errMsg == "" {
+			errMsg = fmt.Sprintf("Telegram API merespons dengan status HTTP %d", resp.StatusCode)
+		}
+		c.JSON(resp.StatusCode, gin.H{"error": errMsg})
 		return
 	}
 
