@@ -8,16 +8,20 @@ interface AIPredictionCardProps {
   backendUrl?: string;
   deviceId: string;
   currentWet?: boolean;
+  condition?: 'cerah' | 'mendung' | 'hujan' | 'badai' | 'gerimis';
 }
 
 export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
   backendUrl,
   deviceId,
   currentWet = false,
+  condition = 'cerah',
 }) => {
   const [data, setData] = useState<AIPredictResponse['prediction'] | null>(null);
   const [analyzedAt, setAnalyzedAt] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const isCerah = condition === 'cerah';
 
   const fetchPrediction = async () => {
     setIsLoading(true);
@@ -79,42 +83,66 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
   const isHighRisk = prob >= 70;
   const isMedRisk = prob >= 40 && prob < 70;
 
-  const confidenceBadge = {
-    high: { label: 'Akurasi Tinggi', bg: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30' },
-    medium: { label: 'Akurasi Sedang', bg: 'bg-amber-500/15 text-amber-300 border-amber-400/30' },
-    low: { label: 'Akurasi Rendah', bg: 'bg-slate-700/40 text-slate-300 border-slate-600/40' },
-  }[data.confidenceLevel];
+  const confidenceBadge = isCerah
+    ? {
+        high: { label: 'Akurasi Tinggi', bg: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' },
+        medium: { label: 'Akurasi Sedang', bg: 'bg-amber-50 text-amber-800 border-amber-300 font-bold' },
+        low: { label: 'Akurasi Rendah', bg: 'bg-slate-100 text-slate-700 border-slate-300 font-medium' },
+      }[data.confidenceLevel]
+    : {
+        high: { label: 'Akurasi Tinggi', bg: 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30' },
+        medium: { label: 'Akurasi Sedang', bg: 'bg-amber-500/15 text-amber-300 border-amber-400/30' },
+        low: { label: 'Akurasi Rendah', bg: 'bg-slate-700/40 text-slate-300 border-slate-600/40' },
+      }[data.confidenceLevel];
 
   // SVG Circular progress radius & circumference
   const radius = 38;
   const circ = 2 * Math.PI * radius;
   const strokeDashoffset = circ - (prob / 100) * circ;
 
+  const cardClass = isCerah
+    ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
+    : 'border-white/10 bg-slate-900/80 backdrop-blur-2xl text-white shadow-xl';
+
   return (
-    <Card className="relative overflow-hidden border border-white/10 bg-slate-900/80 backdrop-blur-2xl p-4 sm:p-6 shadow-xl text-white">
+    <Card className={`relative overflow-hidden border p-4 sm:p-6 transition-all duration-500 ${cardClass}`}>
       {/* Decorative ambient glow */}
-      <div
-        className={`absolute -top-10 -right-10 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-colors duration-700 ${
-          isHighRisk ? 'bg-cyan-500/15' : isMedRisk ? 'bg-amber-500/10' : 'bg-blue-500/10'
-        }`}
-      />
+      {!isCerah && (
+        <div
+          className={`absolute -top-10 -right-10 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-colors duration-700 ${
+            isHighRisk ? 'bg-cyan-500/15' : isMedRisk ? 'bg-amber-500/10' : 'bg-blue-500/10'
+          }`}
+        />
+      )}
 
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-white/10">
+      <div className={`flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 border border-white/15">
+          <div
+            className={`w-8 h-8 rounded-xl flex items-center justify-center border shadow-sm ${
+              isCerah
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white border-white/15'
+            }`}
+          >
             <BrainCircuit className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base sm:text-lg font-bold font-heading text-white tracking-tight">
+              <h3 className={`text-base sm:text-lg font-bold font-heading tracking-tight ${isCerah ? 'text-slate-900' : 'text-white'}`}>
                 Prediksi Hujan Cerdas AI
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-cyan-300 border border-blue-400/30">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                  isCerah
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : 'bg-blue-500/20 text-cyan-300 border-blue-400/30'
+                }`}
+              >
                 BE-05 Engine
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className={`text-[11px] ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
               Analisis laju perubahan kelembapan udara & suhu 30 menit terakhir
             </p>
           </div>
@@ -124,10 +152,14 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
         <button
           onClick={fetchPrediction}
           disabled={isLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/10 transition-all disabled:opacity-50 min-h-11"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all disabled:opacity-50 min-h-11 ${
+            isCerah
+              ? 'bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-slate-200'
+              : 'bg-white/5 border-white/10 text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
           title="Segarkan Analisis AI"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-600' : ''}`} />
           <span className="hidden xs:inline">Refresh Analisis</span>
         </button>
       </div>
@@ -143,7 +175,7 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
                 cx="50"
                 cy="50"
                 r={radius}
-                className="stroke-slate-800"
+                className={isCerah ? 'stroke-slate-200' : 'stroke-slate-800'}
                 strokeWidth="8"
                 fill="none"
               />
@@ -152,7 +184,7 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
                 cx="50"
                 cy="50"
                 r={radius}
-                stroke={isHighRisk ? '#38bdf8' : isMedRisk ? '#fbbf24' : '#60a5fa'}
+                stroke={isHighRisk ? '#0284c7' : isMedRisk ? '#f59e0b' : '#3b82f6'}
                 strokeWidth="8"
                 strokeDasharray={circ}
                 strokeDashoffset={strokeDashoffset}
@@ -164,17 +196,17 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
 
             {/* Inner Circular Value */}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="text-2xl font-extrabold font-mono tracking-tight text-white">
+              <span className={`text-2xl font-black font-mono tracking-tight ${isCerah ? 'text-slate-900' : 'text-white'}`}>
                 {prob}%
               </span>
-              <span className="text-[10px] text-slate-400 font-medium">Potensi</span>
+              <span className={`text-[10px] font-semibold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>
+                Potensi
+              </span>
             </div>
           </div>
 
           <div className="mt-2 text-center">
-            <span
-              className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${confidenceBadge.bg}`}
-            >
+            <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${confidenceBadge.bg}`}>
               {confidenceBadge.label}
             </span>
           </div>
@@ -183,16 +215,22 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
         {/* Right: Trend Factors & Estimates (8 cols) */}
         <div className="md:col-span-8 space-y-3">
           {/* Estimated countdown banner */}
-          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-950/60 border border-white/5 text-xs text-slate-300">
-            <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
+          <div
+            className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs ${
+              isCerah
+                ? 'bg-slate-50 border-slate-200 text-slate-700'
+                : 'bg-slate-950/60 border-white/5 text-slate-300'
+            }`}
+          >
+            <Clock className={`w-4 h-4 shrink-0 ${isCerah ? 'text-amber-600' : 'text-cyan-400'}`} />
             <div>
               {data.willRain ? (
                 <span>
-                  Estimasi waktu: <strong className="text-cyan-300">{data.estimatedMinutesUntilRain > 0 ? `~${data.estimatedMinutesUntilRain} Menit lagi` : 'Sedang Berlangsung'}</strong> sebelum titik air menyentuh sensor jemuran.
+                  Estimasi waktu: <strong className={isCerah ? 'text-amber-700 font-bold' : 'text-cyan-300'}>{data.estimatedMinutesUntilRain > 0 ? `~${data.estimatedMinutesUntilRain} Menit lagi` : 'Sedang Berlangsung'}</strong> sebelum titik air menyentuh sensor jemuran.
                 </span>
               ) : (
                 <span>
-                  Kondisi aman: <strong className="text-emerald-300">Belum ada potensi hujan</strong> dalam 30–60 menit ke depan.
+                  Kondisi aman: <strong className={isCerah ? 'text-emerald-700 font-bold' : 'text-emerald-300'}>Belum ada potensi hujan</strong> dalam 30–60 menit ke depan.
                 </span>
               )}
             </div>
@@ -200,40 +238,46 @@ export const AIPredictionCard: React.FC<AIPredictionCardProps> = ({
 
           {/* Micro Trend Factors Grid */}
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <div className={`p-2.5 rounded-xl border ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/5'}`}>
+              <div className={`flex items-center justify-center gap-1 text-[11px] ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
                 <span>Δ Kelembapan</span>
               </div>
-              <div className="font-mono font-bold text-sm text-cyan-300 mt-1 flex items-center justify-center gap-0.5">
-                <ArrowUpRight className="w-3.5 h-3.5" />
+              <div className={`font-mono font-bold text-sm mt-1 flex items-center justify-center gap-0.5 ${isCerah ? 'text-slate-800' : 'text-cyan-300'}`}>
+                <ArrowUpRight className="w-3.5 h-3.5 text-blue-500" />
                 {data.trendFactors.humidityDelta}
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <div className={`p-2.5 rounded-xl border ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/5'}`}>
+              <div className={`flex items-center justify-center gap-1 text-[11px] ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
                 <span>Δ Suhu</span>
               </div>
-              <div className="font-mono font-bold text-sm text-sky-300 mt-1 flex items-center justify-center gap-0.5">
-                <ArrowDownRight className="w-3.5 h-3.5" />
+              <div className={`font-mono font-bold text-sm mt-1 flex items-center justify-center gap-0.5 ${isCerah ? 'text-slate-800' : 'text-sky-300'}`}>
+                <ArrowDownRight className="w-3.5 h-3.5 text-amber-500" />
                 {data.trendFactors.tempDelta}
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/5">
-              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+            <div className={`p-2.5 rounded-xl border ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-white/5 border-white/5'}`}>
+              <div className={`flex items-center justify-center gap-1 text-[11px] ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
                 <span>Tren ADC Sensor</span>
               </div>
-              <div className="font-mono font-bold text-xs capitalize text-slate-200 mt-1">
+              <div className={`font-mono font-bold text-xs capitalize mt-1 ${isCerah ? 'text-slate-800' : 'text-slate-200'}`}>
                 {data.trendFactors.adcTrend === 'falling' ? 'Mulai Basah' : 'Kering'}
               </div>
             </div>
           </div>
 
           {/* AI Narrative Summary */}
-          <div className="p-3 rounded-xl bg-blue-950/25 border border-blue-900/30 text-xs text-slate-300 leading-relaxed flex items-start gap-2">
-            <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-            <p className="flex-1">{data.summary}</p>
+          <div
+            className={`p-3 rounded-xl border text-xs leading-relaxed flex items-start gap-2 ${
+              isCerah
+                ? 'bg-amber-50/70 border-amber-200/80 text-slate-800'
+                : 'bg-blue-950/25 border-blue-900/30 text-slate-300'
+            }`}
+          >
+            <Sparkles className={`w-4 h-4 shrink-0 mt-0.5 ${isCerah ? 'text-amber-600' : 'text-cyan-400'}`} />
+            <p className="flex-1 font-medium">{data.summary}</p>
           </div>
         </div>
       </div>

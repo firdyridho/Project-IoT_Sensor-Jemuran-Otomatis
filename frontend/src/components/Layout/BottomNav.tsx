@@ -36,9 +36,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   if (isDashboard) {
     // Khusus di Dashboard: Footernya sesuaikan dengan kondisi cuaca secara solid (tanpa glassmorphism)
     if (weatherCondition === 'cerah') {
-      navBgClass = 'bg-white/85 border-white/90 text-slate-950 shadow-2xl backdrop-blur-2xl';
+      navBgClass = 'bg-white/90 border-slate-200/80 text-slate-900 shadow-xl backdrop-blur-2xl';
       activeTextClass = 'text-amber-600 font-black';
-      inactiveTextClass = 'text-slate-600 hover:text-slate-950 font-bold';
+      inactiveTextClass = 'text-slate-500 hover:text-slate-900 font-semibold';
       indicatorColor = 'bg-amber-500';
     } else if (weatherCondition === 'mendung') {
       navBgClass = 'bg-[#1e293b] border-slate-700 text-white shadow-2xl';

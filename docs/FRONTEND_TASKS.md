@@ -38,10 +38,15 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Menggunakan `navigator.geolocation` browser untuk menghitung jarak terdekat ke preset wilayah BMKG.
   * Menampilkan banner konfirmasi wilayah terdeteksi.
 * [x] **FE-04d: Desain Visual Dashboard Cuaca Realistis Mobile-First**:
-  * Background cuaca fotorealistik: Cerah (kuning oranye matahari hangat), Gerimis (abu-abu transisi), Hujan (gelap pekat dengan rintik diagonal miring), Badai (gelap berhint ungu).
+  * Background cuaca fotorealistik: Cerah, Gerimis, Hujan, Badai.
   * Ilustrasi Cuaca 3D Skeuomorfik: Bola matahari 3D glossy, awan 3D puffy bervolume, dan tetesan air 3D cyan/sky-blue mengilap.
   * Header Jam Digital Realtime & 4-Day Forecast pill cards row.
   * Penyesuaian kontras dinamis: Frosted glass hangat pada cuaca cerah dan frosted glass gelap pada cuaca hujan/badai.
+* [x] **FE-04e: Navigasi Vertikal Collapse Pane Desktop, Logo Favicon Mobile & Tema Cerah Bersih**:
+  * Mengganti hamburger menu mobile dengan logo favicon aplikasi (navigasi halaman mobile difokuskan lewat bottom bar footer).
+  * Desktop sidebar Vertical Tabs mode Chrome Collapse Pane (Compact mode: ikon saja, Expanded mode: nama halaman + status).
+  * Penyelarasan warna background dan border sidebar desktop agar 100% identik dengan warna footer mobile di seluruh kondisi cuaca.
+  * Desain tema cerah tipe clean & minimalis: menghilangkan warna silau/berlebih dan patch gelap yang kontras tajam, memastikan semua teks, kartu, dan ikon terbaca dengan jelas dan nyaman di mata.
 
 ---
 

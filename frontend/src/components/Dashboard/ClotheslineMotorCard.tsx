@@ -116,34 +116,34 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
 
   return (
     <Card
-      className={`relative overflow-hidden border p-4 sm:p-6 backdrop-blur-xl shadow-2xl transition-all duration-700 ${
+      className={`relative overflow-hidden border p-4 sm:p-6 backdrop-blur-xl shadow-md transition-all duration-700 ${
         isCerah
-          ? 'bg-white/60 border-white/80 text-slate-950'
+          ? 'bg-white/95 border-slate-200/90 text-slate-900'
           : 'border-white/15 bg-gradient-to-br from-slate-900/95 via-slate-900/85 to-blue-950/70 text-white'
       }`}
     >
       {/* Ambient decorative glow */}
-      <div
-        className={`absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-700 ${
-          isSheltered
-            ? 'bg-emerald-500/15'
-            : isCerah
-            ? 'bg-amber-400/25'
-            : 'bg-slate-400/15'
-        }`}
-      />
+      {!isCerah && (
+        <div
+          className={`absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-colors duration-700 ${
+            isSheltered
+              ? 'bg-emerald-500/15'
+              : 'bg-slate-400/15'
+          }`}
+        />
+      )}
 
       {/* Header Info & Mode Switcher */}
       <div
         className={`flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b ${
-          isCerah ? 'border-slate-300' : 'border-slate-800'
+          isCerah ? 'border-slate-200' : 'border-slate-800'
         }`}
       >
         <div>
           <div className="flex items-center gap-2">
             <span
-              className={`text-xs font-black uppercase tracking-wider ${
-                isCerah ? 'text-slate-950' : 'text-blue-400'
+              className={`text-xs font-bold uppercase tracking-wider ${
+                isCerah ? 'text-amber-700' : 'text-blue-400'
               }`}
             >
               Mekanisme Kendali IoT & Motor DC
@@ -157,8 +157,8 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             />
           </div>
           <h3
-            className={`text-lg sm:text-xl font-black tracking-tight mt-0.5 font-heading ${
-              isCerah ? 'text-slate-950' : 'text-white'
+            className={`text-lg sm:text-xl font-bold tracking-tight mt-0.5 font-heading ${
+              isCerah ? 'text-slate-900' : 'text-white'
             }`}
           >
             Sistem Rel Jemuran & Motor DC
@@ -171,18 +171,18 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
           <div
             className={`inline-flex p-1 rounded-xl border backdrop-blur-md shadow-sm transition-all ${
               isCerah
-                ? 'bg-white/80 border-slate-300'
+                ? 'bg-slate-100 border-slate-200'
                 : 'bg-slate-950/70 border-slate-800'
             }`}
           >
             <button
               type="button"
               onClick={() => setControlMode('auto')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 controlMode === 'auto'
-                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+                  ? 'bg-emerald-500 text-white shadow-xs'
                   : isCerah
-                  ? 'text-slate-700 hover:text-slate-950'
+                  ? 'text-slate-600 hover:text-slate-900'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -192,11 +192,11 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             <button
               type="button"
               onClick={() => setControlMode('manual')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 controlMode === 'manual'
-                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                  ? 'bg-amber-500 text-white shadow-xs'
                   : isCerah
-                  ? 'text-slate-700 hover:text-slate-950'
+                  ? 'text-slate-600 hover:text-slate-900'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -207,27 +207,27 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
 
           {/* Safety Status Badge */}
           <div
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-black transition-all duration-500 shadow-md ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold transition-all duration-500 shadow-xs ${
               isSheltered
-                ? 'bg-emerald-400 text-slate-950 border-emerald-300'
+                ? isCerah ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-emerald-400 text-slate-950 border-emerald-300'
                 : isMendung
-                ? 'bg-amber-400 text-slate-950 border-amber-300'
-                : 'bg-slate-950 text-amber-300 border-slate-800'
+                ? isCerah ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-amber-400 text-slate-950 border-amber-300'
+                : isCerah ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-slate-950 text-amber-300 border-slate-800'
             }`}
           >
             {isSheltered ? (
               <>
-                <ShieldCheck className="w-4 h-4 text-slate-950" />
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>JEMURAN AMAN (TEDUH)</span>
               </>
             ) : isMendung ? (
               <>
-                <Cloud className="w-4 h-4 text-slate-950" />
+                <Cloud className="w-4 h-4 text-amber-600" />
                 <span>JEMURAN SIAGA (MENDUNG)</span>
               </>
             ) : (
               <>
-                <Sun className="w-4 h-4 text-amber-300" />
+                <Sun className={`w-4 h-4 ${isCerah ? 'text-amber-600' : 'text-amber-300'}`} />
                 <span>SEDANG MENJEMUR (TERIK)</span>
               </>
             )}

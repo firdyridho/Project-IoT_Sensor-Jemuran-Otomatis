@@ -57,10 +57,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   if (isDashboard) {
     if (weatherCondition === 'cerah') {
-      headerBgClass = 'bg-white/80 backdrop-blur-2xl text-slate-950 shadow-xl';
-      borderClass = 'border-white/80';
-      buttonBgClass = 'bg-white/80 hover:bg-white text-slate-900 border-slate-200/90 shadow-xs';
-      selectBgClass = 'bg-white text-slate-950 border-slate-300 shadow-xs font-bold';
+      headerBgClass = 'bg-white/90 backdrop-blur-2xl text-slate-900 shadow-sm';
+      borderClass = 'border-slate-200/80';
+      buttonBgClass = 'bg-slate-100 hover:bg-slate-200/80 text-slate-800 border-slate-200 shadow-xs';
+      selectBgClass = 'bg-white text-slate-900 border-slate-200 shadow-xs font-bold';
     } else if (weatherCondition === 'mendung') {
       headerBgClass = 'bg-[#1e293b] text-white shadow-xl';
       borderClass = 'border-slate-700';
@@ -103,23 +103,13 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="mx-auto max-w-6xl px-3.5 sm:px-6 h-16 flex items-center justify-between gap-2.5">
         {/* Left: Mobile Hamburger Trigger & Brand */}
         <div className="flex items-center gap-2.5 min-w-0">
-          {/* Mobile Hamburger Menu Button */}
-          {onOpenMobileMenu && (
-            <button
-              onClick={onOpenMobileMenu}
-              className={`lg:hidden min-h-11 min-w-11 p-2 rounded-xl border flex items-center justify-center transition-all shrink-0 active:scale-95 ${buttonBgClass}`}
-              aria-label="Buka Menu Navigasi"
-              title="Menu Navigasi"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-          )}
-
-          {/* Mobile Brand Icon */}
-          <div className="hidden xs:flex lg:hidden items-center gap-2 shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 border border-white/15">
-              <CloudRain className="w-5 h-5" />
-            </div>
+          {/* Mobile Logo Favicon */}
+          <div className="lg:hidden flex items-center gap-2 shrink-0">
+            <img
+              src="/favicon.svg"
+              alt="HujanPantau Logo"
+              className="w-8 h-8 rounded-xl shadow-xs"
+            />
           </div>
 
           {/* Device Selector */}

@@ -8,15 +8,19 @@ interface DryingAdviceCardProps {
   backendUrl?: string;
   deviceId: string;
   currentWet?: boolean;
+  condition?: 'cerah' | 'mendung' | 'hujan' | 'badai' | 'gerimis';
 }
 
 export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
   backendUrl,
   deviceId,
   currentWet = false,
+  condition = 'cerah',
 }) => {
   const [data, setData] = useState<AIDryingAdviceResponse['advice'] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const isCerah = condition === 'cerah';
 
   const fetchAdvice = async () => {
     setIsLoading(true);
@@ -64,43 +68,73 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
 
   if (!data) return null;
 
-  const recConfig = {
-    aman_jemur: {
-      label: 'AMAN JEMUR',
-      sub: 'Kondisi Sangat Mendukung',
-      color: 'text-emerald-300',
-      bgBadge: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200',
-      glow: 'from-emerald-500/20 to-transparent',
-      ringColor: '#10b981',
-      icon: ShieldCheck,
-    },
-    waspada_jemur: {
-      label: 'WASPADA JEMUR',
-      sub: 'Potensi Mendung Mendadak',
-      color: 'text-amber-300',
-      bgBadge: 'bg-amber-500/20 border-amber-500/40 text-amber-200',
-      glow: 'from-amber-500/20 to-transparent',
-      ringColor: '#f59e0b',
-      icon: AlertTriangle,
-    },
-    angkat_segera: {
-      label: 'ANGKAT SEGERA',
-      sub: 'Hujan Aktif Terdeteksi',
-      color: 'text-rose-400',
-      bgBadge: 'bg-rose-500/20 border-rose-500/40 text-rose-200',
-      glow: 'from-rose-500/25 to-transparent',
-      ringColor: '#f43f5e',
-      icon: AlertTriangle,
-    },
-  }[data.recommendation] || {
-    label: 'ANALISIS CUACA',
-    sub: 'Memeriksa Sensor',
-    color: 'text-slate-300',
-    bgBadge: 'bg-slate-500/20 border-slate-500/40 text-slate-200',
-    glow: 'from-blue-500/10 to-transparent',
-    ringColor: '#38bdf8',
-    icon: Sun,
-  };
+  const recConfig = isCerah
+    ? {
+        aman_jemur: {
+          label: 'AMAN JEMUR',
+          sub: 'Kondisi Sangat Mendukung',
+          color: 'text-emerald-700 font-bold',
+          bgBadge: 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold',
+          ringColor: '#10b981',
+          icon: ShieldCheck,
+        },
+        waspada_jemur: {
+          label: 'WASPADA JEMUR',
+          sub: 'Potensi Mendung Mendadak',
+          color: 'text-amber-700 font-bold',
+          bgBadge: 'bg-amber-50 border-amber-300 text-amber-800 font-bold',
+          ringColor: '#f59e0b',
+          icon: AlertTriangle,
+        },
+        angkat_segera: {
+          label: 'ANGKAT SEGERA',
+          sub: 'Hujan Aktif Terdeteksi',
+          color: 'text-rose-700 font-bold',
+          bgBadge: 'bg-rose-50 border-rose-300 text-rose-800 font-bold',
+          ringColor: '#f43f5e',
+          icon: AlertTriangle,
+        },
+      }[data.recommendation] || {
+        label: 'ANALISIS CUACA',
+        sub: 'Memeriksa Sensor',
+        color: 'text-slate-700 font-bold',
+        bgBadge: 'bg-slate-100 border-slate-300 text-slate-800 font-bold',
+        ringColor: '#0284c7',
+        icon: Sun,
+      }
+    : {
+        aman_jemur: {
+          label: 'AMAN JEMUR',
+          sub: 'Kondisi Sangat Mendukung',
+          color: 'text-emerald-300',
+          bgBadge: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200',
+          ringColor: '#10b981',
+          icon: ShieldCheck,
+        },
+        waspada_jemur: {
+          label: 'WASPADA JEMUR',
+          sub: 'Potensi Mendung Mendadak',
+          color: 'text-amber-300',
+          bgBadge: 'bg-amber-500/20 border-amber-500/40 text-amber-200',
+          ringColor: '#f59e0b',
+          icon: AlertTriangle,
+        },
+        angkat_segera: {
+          label: 'ANGKAT SEGERA',
+          sub: 'Hujan Aktif Terdeteksi',
+          color: 'text-rose-400',
+          bgBadge: 'bg-rose-500/20 border-rose-500/40 text-rose-200',
+          ringColor: '#f43f5e',
+          icon: AlertTriangle,
+        },
+      }[data.recommendation] || {
+        label: 'ANALISIS CUACA',
+        sub: 'Memeriksa Sensor',
+        color: 'text-slate-300',
+        bgBadge: 'bg-slate-500/20 border-slate-500/40 text-slate-200',
+        ringColor: '#38bdf8',
+        icon: Sun,
+      };
 
   const RecIcon = recConfig.icon;
 
@@ -109,39 +143,56 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
   const circ = 2 * Math.PI * radius;
   const scoreOffset = circ - (Math.min(100, Math.max(0, data.dryingScore)) / 100) * circ;
 
-  return (
-    <Card className="relative overflow-hidden border border-white/10 bg-slate-900/80 backdrop-blur-2xl p-4 sm:p-6 shadow-xl text-white">
-      {/* Dynamic ambient background glow */}
-      <div
-        className={`absolute -top-16 -left-16 w-48 h-48 rounded-full blur-3xl pointer-events-none bg-gradient-to-br ${recConfig.glow}`}
-      />
+  const cardClass = isCerah
+    ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
+    : 'border-white/10 bg-slate-900/80 backdrop-blur-2xl text-white shadow-xl';
 
+  return (
+    <Card className={`relative overflow-hidden border p-4 sm:p-6 transition-all duration-500 ${cardClass}`}>
       {/* Header section */}
-      <div className="relative z-10 flex items-center justify-between gap-2 border-b border-white/10 pb-3 mb-4">
+      <div className={`relative z-10 flex items-center justify-between gap-2 border-b pb-3 mb-4 ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-sky-500/10 border border-indigo-400/30 text-indigo-300 shadow-inner">
-            <Shirt className="w-5 h-5 text-indigo-300" />
+          <div
+            className={`p-2 rounded-xl border shadow-xs ${
+              isCerah
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-gradient-to-br from-indigo-500/20 to-sky-500/10 border-indigo-400/30 text-indigo-300'
+            }`}
+          >
+            <Shirt className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-sm sm:text-base text-white tracking-wide">
+              <h3 className={`font-bold text-sm sm:text-base tracking-wide ${isCerah ? 'text-slate-900' : 'text-white'}`}>
                 Rekomendasi Jemuran AI
               </h3>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/20">
+              <span
+                className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border ${
+                  isCerah
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-400/20'
+                }`}
+              >
                 Smart Advisor
               </span>
             </div>
-            <p className="text-xs text-slate-400">Analisis sensor + perkiraan waktu pengeringan pakaian</p>
+            <p className={`text-xs ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>
+              Analisis sensor + perkiraan waktu pengeringan pakaian
+            </p>
           </div>
         </div>
 
         <button
           onClick={fetchAdvice}
           disabled={isLoading}
-          className="p-1.5 sm:p-2 rounded-lg bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 text-slate-300 transition-all disabled:opacity-50"
+          className={`p-2 rounded-xl border transition-all disabled:opacity-50 min-h-11 min-w-11 flex items-center justify-center ${
+            isCerah
+              ? 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200'
+              : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+          }`}
           title="Refresh Rekomendasi"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sky-400' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-amber-600' : ''}`} />
         </button>
       </div>
 
@@ -150,16 +201,22 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
         {/* Large recommendation badge banner */}
         <div className="sm:col-span-8 flex flex-col justify-center">
           <div className="flex items-center gap-2 mb-2">
-            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs sm:text-sm font-black tracking-wider uppercase shadow-lg ${recConfig.bgBadge}`}>
+            <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs sm:text-sm font-bold tracking-wider uppercase shadow-xs ${recConfig.bgBadge}`}>
               <RecIcon className="w-4 h-4" />
               <span>{recConfig.label}</span>
             </div>
-            <span className="text-xs text-slate-400 font-medium hidden xs:inline">
+            <span className={`text-xs font-medium hidden xs:inline ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>
               • {recConfig.sub}
             </span>
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
+          <p
+            className={`text-xs sm:text-sm leading-relaxed p-2.5 rounded-xl border font-medium ${
+              isCerah
+                ? 'bg-slate-50 border-slate-200 text-slate-800'
+                : 'bg-white/[0.03] border-white/5 text-slate-200'
+            }`}
+          >
             {data.actionMessage}
           </p>
         </div>
@@ -172,7 +229,7 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
                 cx="40"
                 cy="40"
                 r={radius}
-                className="stroke-slate-800"
+                className={isCerah ? 'stroke-slate-200' : 'stroke-slate-800'}
                 strokeWidth="7"
                 fill="transparent"
               />
@@ -190,58 +247,58 @@ export const DryingAdviceCard: React.FC<DryingAdviceCardProps> = ({
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-lg font-black text-white leading-none">
+              <span className={`text-lg font-black leading-none ${isCerah ? 'text-slate-900' : 'text-white'}`}>
                 {data.dryingScore}
               </span>
-              <span className="text-[9px] uppercase tracking-wider text-slate-400 mt-0.5">
+              <span className={`text-[9px] uppercase tracking-wider mt-0.5 font-bold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>
                 Skor
               </span>
             </div>
           </div>
           <div className="text-left sm:text-right">
-            <div className="text-xs font-semibold text-slate-300">Skor Jemur</div>
-            <div className="text-[11px] text-slate-400">Kualitas Penguapan</div>
-            <div className="text-[10px] text-slate-500 font-mono mt-0.5">Maks 100</div>
+            <div className={`text-xs font-bold ${isCerah ? 'text-slate-800' : 'text-slate-300'}`}>Skor Jemur</div>
+            <div className={`text-[11px] ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-400'}`}>Kualitas Penguapan</div>
+            <div className={`text-[10px] font-mono mt-0.5 ${isCerah ? 'text-slate-400' : 'text-slate-500'}`}>Maks 100</div>
           </div>
         </div>
       </div>
 
       {/* Key Insights Grid */}
-      <div className="relative z-10 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2.5 pt-3 border-t border-white/10">
+      <div className={`relative z-10 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 gap-2.5 pt-3 border-t ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
         {/* Estimasi Jam Kering */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-800/40 border border-white/5">
-          <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/20">
+        <div className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-slate-800/40 border-white/5'}`}>
+          <div className={`p-2 rounded-lg border ${isCerah ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-sky-500/10 text-sky-400 border-sky-500/20'}`}>
             <Clock className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Estimasi Kering</div>
-            <div className="text-xs sm:text-sm font-bold text-slate-100">
+            <div className={`text-[10px] uppercase tracking-wider font-semibold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>Estimasi Kering</div>
+            <div className={`text-xs sm:text-sm font-bold ${isCerah ? 'text-slate-800' : 'text-slate-100'}`}>
               ~{data.estimatedDryHours} Jam
             </div>
           </div>
         </div>
 
-        {/* Waktu Jemur Optimal */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-800/40 border border-white/5">
-          <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        {/* Waktu Jemur Terbaik */}
+        <div className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-slate-800/40 border-white/5'}`}>
+          <div className={`p-2 rounded-lg border ${isCerah ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
             <Calendar className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Jam Optimal</div>
-            <div className="text-xs sm:text-sm font-bold text-amber-200">
+            <div className={`text-[10px] uppercase tracking-wider font-semibold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>Waktu Optimal</div>
+            <div className={`text-xs sm:text-sm font-bold truncate max-w-[130px] ${isCerah ? 'text-slate-800' : 'text-slate-100'}`}>
               {data.bestDryingWindow}
             </div>
           </div>
         </div>
 
-        {/* Kondisi BMKG / Lingkungan */}
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-800/40 border border-white/5 xs:col-span-2 sm:col-span-1">
-          <div className="p-2 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20">
+        {/* Kondisi Lapangan */}
+        <div className={`flex items-center gap-2.5 p-2.5 rounded-xl border xs:col-span-2 sm:col-span-1 ${isCerah ? 'bg-slate-50 border-slate-200' : 'bg-slate-800/40 border-white/5'}`}>
+          <div className={`p-2 rounded-lg border ${isCerah ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
             <Wind className="w-4 h-4" />
           </div>
-          <div className="truncate">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Kondisi BMKG</div>
-            <div className="text-xs sm:text-sm font-bold text-teal-200 truncate" title={data.bmkgWeatherDesc}>
+          <div className="min-w-0">
+            <div className={`text-[10px] uppercase tracking-wider font-semibold ${isCerah ? 'text-slate-500' : 'text-slate-400'}`}>Kondisi Cuaca</div>
+            <div className={`text-xs sm:text-sm font-bold truncate ${isCerah ? 'text-slate-800' : 'text-slate-100'}`}>
               {data.bmkgWeatherDesc}
             </div>
           </div>

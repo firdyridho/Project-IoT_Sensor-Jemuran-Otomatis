@@ -16,10 +16,10 @@ export const DailyForecastCards: React.FC<DailyForecastCardsProps> = ({
   const isCerah = condition === 'cerah';
 
   const pillCardBg = isCerah
-    ? 'bg-white/70 border-white/90 text-slate-950 shadow-md backdrop-blur-xl'
+    ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-xs backdrop-blur-xl'
     : 'bg-slate-900/90 border-white/15 text-white shadow-xl backdrop-blur-xl';
 
-  const pillSubtext = isCerah ? 'text-slate-900 font-bold' : 'text-slate-200 font-medium';
+  const pillSubtext = isCerah ? 'text-slate-500 font-medium' : 'text-slate-200 font-medium';
 
   const forecastItems = [
     {
@@ -68,9 +68,9 @@ export const DailyForecastCards: React.FC<DailyForecastCardsProps> = ({
 
   return (
     <div className="w-full">
-      <div className={`flex items-center justify-between text-xs font-black px-1 mb-2 ${isCerah ? 'text-slate-950' : 'text-white'}`}>
+      <div className={`flex items-center justify-between text-xs font-bold px-1 mb-2 ${isCerah ? 'text-slate-800' : 'text-white'}`}>
         <span>Perkiraan Cuaca & Situasi Jemuran</span>
-        <span className="opacity-90">4 Periode</span>
+        <span className="opacity-80">4 Periode</span>
       </div>
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {forecastItems.map((item, idx) => {
@@ -80,7 +80,7 @@ export const DailyForecastCards: React.FC<DailyForecastCardsProps> = ({
               key={idx}
               className={`flex flex-col items-center justify-between p-2.5 sm:p-3.5 rounded-2xl border transition-all duration-300 hover:scale-[1.02] ${pillCardBg}`}
             >
-              <span className={`text-[10px] sm:text-[11px] font-black tracking-wider uppercase ${isCerah ? 'text-slate-950' : 'text-slate-100'}`}>
+              <span className={`text-[10px] sm:text-[11px] font-bold tracking-wider uppercase ${isCerah ? 'text-slate-700' : 'text-slate-100'}`}>
                 {item.day}
               </span>
 

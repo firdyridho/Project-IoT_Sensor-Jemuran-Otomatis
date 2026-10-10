@@ -113,11 +113,11 @@
   scrollbar-width: none;
 }
 
-/* Dynamic Weather Backgrounds (Matched to User Reference Image) */
-/* 1. Cerah: Warna kuning oranye hangat & golden hour cerah seperti bagian kiri gambar */
+/* Dynamic Weather Backgrounds */
+/* 1. Cerah: Warna bersih, lembut, hangat daylight alami tanpa kontras warna berlebihan */
 .weather-bg-cerah {
-  background: linear-gradient(180deg, #fde4b2 0%, #f6ca7e 30%, #ec9f4a 65%, #d97825 100%);
-  color: #1e1e1e;
+  background: linear-gradient(180deg, #fef9c3 0%, #fef3c7 25%, #fffbeb 60%, #f8fafc 100%);
+  color: #0f172a;
 }
 
 /* 2. Mendung: Abu-abu awan tebal elegan (overcast) tanpa hujan */
@@ -150,7 +150,7 @@
 }
 
 .weather-bg-cerah .bottom-blue-gradient {
-  background: linear-gradient(to top, rgba(217, 119, 38, 0.45) 0%, rgba(246, 202, 126, 0.20) 35%, transparent 85%);
+  background: linear-gradient(to top, rgba(254, 240, 138, 0.20) 0%, rgba(254, 243, 199, 0.08) 35%, transparent 85%);
 }
 
 .weather-bg-mendung .bottom-blue-gradient {
@@ -161,17 +161,16 @@
   background: linear-gradient(to top, rgba(59, 32, 100, 0.6) 0%, rgba(36, 20, 66, 0.3) 35%, transparent 85%);
 }
 
-/* Cerah: Card Konten Dashboard diubah menjadi Putih Transparan Glassmorphism, 
-   KECUALI Header, Footer Nav, Button, dan Badge agar tetap solid & kontras tinggi */
+/* Cerah: Card Konten Dashboard Tipe Clean, Elegan & Jelas Dibaca (Tanpa Warna Silau) */
 .weather-bg-cerah main div[class*="rounded-3xl"],
 .weather-bg-cerah main div[class*="rounded-2xl"]:not(button):not([class*="rounded-full"]) {
   background-image: none !important;
-  background-color: rgba(255, 255, 255, 0.60) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border-color: rgba(255, 255, 255, 0.85) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: rgba(226, 232, 240, 0.90) !important;
   color: #0f172a !important;
-  box-shadow: 0 10px 35px rgba(217, 119, 6, 0.12) !important;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03) !important;
 }
 
 /* Header & Footer Ter-freeze di Atas & Bawah */
@@ -182,32 +181,40 @@ header.sticky {
   z-index: 50 !important;
 }
 
-/* Glassmorphism dominan putih khusus cuaca Cerah untuk Header & Footer */
+/* Glassmorphism dominan putih bersih khusus cuaca Cerah untuk Header & Footer */
 .weather-bg-cerah header.sticky,
 .weather-bg-cerah nav.fixed {
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
 }
 
-/* Pastikan semua teks di cuaca cerah memiliki kontras tinggi dan mudah dibaca */
-.weather-bg-cerah main .text-white {
-  color: #020617 !important;
-}
-
+/* Pastikan semua teks di cuaca cerah memiliki kontras tinggi, tegas dan nyaman dilihat */
+.weather-bg-cerah main .text-white,
 .weather-bg-cerah main h1,
 .weather-bg-cerah main h2,
 .weather-bg-cerah main h3 {
-  color: #020617 !important;
+  color: #0f172a !important;
 }
 
 .weather-bg-cerah main .text-slate-200,
 .weather-bg-cerah main .text-slate-300 {
-  color: #1e293b !important;
+  color: #334155 !important;
 }
 
 .weather-bg-cerah main .text-slate-400,
 .weather-bg-cerah main .text-slate-500 {
-  color: #334155 !important;
+  color: #64748b !important;
+}
+
+.weather-bg-cerah main .border-white\/10,
+.weather-bg-cerah main .border-white\/15,
+.weather-bg-cerah main .border-white\/20 {
+  border-color: rgba(226, 232, 240, 0.90) !important;
+}
+
+.weather-bg-cerah main .bg-white\/5,
+.weather-bg-cerah main .bg-white\/10 {
+  background-color: rgba(248, 250, 252, 0.90) !important;
 }
 
 /* Realistic Diagonal Rain Streaks like right phone */

@@ -648,7 +648,17 @@ export const App: React.FC = () => {
   // Simulation & Audio Mode for Dashboard Demo
   const [simMode, setSimMode] = useState<SimulationMode>('live');
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(true);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('hujan.sidebar.collapsed') === 'true';
+  });
+
+  const handleToggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('hujan.sidebar.collapsed', String(next));
+      return next;
+    });
+  };
 
   // Latest values for Dashboard
   const latestReading = readings[readings.length - 1];
@@ -766,7 +776,7 @@ export const App: React.FC = () => {
       {/* Toast Alert System */}
       <ToastContainer />
 
-      {/* Sidebar: Desktop left column + Mobile Hamburger Drawer */}
+      {/* Sidebar: Desktop left column (Chrome Vertical Tabs Collapse Pane) */}
       <Sidebar
         activeTab={activeTab}
         onChangeTab={setActiveTab}
@@ -774,12 +784,18 @@ export const App: React.FC = () => {
         isOnline={!isDeviceOffline}
         isRaining={effectiveWet}
         brokerStatus={brokerStatus}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebarCollapse}
+        weatherCondition={activeCondition}
+        theme={settings.tema}
       />
 
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col lg:pl-64 relative z-10">
+      {/* Main Container with dynamic padding based on sidebar collapse state */}
+      <div
+        className={`flex-1 flex flex-col ${
+          isSidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-64'
+        } transition-[padding] duration-300 ease-in-out relative z-10`}
+      >
         {/* Sticky Frozen App Header (Never sinks during scroll) */}
         <Header
           devices={devices}
@@ -794,7 +810,6 @@ export const App: React.FC = () => {
           onRequestNotif={handleRequestNotification}
           user={session.user}
           onLogout={handleLogout}
-          onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           isDashboard={activeTab === 'dashboard'}
           weatherCondition={activeCondition}
         />
@@ -811,6 +826,7 @@ export const App: React.FC = () => {
                   onChangeMode={handleChangeSimMode}
                   isAudioMuted={isAudioMuted}
                   onToggleAudio={handleToggleAudio}
+                  weatherCondition={activeCondition}
                 />
 
                 {/* Digital Clock & Date Header (Top) */}
@@ -910,6 +926,7 @@ export const App: React.FC = () => {
                   backendUrl={settings.backendUrl}
                   deviceId={activeDevice.deviceId}
                   currentWet={effectiveWet}
+                  condition={activeCondition}
                 />
 
                 {/* AI Smart Drying Advice Card (REQ-FE-02 / FE-06) */}
@@ -917,6 +934,7 @@ export const App: React.FC = () => {
                   backendUrl={settings.backendUrl}
                   deviceId={activeDevice.deviceId}
                   currentWet={effectiveWet}
+                  condition={activeCondition}
                 />
 
                 {/* Quick Weather Forecast Snapshot */}

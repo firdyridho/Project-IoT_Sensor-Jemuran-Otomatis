@@ -115,13 +115,13 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
   // Theme configurations with high contrast text & badges
   const theme = {
     cerah: {
-      cardClass: 'bg-white/60 border-white/80 text-slate-950 shadow-2xl backdrop-blur-2xl',
-      locText: 'text-slate-950 font-black',
-      tempText: 'text-slate-950 font-black',
-      condText: 'text-slate-950 font-black',
-      subText: 'text-slate-900 font-bold',
-      badgeBg: 'bg-slate-950 text-amber-300 border-slate-800 font-black shadow-md',
-      motorBg: 'bg-slate-950 text-white border-slate-800 font-bold shadow-md',
+      cardClass: 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl',
+      locText: 'text-slate-900 font-bold',
+      tempText: 'text-slate-900 font-black',
+      condText: 'text-amber-600 font-bold',
+      subText: 'text-slate-600 font-medium',
+      badgeBg: 'bg-amber-50 text-amber-800 border-amber-200 font-bold shadow-xs',
+      motorBg: 'bg-slate-100 text-slate-700 border-slate-200 font-medium shadow-xs',
       safetyBadge: 'Jemuran Terbuka (Sinar Matahari)',
       motorNotice: 'Motor DC: Siaga di luar',
       condLabel: 'Cerah Berawan',
@@ -270,7 +270,7 @@ export const HeroStatusCard: React.FC<HeroStatusCardProps> = ({
           {/* Motor DC Status Pill */}
           <div className="pt-1.5">
             <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs sm:text-sm font-medium shadow-inner ${theme.motorBg}`}>
-              <Umbrella className="w-4 h-4 text-cyan-400" />
+              <Umbrella className={`w-4 h-4 ${isCerah ? 'text-amber-600' : 'text-cyan-400'}`} />
               <span>{theme.motorNotice}</span>
             </div>
           </div>

@@ -21,18 +21,18 @@ export const SensorADCCard: React.FC<SensorADCCardProps> = ({
   const isCerah = condition === 'cerah';
 
   const cardClass = isCerah
-    ? 'bg-white/60 border-white/80 text-slate-950 shadow-2xl backdrop-blur-2xl'
+    ? 'bg-white/95 border-slate-200/90 text-slate-900 shadow-md backdrop-blur-xl'
     : 'bg-slate-900/90 border-white/15 text-white shadow-2xl backdrop-blur-2xl';
 
   const statusBadge = isWet
     ? {
         label: 'SENSOR BASAH (HUJAN)',
-        bg: 'bg-rose-600 text-white border-rose-500 shadow-md',
+        bg: isCerah ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold' : 'bg-rose-600 text-white border-rose-500 shadow-md',
         icon: AlertTriangle,
       }
     : {
         label: 'SENSOR KERING (AMAN)',
-        bg: 'bg-emerald-600 text-white border-emerald-500 shadow-md',
+        bg: isCerah ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-bold' : 'bg-emerald-600 text-white border-emerald-500 shadow-md',
         icon: ShieldCheck,
       };
 
@@ -41,16 +41,16 @@ export const SensorADCCard: React.FC<SensorADCCardProps> = ({
   return (
     <Card className={`relative overflow-hidden rounded-3xl border p-4 sm:p-6 transition-all duration-700 ${cardClass}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isCerah ? 'border-slate-300' : 'border-white/10'}`}>
+      <div className={`flex items-center justify-between border-b pb-3 mb-4 ${isCerah ? 'border-slate-200' : 'border-white/10'}`}>
         <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-xl border ${isCerah ? 'bg-slate-950 text-white border-slate-800' : 'bg-blue-500/20 text-blue-300 border-blue-400/30'}`}>
+          <div className={`p-1.5 rounded-xl border ${isCerah ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-500/20 text-blue-300 border-blue-400/30'}`}>
             <Activity className="w-4 h-4" />
           </div>
           <div>
-            <h3 className={`text-sm sm:text-base font-black tracking-wide ${isCerah ? 'text-slate-950' : 'text-white'}`}>
+            <h3 className={`text-sm sm:text-base font-bold tracking-wide ${isCerah ? 'text-slate-900' : 'text-white'}`}>
               Sensor Kebasahan Fisik (ADC)
             </h3>
-            <p className={`text-xs font-semibold ${isCerah ? 'text-slate-800' : 'text-slate-300'}`}>
+            <p className={`text-xs ${isCerah ? 'text-slate-500 font-medium' : 'text-slate-300 font-semibold'}`}>
               Deteksi tetesan air hujan mikrokontroler ESP32
             </p>
           </div>
