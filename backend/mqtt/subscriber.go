@@ -230,7 +230,7 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 	}
 	s.lastAlert = now
 
-	text := fmt.Sprintf("🌧️ <b>Hujan Terdeteksi!</b>\nPerangkat: <code>%s</code>\nWaktu: %s WIB\n\nSegera amankan jemuran Anda!",
+	text := fmt.Sprintf("🌧️ <b>[Rintik] Peringatan Hujan!</b>\nPerangkat: <code>%s</code>\nWaktu: %s WIB\n\nSensor mendeteksi air hujan. Rel motor telah mengamankan jemuran ke tempat teduh!",
 		ev.DeviceID, now.Format("15:04:05"))
 
 	go func() {

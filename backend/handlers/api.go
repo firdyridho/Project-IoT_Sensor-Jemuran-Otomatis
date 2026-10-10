@@ -267,7 +267,7 @@ func TestTelegram(c *gin.Context) {
 		return
 	}
 
-	text := "🌧️ <b>Tes Notifikasi HujanPantau!</b>\nKoneksi bot Telegram dari backend berhasil aktif.\n\nSistem siap mengirimkan peringatan darurat otomatis saat jemuran ditarik akibat hujan!"
+	text := "🌧️ <b>Tes Notifikasi Rintik Bot!</b>\nKoneksi bot Telegram ke backend Rintik berhasil aktif.\n\nSistem siap mengirimkan peringatan darurat otomatis saat jemuran ditarik akibat hujan!"
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
 	body, _ := json.Marshal(map[string]interface{}{
 		"chat_id":    chatID,
