@@ -58,6 +58,31 @@
   }
 }
 
+/* Custom Scrollbars with Weather & Theme Support */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, #f1f5f9);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #94a3b8);
+  border-radius: 9999px;
+  border: 2px solid var(--scrollbar-track, #f1f5f9);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #64748b);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #94a3b8) var(--scrollbar-track, #f1f5f9);
+}
+
 /* Custom Utility Classes for Tokens */
 .bg-latar { background-color: var(--color-latar); }
 .bg-kartu { background-color: var(--color-kartu); }

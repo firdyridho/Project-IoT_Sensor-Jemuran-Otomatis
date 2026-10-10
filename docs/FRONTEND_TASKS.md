@@ -58,6 +58,12 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Mengatur tata letak Motor DC dan Sensor Kebasahan Fisik (ADC) pada mobile menjadi full-width, meletakkan badge status setelah deskripsi teks tanpa membagi dua kolom yang sempit.
   * Menyelaraskan transparansi glassmorphism header & footer (mobile & desktop) agar identik dengan sidebar desktop.
   * Memberi warna merah pada teks dan ikon "Perangkat Tidak Aktif" saat status perangkat IoT offline.
+* [x] **FE-04h: Pop-up SweetAlert2 di Desktop, Top Push Banner di Mobile, Lenis Smooth Scroll & Custom Scrollbar Cuaca/Tema**:
+  * Mendesain ulang feedback notifikasi/pop-up: di desktop muncul di tengah layar bergaya SweetAlert2 dengan ring animasi ikonik, tombol konfirmasi OK, dan backdrop modal; di mobile muncul di bagian atas seperti push notification banner.
+  * Memastikan kartu pop-up 100% solid (tidak transparan) dengan skema warna yang dinamis mengikuti kondisi cuaca di dashboard atau tema yang dipilih user di halaman lain.
+  * Mengintegrasikan library Lenis untuk animasi scrolling halaman web yang halus dan buttery-smooth.
+  * Menerapkan custom scrollbar CSS yang warnanya otomatis beradaptasi dengan kondisi cuaca pada dashboard (Cerah, Mendung, Hujan, Badai) serta tema light/dark pada halaman lainnya.
+
 
 
 ---

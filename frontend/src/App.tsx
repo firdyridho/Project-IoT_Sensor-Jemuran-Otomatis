@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useTransition } from 'react';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 import { NavTab, BottomNav } from './components/Layout/BottomNav';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Header } from './components/Layout/Header';
@@ -147,6 +149,18 @@ export const App: React.FC = () => {
     media.addEventListener('change', listener);
     return () => media.removeEventListener('change', listener);
   }, [settings.tema, activeTab]);
+
+  // Smooth Scrolling with Lenis
+  useEffect(() => {
+    const lenis = new Lenis({
+      autoRaf: true,
+      smoothWheel: true,
+    });
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
 
   const handleToggleTheme = () => {
     const order: Array<'system' | 'dark' | 'light'> = ['system', 'dark', 'light'];
@@ -722,11 +736,51 @@ export const App: React.FC = () => {
     }
   };
 
+  // Custom Scrollbar Colors according to Theme & Weather Condition
+  useEffect(() => {
+    const root = document.documentElement;
+    const isDark =
+      settings.tema === 'dark' ||
+      (settings.tema === 'system' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    if (activeTab === 'dashboard') {
+      if (activeCondition === 'cerah') {
+        root.style.setProperty('--scrollbar-track', '#fef3c7');
+        root.style.setProperty('--scrollbar-thumb', '#f59e0b');
+        root.style.setProperty('--scrollbar-thumb-hover', '#d97706');
+      } else if (activeCondition === 'mendung') {
+        root.style.setProperty('--scrollbar-track', '#0f172a');
+        root.style.setProperty('--scrollbar-thumb', '#64748b');
+        root.style.setProperty('--scrollbar-thumb-hover', '#94a3b8');
+      } else if (activeCondition === 'badai') {
+        root.style.setProperty('--scrollbar-track', '#0f071f');
+        root.style.setProperty('--scrollbar-thumb', '#a855f7');
+        root.style.setProperty('--scrollbar-thumb-hover', '#c084fc');
+      } else {
+        // Hujan / Gerimis
+        root.style.setProperty('--scrollbar-track', '#0b1329');
+        root.style.setProperty('--scrollbar-thumb', '#06b6d4');
+        root.style.setProperty('--scrollbar-thumb-hover', '#22d3ee');
+      }
+    } else {
+      if (isDark) {
+        root.style.setProperty('--scrollbar-track', '#0f172a');
+        root.style.setProperty('--scrollbar-thumb', '#334155');
+        root.style.setProperty('--scrollbar-thumb-hover', '#475569');
+      } else {
+        root.style.setProperty('--scrollbar-track', '#f1f5f9');
+        root.style.setProperty('--scrollbar-thumb', '#94a3b8');
+        root.style.setProperty('--scrollbar-thumb-hover', '#64748b');
+      }
+    }
+  }, [activeTab, activeCondition, settings.tema]);
+
   if (!session) {
     if (authView === 'login' || authView === 'register') {
       return (
         <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
-          <ToastContainer />
+          <ToastContainer isDashboard={false} theme={settings.tema} />
           <AuthPage
             initialMode={authView}
             backendUrl={settings.backendUrl || ''}
@@ -741,7 +795,7 @@ export const App: React.FC = () => {
 
     return (
       <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
-        <ToastContainer />
+        <ToastContainer isDashboard={false} theme={settings.tema} />
         <LandingPage
           onGoToAuth={(mode) => setAuthView(mode)}
           onQuickDemo={() => {
@@ -773,8 +827,12 @@ export const App: React.FC = () => {
       {/* Badai Lightning / Halilintar Screen Flash & Electric Bolts */}
       {activeTab === 'dashboard' && <LightningFlash active={activeCondition === 'badai'} />}
 
-      {/* Toast Alert System */}
-      <ToastContainer />
+      {/* Toast Alert System (SweetAlert2-style centered modal on desktop, top push banner on mobile) */}
+      <ToastContainer
+        isDashboard={activeTab === 'dashboard'}
+        weatherCondition={activeCondition}
+        theme={settings.tema}
+      />
 
       {/* Sidebar: Desktop left column (Chrome Vertical Tabs Collapse Pane) */}
       <Sidebar
