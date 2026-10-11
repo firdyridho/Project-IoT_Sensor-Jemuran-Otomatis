@@ -240,4 +240,95 @@ func TestSimulatorWeatherEndpoint(t *testing.T) {
 	reqInv.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(wInv, reqInv)
 	assert.Equal(t, http.StatusBadRequest, wInv.Code)
+
+	// 3. Simulate Mendung Condition (REQ-BE-05) -> 200 OK
+	simMendung := models.SimulatorWeatherRequest{
+		DeviceID:  devID,
+		Condition: "mendung",
+	}
+	bMendung, _ := json.Marshal(simMendung)
+	wMendung := httptest.NewRecorder()
+	reqMendung, _ := http.NewRequest("POST", "/api/simulator/weather", bytes.NewBuffer(bMendung))
+	reqMendung.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wMendung, reqMendung)
+	assert.Equal(t, http.StatusOK, wMendung.Code)
 }
+
+func TestGetAIPredictionsHistory(t *testing.T) {
+	r := setupTestRouter()
+	devID := "hs-test-ai-hist-01"
+
+	// Seed AIPredictions
+	database.DB.Create(&models.AIPrediction{
+		DeviceID:         devID,
+		ProbabilityPct:   85,
+		PredictedRain:    true,
+		ConfidenceLevel:  "high",
+		EstimatedMinutes: 15,
+		CreatedAt:        time.Now().Add(-30 * time.Minute),
+	})
+
+	// Seed actual rain telemetry within 60 mins of prediction
+	database.DB.Create(&models.Telemetry{
+		DeviceID:  devID,
+		Timestamp: time.Now().Add(-15 * time.Minute).UnixMilli(),
+		Raw:       1000,
+		Pct:       88,
+		Wet:       true,
+		CreatedAt: time.Now().Add(-15 * time.Minute),
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/ai/predictions/history?deviceId="+devID+"&limit=10", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var res map[string]interface{}
+	err := json.Unmarshal(w.Body.Bytes(), &res)
+	assert.NoError(t, err)
+	assert.Equal(t, "success", res["status"])
+	assert.Equal(t, float64(1), res["total"])
+	assert.Equal(t, float64(100), res["accuracyRatePct"])
+
+	logs := res["logs"].([]interface{})
+	assert.Len(t, logs, 1)
+	firstLog := logs[0].(map[string]interface{})
+	assert.Equal(t, true, firstLog["predictedRain"])
+	assert.Equal(t, true, firstLog["actualRainOccurred"])
+	assert.Equal(t, "tepat", firstLog["accuracyStatus"])
+}
+
+func TestExportTelemetryCSV(t *testing.T) {
+	r := setupTestRouter()
+	devID := "hs-test-export-01"
+
+	temp := 29.5
+	hum := 75.0
+	vbat := 4.10
+	rssi := -65
+
+	database.DB.Create(&models.Telemetry{
+		DeviceID:  devID,
+		Timestamp: time.Now().UnixMilli(),
+		Raw:       2500,
+		Pct:       45,
+		Wet:       false,
+		TempC:     &temp,
+		Hum:       &hum,
+		Vbat:      &vbat,
+		RSSI:      &rssi,
+		CreatedAt: time.Now(),
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/telemetry/export?deviceId="+devID, nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "text/csv")
+	assert.Contains(t, w.Header().Get("Content-Disposition"), "attachment; filename=\"telemetry_")
+	csvBody := w.Body.String()
+	assert.Contains(t, csvBody, "timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi")
+	assert.Contains(t, csvBody, "2500,45,false,29.50,75.00,4.10,-65")
+}
+

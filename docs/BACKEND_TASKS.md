@@ -124,10 +124,39 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 
 ---
 
+### Fase 5: Riwayat AI, Ekspor Telemetri & Fleksibilitas Simulator [SELESAI]
+
+* [x] **BE-16: Riwayat Log Prediksi AI & Evaluasi Akurasi (REQ-BE-03)**:
+  * **Tujuan**: Menyediakan data riwayat keandalan model AI dan perbandingan otomatis dengan sensor fisik lapangan.
+  * **Endpoint**: `GET /api/ai/predictions/history?deviceId={id}&limit=50`
+  * **Implementasi**:
+    * Handler `GetAIPredictionsHistory` di `handlers/ai.go`.
+    * Membaca riwayat dari tabel `ai_predictions` dan memvalidasi apakah telemetri hujan (`wet=true` atau `pct>=60`) terjadi dalam rentang 60 menit setelah prediksi dibuat.
+    * Menghasilkan metrik `accuracyRatePct`, `actualRainOccurred`, dan `accuracyStatus` ("tepat" atau "meleset").
+  * **Status**: Selesai diimplementasikan dan lulus pengujian `TestGetAIPredictionsHistory`.
+
+* [x] **BE-17: Endpoint Streaming Ekspor Telemetri CSV (REQ-BE-04)**:
+  * **Tujuan**: Memungkinkan pengunduhan rekaman telemetri berkas CSV langsung dari database VPS.
+  * **Endpoint**: `GET /api/telemetry/export?deviceId={id}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&limit=1000`
+  * **Implementasi**:
+    * Handler `ExportTelemetryCSV` di `handlers/api.go`.
+    * Mengalirkan respons berkas `Content-Type: text/csv` dengan baris terformat `timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi`.
+  * **Status**: Selesai diimplementasikan dan lulus pengujian `TestExportTelemetryCSV`.
+
+* [x] **BE-18: Ekstensi 4 Kondisi Cuaca Simulator (REQ-BE-05)**:
+  * **Tujuan**: Menyelaraskan injeksi virtual cuaca dengan kondisi cerah, mendung, hujan, dan badai.
+  * **Endpoint**: `POST /api/simulator/weather`
+  * **Implementasi**:
+    * Penambahan kondisi `mendung` di `handlers/simulator.go` (kelembapan 85%, awan tebal, `wet: false`, motor mode siaga `extended`).
+    * Mempertahankan backward compatibility untuk kondisi `gerimis`.
+  * **Status**: Selesai diimplementasikan dan lulus pengujian `TestSimulatorWeatherMendung`.
+
+---
+
 ## 3. Alur Serah Terima ke Frontend (Handoff)
 
 Bila Anda telah selesai membuat salah satu endpoint backend:
 1. Uji endpoint secara lokal atau di staging dengan cURL / Postman.
 2. Centang task di atas dari `[ ]` menjadi `[x]`.
 3. Sampaikan kepada asisten AI atau developer frontend:
-   > *"Endpoint BE-05 (/api/ai/predict-rain) sudah aktif di backend. Tolong buatkan tampilan antarmuka FE-05 di frontend sesuai kontrak di docs/FRONTEND_TASKS.md."*
+   > *"Endpoint BE-16 (/api/ai/predictions/history) dan BE-17 (/api/telemetry/export) sudah aktif di backend. Tolong buatkan tampilan antarmuka di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md."*

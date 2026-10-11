@@ -88,9 +88,10 @@ func main() {
 		api.POST("/auth/login", handlers.LoginBruteForceMiddleware(), handlers.Login)
 		api.GET("/auth/me", handlers.GetMe)
 
-		// Fitur Kecerdasan Buatan (AI Engine & Predictions) (BE-05 & BE-06)
+		// Fitur Kecerdasan Buatan (AI Engine & Predictions) (BE-05 & BE-06 & REQ-BE-03)
 		api.POST("/ai/predict-rain", handlers.PredictRain)
 		api.GET("/ai/drying-advice", handlers.GetDryingAdvice)
+		api.GET("/ai/predictions/history", handlers.GetAIPredictionsHistory)
 
 		api.GET("/devices", handlers.GetDevices)
 		api.POST("/devices", handlers.CreateDevice)
@@ -98,6 +99,7 @@ func main() {
 		api.DELETE("/devices/:id", handlers.DeleteDevice)
 
 		api.GET("/devices/:id/telemetry", handlers.GetTelemetry)
+		api.GET("/telemetry/export", handlers.ExportTelemetryCSV)
 		api.GET("/devices/:id/events", handlers.GetEvents)
 		api.GET("/devices/:id/latest", handlers.GetLatest)
 		api.POST("/devices/:id/telegram", handlers.SaveDeviceTelegram)
@@ -106,7 +108,7 @@ func main() {
 		api.GET("/devices/:id/motor", handlers.GetMotorStatus)
 		api.POST("/devices/:id/motor/command", handlers.CommandMotor)
 
-		// Simulator Cuaca Virtual (REQ-BE-02)
+		// Simulator Cuaca Virtual (REQ-BE-02 & REQ-BE-05)
 		api.POST("/simulator/weather", handlers.SimulateWeather)
 
 		// Direct HTTP ingestion backup

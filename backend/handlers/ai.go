@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -335,3 +336,90 @@ func checkExtremeWeatherRisk() {
 		}
 	}
 }
+
+// PredictionLogItem format for items in GetAIPredictionsHistory (REQ-BE-03)
+type PredictionLogItem struct {
+	ID                 uint   `json:"id"`
+	CreatedAt          string `json:"createdAt"`
+	ProbabilityPct     int    `json:"probabilityPct"`
+	PredictedRain      bool   `json:"predictedRain"`
+	ConfidenceLevel    string `json:"confidenceLevel"`
+	ActualRainOccurred bool   `json:"actualRainOccurred"`
+	AccuracyStatus     string `json:"accuracyStatus"` // "tepat" | "meleset"
+}
+
+// GetAIPredictionsHistory handles GET /api/ai/predictions/history (REQ-BE-03)
+func GetAIPredictionsHistory(c *gin.Context) {
+	deviceID := c.DefaultQuery("deviceId", "")
+	limitStr := c.DefaultQuery("limit", "50")
+	limit := 50
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l > 200 {
+			limit = 200
+		} else {
+			limit = l
+		}
+	}
+
+	query := database.DB.Model(&models.AIPrediction{})
+	if deviceID != "" {
+		query = query.Where("device_id = ?", deviceID)
+	}
+
+	var preds []models.AIPrediction
+	if err := query.Order("created_at desc").Limit(limit).Find(&preds).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil log riwayat prediksi: " + err.Error()})
+		return
+	}
+
+	logs := make([]PredictionLogItem, 0, len(preds))
+	accurateCount := 0
+
+	for _, p := range preds {
+		actualRain := false
+		if p.ActualRainOccurred != nil {
+			actualRain = *p.ActualRainOccurred
+		} else {
+			// Periksa apakah ada telemetri hujan (wet=true atau pct>=60) dalam rentang 60 menit setelah prediksi
+			startMs := p.CreatedAt.UnixMilli()
+			endMs := p.CreatedAt.Add(60 * time.Minute).UnixMilli()
+			var count int64
+			database.DB.Model(&models.Telemetry{}).
+				Where("device_id = ? AND timestamp >= ? AND timestamp <= ? AND (wet = ? OR pct >= 60)", p.DeviceID, startMs, endMs, true).
+				Count(&count)
+			if count > 0 {
+				actualRain = true
+			}
+		}
+
+		accuracyStatus := "meleset"
+		if p.PredictedRain == actualRain {
+			accuracyStatus = "tepat"
+			accurateCount++
+		}
+
+		logs = append(logs, PredictionLogItem{
+			ID:                 p.ID,
+			CreatedAt:          p.CreatedAt.UTC().Format(time.RFC3339),
+			ProbabilityPct:     p.ProbabilityPct,
+			PredictedRain:      p.PredictedRain,
+			ConfidenceLevel:    p.ConfidenceLevel,
+			ActualRainOccurred: actualRain,
+			AccuracyStatus:     accuracyStatus,
+		})
+	}
+
+	var accuracyRatePct float64 = 100.0
+	if len(logs) > 0 {
+		accuracyRatePct = math.Round((float64(accurateCount)/float64(len(logs)))*1000) / 10
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":          "success",
+		"deviceId":        deviceID,
+		"total":           len(logs),
+		"accuracyRatePct": accuracyRatePct,
+		"logs":            logs,
+	})
+}
+

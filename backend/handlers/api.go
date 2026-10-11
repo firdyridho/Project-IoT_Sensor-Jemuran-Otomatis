@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -372,3 +373,99 @@ func SaveDeviceTelegram(c *gin.Context) {
 		"chatId":   dev.TelegramChatID,
 	})
 }
+
+// ExportTelemetryCSV handles GET /api/telemetry/export (REQ-BE-04)
+func ExportTelemetryCSV(c *gin.Context) {
+	deviceID := c.DefaultQuery("deviceId", "")
+	startDate := c.DefaultQuery("startDate", "") // format YYYY-MM-DD
+	endDate := c.DefaultQuery("endDate", "")     // format YYYY-MM-DD
+	limitStr := c.DefaultQuery("limit", "1000")
+
+	limit := 1000
+	if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+		if l > 10000 {
+			limit = 10000
+		} else {
+			limit = l
+		}
+	}
+
+	query := database.DB.Model(&models.Telemetry{})
+	if deviceID != "" {
+		query = query.Where("device_id = ?", deviceID)
+	}
+
+	if startDate != "" {
+		if tStart, err := time.Parse("2006-01-02", startDate); err == nil {
+			query = query.Where("created_at >= ?", tStart)
+		}
+	}
+
+	if endDate != "" {
+		if tEnd, err := time.Parse("2006-01-02", endDate); err == nil {
+			// Tambahkan 1 hari agar mencakup sampai akhir hari tersebut
+			tEndInclusive := tEnd.Add(24 * time.Hour)
+			query = query.Where("created_at < ?", tEndInclusive)
+		}
+	}
+
+	var readings []models.Telemetry
+	if err := query.Order("timestamp asc").Limit(limit).Find(&readings).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data telemetri: " + err.Error()})
+		return
+	}
+
+	filename := "telemetry"
+	if deviceID != "" {
+		filename += "_" + deviceID
+	}
+	filename += "_" + time.Now().Format("20060102_150405") + ".csv"
+
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+
+	writer := csv.NewWriter(c.Writer)
+	_ = writer.Write([]string{"timestamp", "raw_adc", "wet_pct", "is_wet", "temp_c", "hum_pct", "vbat", "rssi"})
+
+	for _, t := range readings {
+		tsStr := time.UnixMilli(t.Timestamp).UTC().Format(time.RFC3339)
+		if t.Timestamp == 0 && !t.CreatedAt.IsZero() {
+			tsStr = t.CreatedAt.UTC().Format(time.RFC3339)
+		}
+
+		tempStr := ""
+		if t.TempC != nil {
+			tempStr = fmt.Sprintf("%.2f", *t.TempC)
+		}
+
+		humStr := ""
+		if t.Hum != nil {
+			humStr = fmt.Sprintf("%.2f", *t.Hum)
+		}
+
+		vbatStr := ""
+		if t.Vbat != nil {
+			vbatStr = fmt.Sprintf("%.2f", *t.Vbat)
+		}
+
+		rssiStr := ""
+		if t.RSSI != nil {
+			rssiStr = fmt.Sprintf("%d", *t.RSSI)
+		}
+
+		row := []string{
+			tsStr,
+			strconv.Itoa(t.Raw),
+			strconv.Itoa(t.Pct),
+			strconv.FormatBool(t.Wet),
+			tempStr,
+			humStr,
+			vbatStr,
+			rssiStr,
+		}
+		_ = writer.Write(row)
+	}
+
+	writer.Flush()
+}
+

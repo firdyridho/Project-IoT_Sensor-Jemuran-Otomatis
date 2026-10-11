@@ -42,51 +42,39 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-BE-03: Endpoint Riwayat Log Prediksi AI & Evaluasi Akurasi (`GET /api/ai/predictions/history`)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Diperlukan untuk menampilkan log riwayat keandalan model AI pada tab Riwayat Event (komponen `AIAccuracyView.tsx` / Task FE-07). Mengingat backend sudah memiliki tabel `ai_predictions` (BE-07), diperlukan endpoint GET untuk mengambil data riwayat tersebut beserta perbandingan status sensor fisik (apakah benar-benar terjadi hujan setelah prediksi).
-  * Usulan Endpoint: `GET /api/ai/predictions/history?deviceId={id}&limit=50`
-  * Format Response yang Diharapkan:
-    ```json
-    {
-      "status": "success",
-      "deviceId": "hs-8f3a1c9d2b70",
-      "total": 12,
-      "accuracyRatePct": 91.6,
-      "logs": [
-        {
-          "id": 1,
-          "createdAt": "2026-10-09T10:15:00Z",
-          "probabilityPct": 85,
-          "predictedRain": true,
-          "confidenceLevel": "high",
-          "actualRainOccurred": true,
-          "accuracyStatus": "tepat"
-        }
-      ]
-    }
-    ```
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-04: Endpoint Ekspor Data Riwayat Telemetri CSV/Excel (`GET /api/telemetry/export`)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Diperlukan untuk tombol "Ekspor Data" pada tab Grafik dan Riwayat (Task FE-08), memungkinkan pengguna mengunduh rekaman telemetri dalam format CSV langsung dari database VPS.
-  * Usulan Endpoint: `GET /api/telemetry/export?deviceId={id}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&format=csv`
-  * Format Response yang Diharapkan: Header `Content-Type: text/csv` dengan file attachment stream berisi kolom `timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi`.
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-05: Penyesuaian Simulator & Klasifikasi 4 Kondisi Cuaca (`POST /api/simulator/weather`)**
-  * Tanggal Diminta: 2026-10-09
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Frontend menyelaraskan 4 kondisi cuaca standar pada UI dashboard: `cerah`, `mendung`, `hujan`, dan `badai`. Khusus kondisi `mendung`, sensor mendeteksi kelembapan tinggi dan awan tebal namun belum ada tetesan air hujan (`wet: false`, motor DC dalam mode siaga antisipasi), sedangkan `hujan` dan `badai` mengaktifkan penarikan motor kanopi atap (`wet: true`).
-  * Usulan Perubahan Payload: `POST /api/simulator/weather` menerima enum `"condition": "cerah" | "mendung" | "hujan" | "badai"`
-  * Status: Menunggu Dikerjakan
+*Saat ini tidak ada permintaan aktif yang tertunda.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-BE-03: Endpoint Riwayat Log Prediksi AI & Evaluasi Akurasi (`GET /api/ai/predictions/history`)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-12
+  * Diminta Oleh: Frontend Team
+  * Implementasi:
+    * Endpoint `GET /api/ai/predictions/history?deviceId={id}&limit=50` di `handlers/ai.go`.
+    * Membaca riwayat `ai_predictions` dan membandingkannya dengan data telemetri sensor fisik 60 menit pasca-prediksi.
+    * Mengembalikan evaluasi `accuracyRatePct`, `actualRainOccurred`, dan `accuracyStatus` ("tepat" atau "meleset").
+  * Status: Selesai (Tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md) sebagai BE-16).
+
+* [x] **REQ-BE-04: Endpoint Ekspor Data Riwayat Telemetri CSV (`GET /api/telemetry/export`)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-12
+  * Diminta Oleh: Frontend Team
+  * Implementasi:
+    * Endpoint `GET /api/telemetry/export?deviceId={id}&startDate={YYYY-MM-DD}&endDate={YYYY-MM-DD}&format=csv` di `handlers/api.go`.
+    * Mengalirkan file CSV dengan header attachment (`Content-Type: text/csv`) berisi kolom `timestamp,raw_adc,wet_pct,is_wet,temp_c,hum_pct,vbat,rssi`.
+  * Status: Selesai (Tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md) sebagai BE-17).
+
+* [x] **REQ-BE-05: Penyesuaian Simulator & Klasifikasi 4 Kondisi Cuaca (`POST /api/simulator/weather`)**
+  * Tanggal Diminta: 2026-10-09
+  * Tanggal Selesai: 2026-10-12
+  * Diminta Oleh: Frontend Team
+  * Implementasi:
+    * Dukungan kondisi cuaca `mendung` di `handlers/simulator.go` (kelembapan 85%, awan tebal, `wet: false`, motor posisi siaga `extended`).
+    * Dukungan kondisi `cerah`, `mendung`, `hujan`, `badai`, dan backward compatibility `gerimis`.
+  * Status: Selesai (Tercatat di [BACKEND_TASKS.md](BACKEND_TASKS.md) sebagai BE-18).
 
 * [x] **REQ-BE-01: API & MQTT Status/Kontrol Motor DC Jemuran (Otomasi Kanopi Atap)**
   * Tanggal Diminta: 2026-10-09

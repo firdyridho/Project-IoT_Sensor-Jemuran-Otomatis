@@ -49,6 +49,16 @@ func SimulateWeather(c *gin.Context) {
 		rssi = -55
 		motorPosition = "extended"
 		eventType = "rain_stop"
+	case "mendung":
+		raw = 2400
+		pct = 50
+		wet = false
+		temp = 26.5
+		hum = 85.0
+		vbat = 4.10
+		rssi = -62
+		motorPosition = "extended"
+		eventType = ""
 	case "gerimis":
 		raw = 2800
 		pct = 42
@@ -80,7 +90,7 @@ func SimulateWeather(c *gin.Context) {
 		eventType = "rain_start"
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "condition tidak valid. Pilihan yang didukung: 'cerah', 'gerimis', 'hujan', 'badai'",
+			"error": "condition tidak valid. Pilihan yang didukung: 'cerah', 'mendung', 'gerimis', 'hujan', 'badai'",
 		})
 		return
 	}

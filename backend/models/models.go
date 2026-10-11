@@ -181,10 +181,10 @@ type MotorCommandRequest struct {
 	Action string `json:"action"` // "retract" | "extend"
 }
 
-// SimulatorWeatherRequest format for POST /api/simulator/weather (REQ-BE-02)
+// SimulatorWeatherRequest format for POST /api/simulator/weather (REQ-BE-02 & REQ-BE-05)
 type SimulatorWeatherRequest struct {
 	DeviceID  string `json:"deviceId"`
-	Condition string `json:"condition"` // "cerah" | "gerimis" | "hujan" | "badai"
+	Condition string `json:"condition"` // "cerah" | "mendung" | "gerimis" | "hujan" | "badai"
 }
 
 
