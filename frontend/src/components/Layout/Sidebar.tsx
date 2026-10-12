@@ -190,28 +190,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className={`transition-all ${isCollapsed ? 'px-2 py-3' : 'p-3'}`}>
         {isCollapsed ? (
           <div
-            className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 ${deviceCardClass}`}
-            title={`Perangkat Aktif: ${deviceName} (${
+            className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+              !isOnline ? 'border-red-500/40 bg-red-500/10 shadow-xs' : deviceCardClass
+            }`}
+            title={`Perangkat: ${deviceName} (${
               brokerStatus !== 'connected'
                 ? 'Terputus'
                 : !isOnline
-                ? 'Offline'
+                ? 'Perangkat IoT Offline'
                 : isRaining
                 ? 'Hujan'
                 : 'Online'
             })`}
           >
             <Radio
-              className={`w-4 h-4 ${
-                !isOnline ? 'text-slate-400' : isRaining ? 'text-cyan-400 animate-pulse' : 'text-emerald-500 animate-pulse'
+              className={`w-4 h-4 transition-colors ${
+                !isOnline
+                  ? 'text-red-500'
+                  : isRaining
+                  ? 'text-cyan-400 animate-pulse'
+                  : 'text-emerald-500 animate-pulse'
               }`}
             />
             <span
-              className={`w-2 h-2 rounded-full ${
+              className={`w-2 h-2 rounded-full transition-colors ${
                 brokerStatus !== 'connected'
                   ? 'bg-rose-500'
                   : !isOnline
-                  ? 'bg-slate-400'
+                  ? 'bg-red-500 animate-pulse'
                   : isRaining
                   ? 'bg-cyan-400 animate-ping'
                   : 'bg-emerald-500'
@@ -219,10 +225,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             />
           </div>
         ) : (
-          <div className={`p-3 rounded-2xl border shadow-xs relative overflow-hidden ${deviceCardClass}`}>
+          <div
+            className={`p-3 rounded-2xl border shadow-xs relative overflow-hidden transition-all ${
+              !isOnline ? 'border-red-500/40 bg-red-500/10' : deviceCardClass
+            }`}
+          >
             <div className="flex items-center justify-between mb-1.5">
-              <span className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${textMutedClass}`}>
-                <Radio className="w-3 h-3 text-cyan-500 animate-pulse" />
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${
+                  !isOnline ? 'text-red-400' : textMutedClass
+                }`}
+              >
+                <Radio
+                  className={`w-3 h-3 ${
+                    !isOnline ? 'text-red-500' : 'text-cyan-500 animate-pulse'
+                  }`}
+                />
                 Perangkat Aktif
               </span>
               <Badge
@@ -246,7 +264,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : 'Online'}
               </Badge>
             </div>
-            <p className="text-xs font-bold truncate font-heading tracking-wide">
+            <p
+              className={`text-xs font-bold truncate font-heading tracking-wide ${
+                !isOnline ? 'text-red-400' : ''
+              }`}
+            >
               {deviceName}
             </p>
           </div>

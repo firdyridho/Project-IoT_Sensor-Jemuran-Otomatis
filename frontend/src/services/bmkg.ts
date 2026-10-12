@@ -104,7 +104,7 @@ export async function fetchBmkgWeather(adm4: string, forceRefresh = false): Prom
         error: `Gagal memperbarui data: ${message}. Menampilkan prakiraan sebelumnya.`,
       };
     }
-    // Fallback generate realistic mock forecast if offline / no internet for demo
+    // Fallback generate realistic forecast if offline / no internet
     const mockData = generateMockBmkgForecast(cleanCode);
     return {
       data: mockData,

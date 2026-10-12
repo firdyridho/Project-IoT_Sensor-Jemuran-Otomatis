@@ -22,7 +22,7 @@ export const Badge: React.FC<BadgeProps> = ({
           {
             'bg-kering-subtle text-kering border border-kering/30': variant === 'kering',
             'bg-hujan-subtle text-hujan border border-hujan/30': variant === 'hujan',
-            'bg-offline-subtle text-offline border border-offline/30': variant === 'offline',
+            'bg-red-500/15 text-red-500 border border-red-500/30 font-semibold': variant === 'offline',
             'bg-peringatan-subtle text-peringatan border border-peringatan/30': variant === 'peringatan',
             'bg-bahaya-subtle text-bahaya border border-bahaya/30': variant === 'bahaya',
             'bg-sukses-subtle text-sukses border border-sukses/30': variant === 'sukses',
@@ -38,9 +38,9 @@ export const Badge: React.FC<BadgeProps> = ({
           className={clsx('h-1.5 w-1.5 rounded-full shrink-0', {
             'bg-blue-500': variant === 'kering',
             'bg-cyan-500 animate-pulse': variant === 'hujan',
-            'bg-slate-400': variant === 'offline' || variant === 'netral',
+            'bg-red-500': variant === 'offline' || variant === 'bahaya',
+            'bg-slate-400': variant === 'netral',
             'bg-amber-500': variant === 'peringatan',
-            'bg-red-500': variant === 'bahaya',
             'bg-green-500': variant === 'sukses',
           })}
         />

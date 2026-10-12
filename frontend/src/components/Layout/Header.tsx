@@ -7,6 +7,9 @@ import {
   BellOff,
   BellRing,
   CloudRain,
+  CloudLightning,
+  Volume2,
+  VolumeX,
   LogOut,
   Menu,
 } from 'lucide-react';
@@ -30,6 +33,8 @@ interface HeaderProps {
   onOpenMobileMenu?: () => void;
   isDashboard?: boolean;
   weatherCondition?: 'cerah' | 'mendung' | 'hujan' | 'badai' | 'gerimis';
+  isAudioMuted?: boolean;
+  onToggleAudio?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -48,6 +53,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   isDashboard = true,
   weatherCondition = 'cerah',
+  isAudioMuted = true,
+  onToggleAudio,
 }) => {
   // Freezed (sticky) header colors matching theme and weather
   let headerBgClass = '';
@@ -140,13 +147,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Status Badge */}
-          <div className="hidden sm:flex items-center">
+          <div className="flex items-center">
             {brokerStatus !== 'connected' ? (
-              <Badge variant="bahaya" dot>
-                {brokerStatus === 'connecting' ? 'Menyambung...' : 'Broker Terputus'}
+              <Badge variant="bahaya" dot className="bg-red-500/15 text-red-500 border-red-500/40 font-bold">
+                <span className="hidden xs:inline">Broker </span>Terputus
               </Badge>
             ) : !isOnline ? (
-              <Badge variant="offline" dot>
+              <Badge
+                variant="offline"
+                dot
+                className="bg-red-500/15 text-red-500 border-red-500/40 font-bold animate-pulse shadow-xs"
+              >
                 Offline
               </Badge>
             ) : isRaining ? (
@@ -161,8 +172,75 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Notifications, Theme Switcher, User Logout */}
+        {/* Right: Sound Effects, Notifications, Theme Switcher, User Logout */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Weather Sound Effects Mode Button */}
+          {onToggleAudio && (
+            <button
+              onClick={onToggleAudio}
+              className={`min-h-11 min-w-11 px-2.5 sm:px-3 py-1.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-xs font-bold ${
+                weatherCondition === 'badai'
+                  ? !isAudioMuted
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-700 text-white border-purple-400 shadow-md shadow-purple-500/30 animate-pulse'
+                    : 'bg-purple-950/40 text-purple-300 border-purple-800/50 hover:bg-purple-900/40'
+                  : weatherCondition === 'hujan' || weatherCondition === 'gerimis'
+                  ? !isAudioMuted
+                    ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-cyan-400 shadow-md shadow-cyan-500/30 animate-pulse'
+                    : 'bg-cyan-950/40 text-cyan-300 border-cyan-800/50 hover:bg-cyan-900/40'
+                  : weatherCondition === 'mendung'
+                  ? !isAudioMuted
+                    ? 'bg-slate-700 text-cyan-300 border-slate-500 shadow-xs'
+                    : buttonBgClass
+                  : !isAudioMuted
+                  ? 'bg-amber-500 text-white border-amber-400 shadow-xs'
+                  : buttonBgClass
+              }`}
+              aria-label={isAudioMuted ? 'Nyalakan efek suara cuaca' : 'Matikan efek suara cuaca'}
+              title={
+                weatherCondition === 'badai'
+                  ? isAudioMuted
+                    ? 'Nyalakan Suara Badai & Gemuruh Petir'
+                    : 'Suara Badai & Petir Aktif (Klik untuk Mematikan)'
+                  : weatherCondition === 'hujan' || weatherCondition === 'gerimis'
+                  ? isAudioMuted
+                    ? 'Nyalakan Efek Suara Hujan Realtime'
+                    : 'Suara Hujan Aktif (Klik untuk Mematikan)'
+                  : isAudioMuted
+                  ? 'Nyalakan Efek Suara Cuaca Realtime'
+                  : 'Efek Suara Cuaca Siaga'
+              }
+            >
+              {!isAudioMuted ? (
+                <>
+                  {weatherCondition === 'badai' ? (
+                    <CloudLightning className="w-4 h-4 text-amber-300 animate-bounce" />
+                  ) : weatherCondition === 'hujan' || weatherCondition === 'gerimis' ? (
+                    <CloudRain className="w-4 h-4 text-cyan-200 animate-pulse" />
+                  ) : (
+                    <Volume2 className="w-4 h-4 text-emerald-400" />
+                  )}
+                  <span className="hidden sm:inline text-[11px]">
+                    {weatherCondition === 'badai'
+                      ? 'Audio Badai'
+                      : weatherCondition === 'hujan' || weatherCondition === 'gerimis'
+                      ? 'Audio Hujan'
+                      : 'Audio Aktif'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 opacity-75" />
+                  <span className="hidden sm:inline text-[11px] opacity-75">
+                    {weatherCondition === 'badai'
+                      ? 'Bisu Badai'
+                      : weatherCondition === 'hujan' || weatherCondition === 'gerimis'
+                      ? 'Bisu Hujan'
+                      : 'Audio Bisu'}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
           {/* Browser Notification Button */}
           <button
             onClick={onRequestNotif}

@@ -24,18 +24,16 @@ import { Badge } from '../Common/Badge';
 
 interface LandingPageProps {
   onGoToAuth: (mode: 'login' | 'register') => void;
-  onQuickDemo: () => void;
   theme: 'light' | 'dark' | 'system';
   onToggleTheme: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onGoToAuth,
-  onQuickDemo,
   theme,
   onToggleTheme,
 }) => {
-  const [demoWet, setDemoWet] = useState(false);
+  const [previewWet, setPreviewWet] = useState(false);
 
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
@@ -137,11 +135,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <Button
             variant="secondary"
             size="lg"
-            onClick={onQuickDemo}
+            onClick={() => onGoToAuth('login')}
             className="w-full sm:w-auto gap-2 text-xs sm:text-sm px-6 py-3 font-semibold"
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Coba Mode Demo 1-Klik</span>
+            <span>Masuk ke Dashboard</span>
           </Button>
         </div>
 
@@ -164,8 +161,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
               </div>
 
-              <Badge variant={demoWet ? 'hujan' : 'kering'} dot className="shrink-0 text-xs">
-                {demoWet ? 'Terdeteksi Hujan' : 'Cuaca Kering'}
+              <Badge variant={previewWet ? 'hujan' : 'kering'} dot className="shrink-0 text-xs">
+                {previewWet ? 'Terdeteksi Hujan' : 'Cuaca Kering'}
               </Badge>
             </div>
 
@@ -176,7 +173,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Status Servo
                 </span>
                 <p className="text-xs sm:text-base font-bold text-teks-utama truncate">
-                  {demoWet ? '90° (Tertutup)' : '0° (Jemur)'}
+                  {previewWet ? '90° (Tertutup)' : '0° (Jemur)'}
                 </p>
               </div>
 
@@ -185,7 +182,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   ADC Sensor
                 </span>
                 <p className="text-xs sm:text-base font-bold font-mono text-cyan-600 dark:text-cyan-400 truncate">
-                  {demoWet ? '1420 ADC' : '3850 ADC'}
+                  {previewWet ? '1420 ADC' : '3850 ADC'}
                 </p>
               </div>
 
@@ -194,7 +191,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   Kelembapan
                 </span>
                 <p className="text-xs sm:text-base font-bold font-mono text-teks-utama truncate">
-                  {demoWet ? '88% Basah' : '12% Kering'}
+                  {previewWet ? '88% Basah' : '12% Kering'}
                 </p>
               </div>
 
@@ -218,12 +215,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </span>
               </div>
               <Button
-                variant={demoWet ? 'danger' : 'primary'}
+                variant={previewWet ? 'danger' : 'primary'}
                 size="sm"
-                onClick={() => setDemoWet(!demoWet)}
+                onClick={() => setPreviewWet(!previewWet)}
                 className="w-full sm:w-auto text-xs shrink-0 py-2 sm:py-1.5 font-bold"
               >
-                {demoWet ? '☀️ Keringkan Sensor' : '🌧️ Simulasikan Hujan'}
+                {previewWet ? '☀️ Keringkan Sensor' : '🌧️ Simulasikan Hujan'}
               </Button>
             </div>
           </div>
@@ -320,7 +317,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Siap Mengamankan Jemuran Anda?
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-md mx-auto">
-            Daftarkan akun gratis sekarang atau langsung coba demo dashboard interaktif kami.
+            Daftarkan akun gratis sekarang dan nikmati monitoring jemuran otomatis secara realtime.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-2">
             <Button
