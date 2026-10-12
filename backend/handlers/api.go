@@ -36,7 +36,7 @@ func GetDevices(c *gin.Context) {
 		database.DB.Order("created_at asc").Find(&devices)
 	}
 	for i := range devices {
-		if devices[i].LastSeenAt.IsZero() || time.Since(devices[i].LastSeenAt) > 15*time.Second {
+		if devices[i].LastSeenAt.IsZero() || time.Since(devices[i].LastSeenAt) > 6*time.Second {
 			devices[i].Status = "offline"
 		}
 	}
@@ -201,8 +201,8 @@ func GetLatest(c *gin.Context) {
 	var latestTel models.Telemetry
 	database.DB.Where("device_id = ?", deviceID).Order("timestamp desc").First(&latestTel)
 
-	// Check staleness (> 15 seconds or never seen)
-	isStale := dev.LastSeenAt.IsZero() || time.Since(dev.LastSeenAt) > 15*time.Second
+	// Check staleness (> 6 seconds or never seen)
+	isStale := dev.LastSeenAt.IsZero() || time.Since(dev.LastSeenAt) > 6*time.Second
 	status := dev.Status
 	if isStale {
 		status = "offline"

@@ -137,11 +137,10 @@ func InitDB() (*gorm.DB, error) {
 		db.Model(&models.User{}).Where("id = ? AND (username = '' OR username IS NULL)", "usr-demo-admin").Update("username", "admin")
 	}
 
-	// Seed default device only if devices table is completely empty on initial setup
-	var count int64
-	db.Model(&models.Device{}).Count(&count)
-	if count == 0 {
-		defaultDev := models.Device{
+	// Ensure default device hs-24e1796dc9a1 is always present in database
+	var defaultDev models.Device
+	if err := db.First(&defaultDev, "id = ?", "hs-24e1796dc9a1").Error; err != nil {
+		defaultDev = models.Device{
 			ID:         "hs-24e1796dc9a1",
 			UserID:     "usr-demo-admin",
 			Name:       "Jemuran ESP32 Utama",
@@ -154,6 +153,14 @@ func InitDB() (*gorm.DB, error) {
 		db.Create(&defaultDev)
 		log.Println("[Database] Seeded default device: hs-24e1796dc9a1")
 	}
+
+	// Purge unauthorized ghost devices from public broker
+	ghostIDs := []string{
+		"patrol_dorm_v3", "035564680", "DESNER", "14:C1:9F:3A:89:1",
+		"sensors", "senselive", "Testing-Iot", "hs-56855bb5cef2", "hs-test12345678", "fmc920",
+	}
+	db.Where("id IN ?", ghostIDs).Delete(&models.Device{})
+
 
 	DB = db
 	if dbType == "mysql" {

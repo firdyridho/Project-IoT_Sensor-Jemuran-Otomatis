@@ -114,29 +114,6 @@ func (s *MqttSubscriber) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
-func (s *MqttSubscriber) ensureDevice(deviceID string) {
-	var dev models.Device
-	if err := database.DB.First(&dev, "id = ?", deviceID).Error; err != nil {
-		now := time.Now()
-		newDev := models.Device{
-			ID:               deviceID,
-			Name:             "Jemuran ESP32 (" + deviceID + ")",
-			BrokerURL:        "wss://43-133-136-149.sslip.io/ws",
-			LokasiADM4:       "31.71.03.1001",
-			AmbangPct:        60,
-			Status:           "online",
-			MotorPosition:    "extended",
-			MotorStatus:      "idle",
-			MotorLastMovedAt: now,
-			LastSeenAt:       now,
-			CreatedAt:        now,
-			UpdatedAt:        now,
-		}
-		database.DB.Create(&newDev)
-		log.Printf("[MQTT] Auto-registered active hardware device: %s", deviceID)
-	}
-}
-
 func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 	var p models.IngestPayload
 	if err := json.Unmarshal(raw, &p); err != nil {
@@ -153,8 +130,11 @@ func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 		return
 	}
 
-	// Pastikan perangkat terdaftar di database
-	s.ensureDevice(p.DeviceID)
+	// Validasi pendaftaran: Hanya proses perangkat yang terdaftar di database
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", p.DeviceID).Error; err != nil {
+		return
+	}
 
 	// 1. Save to Database
 	reading := models.Telemetry{
@@ -205,8 +185,11 @@ func (s *MqttSubscriber) handleState(topic string, raw []byte) {
 		return
 	}
 
-	// Pastikan perangkat terdaftar di database
-	s.ensureDevice(st.DeviceID)
+	// Validasi pendaftaran: Hanya proses perangkat yang terdaftar di database
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", st.DeviceID).Error; err != nil {
+		return
+	}
 
 	status := st.Status
 	if status == "" {
@@ -360,8 +343,13 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	now := time.Now()
 	nowMs := now.UnixMilli()
 
-	// 2. Pastikan perangkat terdaftar di database
-	s.ensureDevice(devID)
+	// 2. Validasi pendaftaran perangkat:
+	// Hanya proses data jika perangkat sudah terdaftar di database.
+	// Jika perangkat belum/tidak terdaftar (atau telah dihapus oleh user), abaikan data agar tidak auto-register kembali.
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", devID).Error; err != nil {
+		return
+	}
 
 	// 3. Simpan Telemetri ke Database
 	temp := 28.5

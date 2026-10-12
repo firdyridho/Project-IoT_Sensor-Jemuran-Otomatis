@@ -42,7 +42,15 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini tidak ada permintaan aktif yang tertunda.*
+* [ ] **REQ-FE-03: Penyesuaian Ambang Batas Watchdog Offline Realtime (6 Detik) & Validasi Status Awal**
+  * Tanggal Diminta: 2026-10-12
+  * Diminta Oleh: Backend Engineer
+  * Endpoint Backend yang Tersedia: `GET /api/devices`, `GET /api/devices/:id`, WebSocket `/ws` (event `state` & `telemetry`)
+  * Spesifikasi Perubahan yang Diinginkan:
+    1. Di `App.tsx`, turunkan batas toleransi watchdog `isDeviceOffline` dari 15 detik menjadi 6 detik (`Date.now() - lastSeenTs > 6000`), karena ESP32 aktif mengirim telemetri tiap 2 detik dan keepalive diset 5 detik.
+    2. Saat pengguna pertama kali membuka website atau beralih perangkat (`handleSelectDevice`), pastikan perangkat tidak langsung dianggap "Online" jika data terakhir dari backend sudah berstatus `offline` (`dev.status === 'offline'`) atau `lastSeenTs` sudah melebihi 6 detik.
+  * Dokumen Rujukan: Sinkronisasi responsivitas deteksi offline-online dengan Backend & Firmware ESP32
+  * Status: Siap Dikerjakan oleh Frontend
 
 ---
 

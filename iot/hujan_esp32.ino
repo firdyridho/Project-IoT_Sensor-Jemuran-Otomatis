@@ -198,6 +198,7 @@ void setup() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(mqttCallback);
   client.setBufferSize(512);
+  client.setKeepAlive(5); // Keepalive 5 detik agar deteksi LWT offline cepat responsif
 }
 
 void loop() {
