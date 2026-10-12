@@ -9,8 +9,8 @@
 const char* ssid = "UNTIRTA";
 const char* password = "untirtajawara";
 
-// Broker MQTT (Tersinkronisasi 100% dengan Go Backend di VPS & Dashboard Web)
-const char* mqtt_server = "test.mosquitto.org";
+// Broker MQTT Private VPS (Tencent Cloud Singapore - Sangat Stabil & Rendah Latensi)
+const char* mqtt_server = "43.133.136.149";
 const int mqtt_port = 1883;
 
 // Device ID sesuai dengan yang didaftarkan di form Web
