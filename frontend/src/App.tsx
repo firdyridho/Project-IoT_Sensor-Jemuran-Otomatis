@@ -90,9 +90,16 @@ export const App: React.FC = () => {
   const [brokerError, setBrokerError] = useState<string>('');
   const [lastSeenTs, setLastSeenTs] = useState<number>(() => {
     const ts = activeDevice.lastSeenTs || 0;
-    return ts > 1577836800000 && Date.now() - ts <= 15000 ? ts : 0;
+    if (activeDevice.status === 'offline') return 0;
+    return ts > 1577836800000 && Date.now() - ts <= 6000 ? ts : 0;
   });
   const [secondsAgo, setSecondsAgo] = useState(0);
+
+  // Reference to activeDevice to avoid race conditions and stale closures in real-time callbacks
+  const activeDeviceRef = useRef(activeDevice);
+  useEffect(() => {
+    activeDeviceRef.current = activeDevice;
+  }, [activeDevice]);
 
   // 3. BMKG Weather State
   const [weatherData, setWeatherData] = useState<BmkgResponse | null>(null);
@@ -250,18 +257,24 @@ export const App: React.FC = () => {
   // Realtime offline calculation:
   // 1. Belum pernah menerima telemetri (lastSeenTs === 0)
   // 2. Retained LWT status === 'offline'
-  // 3. Tidak ada telemetri baru masuk > 15 detik
+  // 3. Tidak ada telemetri baru masuk > 6 detik (sesuai REQ-FE-03)
   const isDeviceOffline =
     !lastSeenTs ||
     lastSeenTs === 0 ||
     latestState?.status === 'offline' ||
-    Date.now() - lastSeenTs > 15000;
+    Date.now() - lastSeenTs > 6000;
   const isBrokerDisconnected = brokerStatus !== 'connected';
 
   // ---------------------------------------------------------------------------
   // Ingest Incoming MQTT Telemetry & States
   // ---------------------------------------------------------------------------
   const handleIngestTelemetry = (telemetry: TelemetryPayload) => {
+    const currentDeviceId = activeDeviceRef.current.deviceId;
+    // REQ-FE-04: Filter telemetri agar hanya memproses data milik perangkat aktif
+    if (telemetry.deviceId && currentDeviceId && telemetry.deviceId !== currentDeviceId) {
+      return;
+    }
+
     const now = Date.now();
     setLastSeenTs(now);
 
@@ -298,6 +311,12 @@ export const App: React.FC = () => {
   };
 
   const handleIngestState = (state: StatePayload) => {
+    const currentDeviceId = activeDeviceRef.current.deviceId;
+    // REQ-FE-04: Filter state agar hanya memproses data milik perangkat aktif
+    if (state.deviceId && currentDeviceId && state.deviceId !== currentDeviceId) {
+      return;
+    }
+
     setLatestState(state);
     if (state.status === 'offline') {
       setLastSeenTs(0);
@@ -307,6 +326,12 @@ export const App: React.FC = () => {
   };
 
   const handleIngestEvent = (ev: EventPayload) => {
+    const currentDeviceId = activeDeviceRef.current.deviceId;
+    // REQ-FE-04: Filter event agar hanya memproses data milik perangkat aktif
+    if (ev.deviceId && currentDeviceId && ev.deviceId !== currentDeviceId) {
+      return;
+    }
+
     const newEvent: Peristiwa = {
       deviceId: ev.deviceId,
       ts: ev.ts || Date.now(),
@@ -353,7 +378,11 @@ export const App: React.FC = () => {
         setReadings((prev) => {
           const map = new Map<number, PembacaanHujan>();
           dbReadings.forEach((r) => map.set(r.ts, r));
-          prev.forEach((r) => map.set(r.ts, r));
+          prev.forEach((r) => {
+            if (!r.deviceId || r.deviceId === activeDevice.deviceId) {
+              map.set(r.ts, r);
+            }
+          });
           return Array.from(map.values()).sort((a, b) => a.ts - b.ts).slice(-1000);
         });
       })
@@ -365,7 +394,11 @@ export const App: React.FC = () => {
         setEvents((prev) => {
           const map = new Map<number, Peristiwa>();
           dbEvents.forEach((e) => map.set(e.ts, e));
-          prev.forEach((e) => map.set(e.ts, e));
+          prev.forEach((e) => {
+            if (!e.deviceId || e.deviceId === activeDevice.deviceId) {
+              map.set(e.ts, e);
+            }
+          });
           return Array.from(map.values()).sort((a, b) => a.ts - b.ts).slice(-200);
         });
       })
@@ -516,9 +549,11 @@ export const App: React.FC = () => {
 
     const dev = devices.find((d) => d.deviceId === deviceId);
     const validTs =
-      dev?.lastSeenTs &&
+      dev &&
+      dev.status !== 'offline' &&
+      dev.lastSeenTs &&
       dev.lastSeenTs > 1577836800000 &&
-      Date.now() - dev.lastSeenTs <= 15000
+      Date.now() - dev.lastSeenTs <= 6000
         ? dev.lastSeenTs
         : 0;
     setLastSeenTs(validTs);

@@ -42,39 +42,33 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-03: Penyesuaian Ambang Batas Watchdog Offline Realtime (6 Detik) & Validasi Status Awal**
-  * Tanggal Diminta: 2026-10-12
-  * Diminta Oleh: Backend Engineer
-  * Endpoint Backend yang Tersedia: `GET /api/devices`, `GET /api/devices/:id`, WebSocket `/ws` (event `state` & `telemetry`)
-  * Spesifikasi Perubahan yang Diinginkan:
-    1. Di `App.tsx`, turunkan batas toleransi watchdog `isDeviceOffline` dari 15 detik menjadi 6 detik (`Date.now() - lastSeenTs > 6000`), karena ESP32 aktif mengirim telemetri tiap 2 detik dan keepalive diset 5 detik.
-    2. Saat pengguna pertama kali membuka website atau beralih perangkat (`handleSelectDevice`), pastikan perangkat tidak langsung dianggap "Online" jika data terakhir dari backend sudah berstatus `offline` (`dev.status === 'offline'`) atau `lastSeenTs` sudah melebihi 6 detik.
-  * Dokumen Rujukan: Sinkronisasi responsivitas deteksi offline-online dengan Backend & Firmware ESP32
-  * Status: Siap Dikerjakan oleh Frontend
-
-* [ ] **REQ-FE-04: [CRITICAL BUG] Filter Telemetri & State Berdasarkan Device ID Aktif di `App.tsx`**
-  * Tanggal Diminta: 2026-10-12
-  * Diminta Oleh: Backend Engineer
-  * Lokasi Berkas Frontend: `frontend/src/App.tsx` (fungsi `handleIngestTelemetry`, `handleIngestState`, `handleIngestEvent`)
-  * Deskripsi Masalah:
-    Saat ini, WebSocket menyiarkan telemetri dari perangkat keras yang aktif (`hs-24e1796dc9a1`). Namun, fungsi penerima di Frontend tidak memfilter ID perangkat:
-    ```typescript
-    const handleIngestTelemetry = (telemetry: TelemetryPayload) => {
-      // BUG: langsung setLastSeenTs(Date.now()) tanpa memeriksa apakah data ini milik activeDevice!
-      setLastSeenTs(now);
-    ```
-    Akibatnya, jika pengguna beralih ke perangkat lain (termasuk perangkat fiktif/salah yang sebenarnya mati), perangkat fiktif tersebut ikut-ikutan berstatus **Online** dan grafiknya menampilkan data milik perangkat yang aktif.
-  * Solusi yang Diperlukan:
-    1. Di `handleIngestTelemetry`: Tambahkan validasi `if (telemetry.deviceId !== activeDevice.deviceId) return;`.
-    2. Di `handleIngestState`: Tambahkan validasi `if (state.deviceId !== activeDevice.deviceId) return;`.
-    3. Di `handleIngestEvent`: Tambahkan validasi `if (ev.deviceId !== activeDevice.deviceId) return;`.
-    4. Di `handleSelectDevice(deviceId)`: Pastikan `setLastSeenTs` dan `latestState` di-reset sesuai data spesifik perangkat yang dipilih.
-  * Status: Menunggu Perbaikan oleh Frontend Developer
-
+*Saat ini tidak ada permintaan aktif yang tertunda.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-03: Penyesuaian Ambang Batas Watchdog Offline Realtime (6 Detik) & Validasi Status Awal**
+  * Tanggal Diminta: 2026-10-12
+  * Tanggal Selesai: 2026-10-12
+  * Diselesaikan Oleh: Frontend Developer
+  * Endpoint Backend yang Tersedia: `GET /api/devices`, `GET /api/devices/:id`, WebSocket `/ws` (event `state` & `telemetry`)
+  * Spesifikasi Perubahan yang Terpenuhi:
+    1. Di `App.tsx`, batas toleransi watchdog `isDeviceOffline` diturunkan menjadi 6 detik (`Date.now() - lastSeenTs > 6000`), selaras dengan interval telemetri ESP32 (2 detik) dan keepalive (5 detik).
+    2. Saat pengguna pertama kali membuka website atau beralih perangkat (`handleSelectDevice`), validasi awal memastikan perangkat tidak berstatus online jika status dari backend `offline` atau data terakhir `> 6000ms`.
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-04: [CRITICAL BUG] Filter Telemetri & State Berdasarkan Device ID Aktif di `App.tsx`**
+  * Tanggal Diminta: 2026-10-12
+  * Tanggal Selesai: 2026-10-12
+  * Diselesaikan Oleh: Frontend Developer
+  * Lokasi Berkas Frontend: `frontend/src/App.tsx` (fungsi `handleIngestTelemetry`, `handleIngestState`, `handleIngestEvent`, dan `handleSelectDevice`)
+  * Spesifikasi Perubahan yang Terpenuhi:
+    1. Di `handleIngestTelemetry`: Ditambahkan filter `if (telemetry.deviceId && currentDeviceId && telemetry.deviceId !== currentDeviceId) return;`.
+    2. Di `handleIngestState`: Ditambahkan filter `if (state.deviceId && currentDeviceId && state.deviceId !== currentDeviceId) return;`.
+    3. Di `handleIngestEvent`: Ditambahkan filter `if (ev.deviceId && currentDeviceId && ev.deviceId !== currentDeviceId) return;`.
+    4. Di `handleSelectDevice(deviceId)`: `lastSeenTs`, `latestState`, `readings`, dan `events` di-reset spesifik untuk perangkat yang dipilih.
+  * Status: [x] SELESAI (Bug multi-tenancy terselesaikan)
 
 * [x] **REQ-FE-01: Pembuatan Komponen Widget Prediksi Hujan AI (`AIPredictionCard.tsx`)**
   * Tanggal Diminta: 2026-10-09

@@ -98,7 +98,7 @@ export const StorageService = {
       if (Array.isArray(parsed)) {
         return parsed.map((d: Perangkat) => {
           const validTs = d.lastSeenTs && d.lastSeenTs > 1577836800000 ? d.lastSeenTs : 0;
-          const isOnline = validTs > 0 && Date.now() - validTs <= 15000;
+          const isOnline = d.status !== 'offline' && validTs > 0 && Date.now() - validTs <= 6000;
           return {
             ...d,
             lastSeenTs: validTs,

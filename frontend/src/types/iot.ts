@@ -8,6 +8,7 @@ export interface Perangkat {
   fwVersi: string;
   lastSeenTs: number;
   online: boolean;
+  status?: 'online' | 'offline';
   ambangPct: number;
   deteksiBerkepanjanganMs?: number;
   motorPosition?: 'extended' | 'sheltered';

@@ -35,7 +35,7 @@ export const BackendService = {
       return list.map((item: any) => {
         const parsedTs = item.lastSeenAt ? new Date(item.lastSeenAt).getTime() : 0;
         const validTs = parsedTs > 1577836800000 ? parsedTs : 0;
-        const isOnline = item.status === 'online' && validTs > 0 && Date.now() - validTs <= 15000;
+        const isOnline = item.status === 'online' && validTs > 0 && Date.now() - validTs <= 6000;
         return {
           deviceId: item.deviceId,
           nama: item.name,
@@ -44,6 +44,7 @@ export const BackendService = {
           fwVersi: '1.0.0',
           lastSeenTs: validTs,
           online: isOnline,
+          status: item.status,
           ambangPct: item.ambangPct || 60,
         };
       });

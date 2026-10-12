@@ -76,6 +76,10 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Menandai status perangkat IoT yang offline dengan warna merah kontras (teks, ikon, dot berdenyut) pada desktop sidebar dan header.
   * Memperbaiki garis waktu countdown 3 detik pada pop-up alert SweetAlert2 desktop dan push banner mobile agar 100% presisi dan fit dengan radius rounded border kartu tanpa bocor.
   * Memastikan integritas backend tetap utuh 100% dan memvalidasi kelulusan build TypeScript & Vite.
+* [x] **FE-04k: Filter Multi-Tenancy Perangkat Realtime & Penyesuaian Watchdog Offline 6 Detik**:
+  * Mengisolasi penerimaan telemetri, state, dan event WebSocket di `App.tsx` agar hanya memproses payload milik perangkat yang sedang aktif (`activeDevice.deviceId`), mencegah data dari perangkat lain mencemari grafik atau status online perangkat non-aktif.
+  * Mereset timestamp `lastSeenTs`, `latestState`, `readings`, dan `events` secara bersih saat beralih perangkat (`handleSelectDevice`).
+  * Menyesuaikan toleransi watchdog offline menjadi 6 detik (`Date.now() - lastSeenTs > 6000`) dan memvalidasi status awal dari API backend (`dev.status === 'offline'`).
 
 ---
 
