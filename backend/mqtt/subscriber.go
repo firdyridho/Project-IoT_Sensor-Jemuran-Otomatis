@@ -104,25 +104,36 @@ func (s *MqttSubscriber) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	payload := msg.Payload()
 
 	if strings.HasSuffix(topic, "/telemetry") {
-		s.handleTelemetry(payload)
+		s.handleTelemetry(topic, payload)
 	} else if strings.HasSuffix(topic, "/data") {
 		s.handleCustomData(topic, payload)
 	} else if strings.HasSuffix(topic, "/state") {
-		s.handleState(payload)
+		s.handleState(topic, payload)
 	} else if strings.HasSuffix(topic, "/event") {
-		s.handleEvent(payload)
+		s.handleEvent(topic, payload)
 	}
 }
 
-func (s *MqttSubscriber) handleTelemetry(raw []byte) {
+func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 	var p models.IngestPayload
 	if err := json.Unmarshal(raw, &p); err != nil {
+		return
+	}
+
+	if p.DeviceID == "" {
+		parts := strings.Split(topic, "/")
+		if len(parts) >= 3 && parts[0] == "hujansensor" {
+			p.DeviceID = parts[1]
+		}
+	}
+	if p.DeviceID == "" {
 		return
 	}
 
 	// Abaikan telemetri jika perangkat tidak terdaftar di database
 	var dev models.Device
 	if err := database.DB.First(&dev, "id = ?", p.DeviceID).Error; err != nil {
+		log.Printf("[MQTT] Perangkat %s belum terdaftar di database, telemetri diabaikan", p.DeviceID)
 		return
 	}
 
@@ -159,9 +170,26 @@ func (s *MqttSubscriber) handleTelemetry(raw []byte) {
 	database.PushTelemetryList(p.DeviceID, p)
 }
 
-func (s *MqttSubscriber) handleState(raw []byte) {
+func (s *MqttSubscriber) handleState(topic string, raw []byte) {
 	var st models.StatePayload
 	if err := json.Unmarshal(raw, &st); err != nil {
+		return
+	}
+
+	if st.DeviceID == "" {
+		parts := strings.Split(topic, "/")
+		if len(parts) >= 3 && parts[0] == "hujansensor" {
+			st.DeviceID = parts[1]
+		}
+	}
+	if st.DeviceID == "" {
+		return
+	}
+
+	// Abaikan state jika perangkat tidak terdaftar di database
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", st.DeviceID).Error; err != nil {
+		log.Printf("[MQTT] Perangkat %s belum terdaftar di database, update state diabaikan", st.DeviceID)
 		return
 	}
 
@@ -191,9 +219,19 @@ func (s *MqttSubscriber) handleState(raw []byte) {
 	handlers.Hub.Broadcast("state", st)
 }
 
-func (s *MqttSubscriber) handleEvent(raw []byte) {
+func (s *MqttSubscriber) handleEvent(topic string, raw []byte) {
 	var ev models.EventPayload
 	if err := json.Unmarshal(raw, &ev); err != nil {
+		return
+	}
+
+	if ev.DeviceID == "" {
+		parts := strings.Split(topic, "/")
+		if len(parts) >= 3 && parts[0] == "hujansensor" {
+			ev.DeviceID = parts[1]
+		}
+	}
+	if ev.DeviceID == "" {
 		return
 	}
 

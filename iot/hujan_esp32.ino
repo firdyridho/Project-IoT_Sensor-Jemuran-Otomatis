@@ -138,16 +138,17 @@ void reconnectMQTT() {
     
     // Konfigurasi LWT (Last Will and Testament)
     // Jika ESP32 mati/terputus, broker otomatis mengabari Web bahwa status 'offline' secara instan
+    String willPayload = "{\"v\":1,\"deviceId\":\"" + String(device_id) + "\",\"status\":\"offline\"}";
     const char* willTopic = topic_state_std.c_str();
     int willQos = 1;
     bool willRetain = true;
-    const char* willMessage = "{\"status\":\"offline\"}";
 
-    if (client.connect(clientId.c_str(), willTopic, willQos, willRetain, willMessage)) {
+    if (client.connect(clientId.c_str(), willTopic, willQos, willRetain, willPayload.c_str())) {
       Serial.println(" Terhubung!");
 
       // 1. Publikasikan status bahwa perangkat sekarang resmi ONLINE (Retained)
-      client.publish(topic_state_std.c_str(), "{\"status\":\"online\"}", true);
+      String onlinePayload = "{\"v\":1,\"deviceId\":\"" + String(device_id) + "\",\"status\":\"online\"}";
+      client.publish(topic_state_std.c_str(), onlinePayload.c_str(), true);
 
       // 2. Berlangganan topik perintah kontrol dari Web
       client.subscribe(topic_subscribe.c_str());
