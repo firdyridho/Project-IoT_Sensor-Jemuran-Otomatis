@@ -24,12 +24,14 @@ import { Badge } from '../Common/Badge';
 
 interface LandingPageProps {
   onGoToAuth: (mode: 'login' | 'register') => void;
+  onQuickDemo?: () => void;
   theme: 'light' | 'dark' | 'system';
   onToggleTheme: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   onGoToAuth,
+  onQuickDemo,
   theme,
   onToggleTheme,
 }) => {
@@ -131,6 +133,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span>Mulai Sekarang (Buat Akun)</span>
             <ArrowRight className="w-4 h-4" />
           </Button>
+
+          {onQuickDemo && (
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={onQuickDemo}
+              className="w-full sm:w-auto gap-2 text-xs sm:text-sm px-6 py-3 font-semibold hover:border-amber-500/40"
+            >
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Coba Mode Demo 1-Klik</span>
+            </Button>
+          )}
 
           <Button
             variant="secondary"

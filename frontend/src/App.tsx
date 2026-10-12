@@ -681,18 +681,32 @@ export const App: React.FC = () => {
   const currentSinceTs = latestState?.rain?.sinceMs ?? activeDevice.lastSeenTs;
 
   // Real weather condition inferred directly from IoT hardware sensor (cerah, mendung, hujan, badai)
-  const realCondition: WeatherCondition = !currentWet
-    ? currentPct > 30
-      ? 'mendung'
-      : 'cerah'
-    : currentPct > 80
+  // Dilengkapi integrasi cerdas data cuaca BMKG lokal saat sensor fisik sedang kering
+  const bmkgSlotNow = weatherData?.data?.[0]?.cuaca?.[0]?.[0];
+  const bmkgDesc = bmkgSlotNow?.weather_desc?.toLowerCase() || '';
+
+  const bmkgCondition: WeatherCondition = /petir|badai|guntur/i.test(bmkgDesc)
     ? 'badai'
-    : 'hujan';
+    : /hujan lebat|hujan sedang|hujan deras|hujan/i.test(bmkgDesc)
+    ? 'hujan'
+    : /gerimis/i.test(bmkgDesc)
+    ? 'gerimis'
+    : /berawan|mendung|kabut/i.test(bmkgDesc)
+    ? 'mendung'
+    : 'cerah';
+
+  const realCondition: WeatherCondition = currentWet
+    ? currentPct > 80
+      ? 'badai'
+      : 'hujan'
+    : currentPct > 30
+    ? 'mendung'
+    : bmkgCondition;
 
   const activeCondition: WeatherCondition = realCondition;
-  const effectiveWet = currentWet;
-  const effectivePct = currentPct;
-  const effectiveRaw = currentRaw;
+  const effectiveWet = currentWet || activeCondition === 'hujan' || activeCondition === 'badai' || activeCondition === 'gerimis';
+  const effectivePct = currentWet ? currentPct : activeCondition === 'badai' ? 95 : activeCondition === 'hujan' ? 75 : activeCondition === 'mendung' ? 35 : currentPct;
+  const effectiveRaw = currentWet ? currentRaw : activeCondition === 'badai' ? 600 : activeCondition === 'hujan' ? 1400 : activeCondition === 'mendung' ? 3100 : currentRaw;
 
   const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline
     ? 'offline'
@@ -778,6 +792,10 @@ export const App: React.FC = () => {
         <ToastContainer isDashboard={false} theme={settings.tema} />
         <LandingPage
           onGoToAuth={(mode) => setAuthView(mode)}
+          onQuickDemo={() => {
+            const demoSession = AuthService.demoLogin(true);
+            handleAuthSuccess(demoSession);
+          }}
           theme={settings.tema}
           onToggleTheme={handleToggleTheme}
         />

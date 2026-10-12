@@ -297,12 +297,14 @@ header.sticky {
   animation: beacon 2s ease-out infinite;
 }
 
-/* 3-Second Toast Auto-Dismiss Progress Bar Animation */
+/* 3-Second Toast Auto-Dismiss Progress Bar Animation (Smooth GPU accelerated) */
 @keyframes toastProgress {
-  0% { width: 100%; }
-  100% { width: 0%; }
+  0% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
 }
 
 .animate-toast-progress {
+  transform-origin: left center;
   animation: toastProgress 3000ms linear forwards;
+  will-change: transform;
 }

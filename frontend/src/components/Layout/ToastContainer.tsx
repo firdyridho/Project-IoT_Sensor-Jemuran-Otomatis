@@ -123,7 +123,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
           onClick={() => Notifications.dismissToast(activeDesktopToast.id)}
         >
           <div
-            className={`relative w-full max-w-md p-6 sm:p-8 rounded-3xl ${style.cardBg} transition-all duration-300 transform animate-in zoom-in-95 duration-200 select-none`}
+            className={`relative w-full max-w-md p-6 sm:p-8 rounded-3xl overflow-hidden ${style.cardBg} transition-all duration-300 transform animate-in zoom-in-95 duration-200 select-none shadow-2xl`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* SweetAlert2 Circular Icon at Top Center */}
@@ -170,19 +170,19 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
               <X className="w-5 h-5" />
             </button>
 
-            {/* 3-Detik Auto-Dismiss Visual Progress Bar */}
-            <div className="absolute bottom-0 inset-x-0 h-1.5 bg-black/10 dark:bg-white/10 rounded-b-3xl overflow-hidden">
+            {/* 3-Detik Auto-Dismiss Visual Progress Bar (Presisi pas di dasar modal) */}
+            <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/10 dark:bg-white/10 w-full overflow-hidden">
               <div
-                className={`h-full ${
+                className={`h-full w-full ${
                   activeDesktopToast.type === 'success'
-                    ? 'bg-emerald-500'
+                    ? 'bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-xs shadow-emerald-500/50'
                     : activeDesktopToast.type === 'danger'
-                    ? 'bg-rose-500'
+                    ? 'bg-gradient-to-r from-rose-400 to-rose-600 shadow-xs shadow-rose-500/50'
                     : activeDesktopToast.type === 'warning'
-                    ? 'bg-amber-500'
+                    ? 'bg-gradient-to-r from-amber-400 to-amber-500 shadow-xs shadow-amber-500/50'
                     : activeDesktopToast.type === 'rain'
-                    ? 'bg-cyan-500'
-                    : 'bg-blue-500'
+                    ? 'bg-gradient-to-r from-cyan-400 to-blue-500 shadow-xs shadow-cyan-500/50'
+                    : 'bg-gradient-to-r from-blue-400 to-indigo-500 shadow-xs shadow-blue-500/50'
                 } animate-toast-progress`}
               />
             </div>
@@ -203,7 +203,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
             <div
               key={toast.id}
               role="alert"
-              className={`pointer-events-auto flex items-start gap-3 p-4 rounded-2xl ${style.cardBg} transition-all duration-300 animate-in slide-in-from-top-4`}
+              className={`relative overflow-hidden pointer-events-auto flex items-start gap-3 p-4 pb-4.5 rounded-2xl ${style.cardBg} shadow-2xl transition-all duration-300 animate-in slide-in-from-top-4`}
             >
               {/* Left Icon Badge */}
               <div className="shrink-0 mt-0.5">
@@ -249,19 +249,19 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
                 <X className="w-4 h-4" />
               </button>
 
-              {/* 3-Detik Auto-Dismiss Visual Progress Bar Mobile */}
-              <div className="absolute bottom-0 inset-x-0 h-1 bg-black/10 dark:bg-white/10 rounded-b-2xl overflow-hidden">
+              {/* 3-Detik Auto-Dismiss Visual Progress Bar Mobile (Presisi pas di dasar kartu) */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 w-full overflow-hidden">
                 <div
-                  className={`h-full ${
+                  className={`h-full w-full ${
                     toast.type === 'success'
-                      ? 'bg-emerald-500'
+                      ? 'bg-gradient-to-r from-emerald-400 to-emerald-500'
                       : toast.type === 'danger'
-                      ? 'bg-rose-500'
+                      ? 'bg-gradient-to-r from-rose-400 to-rose-600'
                       : toast.type === 'warning'
-                      ? 'bg-amber-500'
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-500'
                       : toast.type === 'rain'
-                      ? 'bg-cyan-500'
-                      : 'bg-blue-500'
+                      ? 'bg-gradient-to-r from-cyan-400 to-blue-500'
+                      : 'bg-gradient-to-r from-blue-400 to-indigo-500'
                   } animate-toast-progress`}
                 />
               </div>

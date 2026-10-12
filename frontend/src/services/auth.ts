@@ -205,4 +205,18 @@ export const AuthService = {
     this.saveSession(session);
     return session;
   },
+
+  demoLogin(rememberMe: boolean): AuthSession {
+    const session: AuthSession = {
+      user: {
+        id: 'usr-demo-admin',
+        name: 'Demo Pengguna',
+        username: 'admin',
+      },
+      token: 'demo-token-bypass',
+      rememberMe,
+    };
+    this.saveSession(session);
+    return session;
+  },
 };
