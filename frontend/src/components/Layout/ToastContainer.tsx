@@ -28,6 +28,17 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
     });
   }, []);
 
+  // Pastikan dialog notifikasi otomatis hilang setelah 3 detik tanpa butuh respon/klik user
+  useEffect(() => {
+    if (toasts.length > 0) {
+      const activeId = toasts[0].id;
+      const timer = setTimeout(() => {
+        Notifications.dismissToast(activeId);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toasts]);
+
   if (toasts.length === 0) return null;
 
   // Resolve solid colors (tidak transparan agar informasi terbaca jelas)
@@ -158,6 +169,23 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
             >
               <X className="w-5 h-5" />
             </button>
+
+            {/* 3-Detik Auto-Dismiss Visual Progress Bar */}
+            <div className="absolute bottom-0 inset-x-0 h-1.5 bg-black/10 dark:bg-white/10 rounded-b-3xl overflow-hidden">
+              <div
+                className={`h-full ${
+                  activeDesktopToast.type === 'success'
+                    ? 'bg-emerald-500'
+                    : activeDesktopToast.type === 'danger'
+                    ? 'bg-rose-500'
+                    : activeDesktopToast.type === 'warning'
+                    ? 'bg-amber-500'
+                    : activeDesktopToast.type === 'rain'
+                    ? 'bg-cyan-500'
+                    : 'bg-blue-500'
+                } animate-toast-progress`}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -220,6 +248,23 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({
               >
                 <X className="w-4 h-4" />
               </button>
+
+              {/* 3-Detik Auto-Dismiss Visual Progress Bar Mobile */}
+              <div className="absolute bottom-0 inset-x-0 h-1 bg-black/10 dark:bg-white/10 rounded-b-2xl overflow-hidden">
+                <div
+                  className={`h-full ${
+                    toast.type === 'success'
+                      ? 'bg-emerald-500'
+                      : toast.type === 'danger'
+                      ? 'bg-rose-500'
+                      : toast.type === 'warning'
+                      ? 'bg-amber-500'
+                      : toast.type === 'rain'
+                      ? 'bg-cyan-500'
+                      : 'bg-blue-500'
+                  } animate-toast-progress`}
+                />
+              </div>
             </div>
           );
         })}

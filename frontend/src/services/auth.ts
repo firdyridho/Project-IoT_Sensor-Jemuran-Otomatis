@@ -70,11 +70,11 @@ export const AuthService = {
           }
           if (res.status === 404) {
             if (username === 'admin' && password === 'admin123') {
-              return { success: true, session: this.demoLogin(rememberMe) };
+              return { success: true, session: this.fallbackAdminSession(rememberMe) };
             }
             return {
               success: false,
-              error: 'Server autentikasi sedang dalam pembaruan (404). Silakan gunakan akun admin/admin123 atau mode demo.',
+              error: 'Server autentikasi sedang dalam pembaruan (404). Silakan gunakan akun admin/admin123.',
             };
           }
           return { success: false, error: data.error || 'Username atau kata sandi tidak cocok' };
@@ -100,7 +100,7 @@ export const AuthService = {
     }
 
     if (username === 'admin' && password === 'admin123') {
-      return { success: true, session: this.demoLogin(rememberMe) };
+      return { success: true, session: this.fallbackAdminSession(rememberMe) };
     }
 
     return {
@@ -192,14 +192,14 @@ export const AuthService = {
     return { success: true, session };
   },
 
-  demoLogin(rememberMe: boolean): AuthSession {
+  fallbackAdminSession(rememberMe: boolean): AuthSession {
     const session: AuthSession = {
       user: {
-        id: 'usr-demo-admin',
-        name: 'Demo Pengguna',
+        id: 'usr-admin',
+        name: 'Administrator',
         username: 'admin',
       },
-      token: 'demo-token-bypass',
+      token: 'admin-local-token',
       rememberMe,
     };
     this.saveSession(session);

@@ -117,10 +117,10 @@ class NotificationService {
     this.activeToasts = [toast, ...this.activeToasts.slice(0, 4)];
     this.notify();
 
-    // Auto dismiss after 6 seconds
+    // Auto dismiss after 3 seconds (3000ms) tanpa harus menunggu klik user
     setTimeout(() => {
       this.dismissToast(toast.id);
-    }, 6000);
+    }, 3000);
   }
 
   public dismissToast(id: string): void {

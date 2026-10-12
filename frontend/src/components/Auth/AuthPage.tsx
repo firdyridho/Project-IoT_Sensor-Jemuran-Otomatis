@@ -85,11 +85,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   };
 
-  const handleDemoLogin = () => {
-    const session = AuthService.demoLogin(rememberMe);
-    onSuccess(session);
-  };
-
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
       {/* Decorative Gradients */}
@@ -185,7 +180,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             </div>
 
             <div className="p-3.5 rounded-2xl bg-kartu-muted/60 border border-garis/60 text-[11px] text-teks-sekunder">
-              <span className="font-semibold text-teks-utama">Akun Demo Cepat:</span> Gunakan username{' '}
+              <span className="font-semibold text-teks-utama">Kredensial Default:</span> Gunakan username{' '}
               <code className="text-cyan-600 dark:text-cyan-400 font-mono font-bold">admin</code> / password{' '}
               <code className="text-cyan-600 dark:text-cyan-400 font-mono font-bold">admin123</code>
             </div>
@@ -360,30 +355,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     : 'Daftar & Masuk Otomatis'}
                 </Button>
               </form>
-
-              {/* Quick Demo Access Divider */}
-              <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-garis" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-kartu px-3 text-[11px] text-teks-sekunder font-medium">
-                    Atau masuk secara instan
-                  </span>
-                </div>
-              </div>
-
-              {/* 1-Click Demo Login */}
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                onClick={handleDemoLogin}
-                className="w-full gap-2 text-xs py-2.5 hover:border-amber-500/40"
-              >
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>Coba Mode Demo (1-Klik Tanpa Akun)</span>
-              </Button>
             </div>
           </div>
         </div>

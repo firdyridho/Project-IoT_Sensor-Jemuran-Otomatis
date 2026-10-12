@@ -11,7 +11,7 @@ import { QuickWeatherCard } from './components/Dashboard/QuickWeatherCard';
 import { DashboardClockHeader } from './components/Dashboard/DashboardClockHeader';
 import { DailyForecastCards } from './components/Dashboard/DailyForecastCards';
 import { SensorADCCard } from './components/Dashboard/SensorADCCard';
-import { ConditionChipBar, SimulationMode, WeatherCondition } from './components/Dashboard/ConditionChipBar';
+export type WeatherCondition = 'cerah' | 'mendung' | 'hujan' | 'badai' | 'gerimis';
 import { RaindropGlassCanvas } from './components/Dashboard/RaindropGlassCanvas';
 import { SoftDriftingClouds } from './components/Dashboard/SoftDriftingClouds';
 import { LightningFlash } from './components/Dashboard/LightningFlash';
@@ -659,8 +659,7 @@ export const App: React.FC = () => {
     }, 600);
   };
 
-  // Simulation & Audio Mode for Dashboard Demo
-  const [simMode, setSimMode] = useState<SimulationMode>('live');
+  // Audio Mode & Ambient Weather Sound Effects
   const [isAudioMuted, setIsAudioMuted] = useState<boolean>(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('hujan.sidebar.collapsed') === 'true';
@@ -681,7 +680,7 @@ export const App: React.FC = () => {
   const currentRaw = latestState?.rain?.raw ?? latestReading?.raw ?? 3800;
   const currentSinceTs = latestState?.rain?.sinceMs ?? activeDevice.lastSeenTs;
 
-  // Real weather condition inferred from IoT hardware sensor (cerah, mendung, hujan, badai)
+  // Real weather condition inferred directly from IoT hardware sensor (cerah, mendung, hujan, badai)
   const realCondition: WeatherCondition = !currentWet
     ? currentPct > 30
       ? 'mendung'
@@ -690,30 +689,12 @@ export const App: React.FC = () => {
     ? 'badai'
     : 'hujan';
 
-  // Effective condition (either simulated demo or real IoT)
-  const activeCondition: WeatherCondition = simMode === 'live' ? realCondition : simMode;
+  const activeCondition: WeatherCondition = realCondition;
+  const effectiveWet = currentWet;
+  const effectivePct = currentPct;
+  const effectiveRaw = currentRaw;
 
-  const effectiveWet = simMode === 'live' ? currentWet : (activeCondition === 'hujan' || activeCondition === 'badai' || activeCondition === 'gerimis');
-  const effectivePct = simMode === 'live'
-    ? currentPct
-    : activeCondition === 'cerah'
-    ? 5
-    : activeCondition === 'mendung'
-    ? 30
-    : activeCondition === 'hujan' || activeCondition === 'gerimis'
-    ? 80
-    : 98;
-  const effectiveRaw = simMode === 'live'
-    ? currentRaw
-    : activeCondition === 'cerah'
-    ? 3940
-    : activeCondition === 'mendung'
-    ? 3150
-    : activeCondition === 'hujan' || activeCondition === 'gerimis'
-    ? 1250
-    : 520;
-
-  const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline && simMode === 'live'
+  const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline
     ? 'offline'
     : effectiveWet
     ? 'hujan'
@@ -728,13 +709,12 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleChangeSimMode = (mode: SimulationMode) => {
-    setSimMode(mode);
-    const nextCondition = mode === 'live' ? realCondition : mode;
+  // Sinkronisasi otomatis efek audio cuaca realtime saat kondisi cuaca berganti
+  useEffect(() => {
     if (!isAudioMuted) {
-      weatherAudio.play(nextCondition);
+      weatherAudio.play(activeCondition);
     }
-  };
+  }, [activeCondition, isAudioMuted]);
 
   // Custom Scrollbar Colors according to Theme & Weather Condition
   useEffect(() => {
@@ -798,10 +778,6 @@ export const App: React.FC = () => {
         <ToastContainer isDashboard={false} theme={settings.tema} />
         <LandingPage
           onGoToAuth={(mode) => setAuthView(mode)}
-          onQuickDemo={() => {
-            const demoSession = AuthService.demoLogin(true);
-            handleAuthSuccess(demoSession);
-          }}
           theme={settings.tema}
           onToggleTheme={handleToggleTheme}
         />
@@ -870,6 +846,8 @@ export const App: React.FC = () => {
           onLogout={handleLogout}
           isDashboard={activeTab === 'dashboard'}
           weatherCondition={activeCondition}
+          isAudioMuted={isAudioMuted}
+          onToggleAudio={handleToggleAudio}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
@@ -878,15 +856,6 @@ export const App: React.FC = () => {
             {/* 1. Dashboard Tab */}
             {activeTab === 'dashboard' && (
               <div className="space-y-4 animate-in fade-in duration-150">
-                {/* Condition Chip Bar for Demonstration / Testing */}
-                <ConditionChipBar
-                  currentMode={simMode}
-                  onChangeMode={handleChangeSimMode}
-                  isAudioMuted={isAudioMuted}
-                  onToggleAudio={handleToggleAudio}
-                  weatherCondition={activeCondition}
-                />
-
                 {/* Digital Clock & Date Header (Top) */}
                 <DashboardClockHeader
                   condition={activeCondition}
@@ -897,20 +866,20 @@ export const App: React.FC = () => {
                   <span className="flex items-center gap-1.5 font-medium">
                     <span
                       className={`w-2 h-2 rounded-full ${
-                        isBrokerDisconnected && simMode === 'live'
+                        isBrokerDisconnected
                           ? 'bg-red-500'
-                          : isDeviceOffline && simMode === 'live'
-                          ? 'bg-slate-400'
+                          : isDeviceOffline
+                          ? 'bg-red-500 animate-pulse'
                           : 'bg-green-500 animate-pulse'
                       }`}
                     />
-                    {simMode !== 'live'
-                      ? `Simulasi Demo: Cuaca ${activeCondition.toUpperCase()}`
-                      : isBrokerDisconnected
-                      ? 'Server terputus'
-                      : isDeviceOffline
-                      ? 'Perangkat offline'
-                      : 'Server Cloud Realtime (WebSocket)'}
+                    <span className={isDeviceOffline ? 'text-red-500 font-bold' : ''}>
+                      {isBrokerDisconnected
+                        ? 'Server terputus'
+                        : isDeviceOffline
+                        ? 'Perangkat offline'
+                        : 'Server Cloud Realtime (WebSocket)'}
+                    </span>
                   </span>
                   <span>
                     Pembaruan: {secondsAgo < 5 ? 'Baru saja' : `${secondsAgo} dtk lalu`}
@@ -925,7 +894,7 @@ export const App: React.FC = () => {
                   thresholdPct={activeDevice.ambangPct}
                   sinceTs={currentSinceTs}
                   lastSeenTs={lastSeenTs}
-                  brokerDisconnected={isBrokerDisconnected && simMode === 'live'}
+                  brokerDisconnected={isBrokerDisconnected}
                   weatherCondition={activeCondition}
                   tempC={latestState?.env?.tempC ?? latestReading?.suhuC ?? null}
                   hum={latestState?.env?.hum ?? latestReading?.lembapPct ?? null}
@@ -1014,7 +983,7 @@ export const App: React.FC = () => {
                   rssi={latestState?.rssi ?? latestReading?.rssi ?? null}
                   uptimeS={latestState?.uptimeS ?? null}
                   fwVersion={latestState?.fw ?? activeDevice.fwVersi}
-                  isStale={secondsAgo > 90 && simMode === 'live'}
+                  isStale={secondsAgo > 90}
                 />
               </div>
             )}
