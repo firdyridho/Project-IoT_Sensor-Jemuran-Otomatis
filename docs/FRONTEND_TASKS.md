@@ -68,11 +68,13 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Menambahkan hook animasi angka gerak (count-up dari 0 ke target) dengan IntersectionObserver saat di-scroll pada widget persentase Prediksi Hujan Cerdas AI, Skor Rekomendasi Jemuran AI (0-100), dan Sensor Kebasahan Fisik ADC (%).
   * Memodifikasi pop-up modal SweetAlert2 di desktop agar tombol "Mengerti / OK" dihilangkan dan tombol close silang (X) diletakkan di sudut kiri atas.
   * Mempercantik antarmuka dan layout halaman Grafik Realtime, Perkiraan BMKG, Riwayat & Log Event, dan Kelola Perangkat dengan aksen gradient modern, glowing status pills, efek hover interaktif, dan visual estetis yang user friendly serta tidak monoton.
-* [x] **FE-04j: Pembersihan Fitur Demo, Integrasi Tombol Audio Cuaca di Header, Status Offline IoT Merah & Timer Auto-Dismiss Pop-up 3 Detik**:
-  * Menghapus seluruh elemen dan tombol berbau "Demo" (Tombol 1-klik mode demo di AuthPage dan LandingPage, card demo simulasi cuaca di dashboard).
-  * Memindahkan kontrol mode efek suara hujan & badai Web Audio API ke header bar yang responsif dan beradaptasi otomatis sesuai kondisi cuaca (Cerah, Mendung, Hujan, Badai).
-  * Menandai status perangkat IoT yang offline dengan warna merah kontras (teks merah, ikon merah, badge merah berkedip) di desktop sidebar dan header.
-  * Menerapkan batas waktu auto-dismiss 3 detik (3000ms) untuk seluruh pop-up / alert sistem lengkap dengan visual countdown bar tanpa membebani user harus klik tutup manual.
+* [x] **FE-04j: Pembersihan Chip Demo Dashboard, Retensi Login Akun Demo, Tombol Audio di Header, Status Offline Merah & Garis Waktu Pop-up Presisi**:
+  * Menghapus card/chip bar simulasi cuaca demo pada tab Dashboard sehingga dashboard 100% didorong oleh sensor fisik IoT dan data cuaca BMKG lokal.
+  * Mempertahankan tombol 1-klik "Coba Mode Demo" pada Landing Page dan Auth Page agar evaluator tetap dapat menguji dashboard secara instan tanpa perlu mendaftar akun baru.
+  * Memastikan tema dashboard otomatis bertransisi mulus ke tema Mendung, Hujan, dan Badai (latar fotorealistik, tetesan air kaca, kilatan petir, awan bergerak) saat sensor basah atau BMKG mendeteksi hujan/badai.
+  * Memindahkan kontrol audio efek cuaca ke Header bar sesuai kondisi cuaca (Cerah, Mendung, Hujan, Badai).
+  * Menandai status perangkat IoT yang offline dengan warna merah kontras (teks, ikon, dot berdenyut) pada desktop sidebar dan header.
+  * Memperbaiki garis waktu countdown 3 detik pada pop-up alert SweetAlert2 desktop dan push banner mobile agar 100% presisi dan fit dengan radius rounded border kartu tanpa bocor.
   * Memastikan integritas backend tetap utuh 100% dan memvalidasi kelulusan build TypeScript & Vite.
 
 ---
