@@ -114,6 +114,29 @@ func (s *MqttSubscriber) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
+func (s *MqttSubscriber) ensureDevice(deviceID string) {
+	var dev models.Device
+	if err := database.DB.First(&dev, "id = ?", deviceID).Error; err != nil {
+		now := time.Now()
+		newDev := models.Device{
+			ID:               deviceID,
+			Name:             "Jemuran ESP32 (" + deviceID + ")",
+			BrokerURL:        "wss://43-133-136-149.sslip.io/ws",
+			LokasiADM4:       "31.71.03.1001",
+			AmbangPct:        60,
+			Status:           "online",
+			MotorPosition:    "extended",
+			MotorStatus:      "idle",
+			MotorLastMovedAt: now,
+			LastSeenAt:       now,
+			CreatedAt:        now,
+			UpdatedAt:        now,
+		}
+		database.DB.Create(&newDev)
+		log.Printf("[MQTT] Auto-registered active hardware device: %s", deviceID)
+	}
+}
+
 func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 	var p models.IngestPayload
 	if err := json.Unmarshal(raw, &p); err != nil {
@@ -130,12 +153,8 @@ func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 		return
 	}
 
-	// Abaikan telemetri jika perangkat tidak terdaftar di database
-	var dev models.Device
-	if err := database.DB.First(&dev, "id = ?", p.DeviceID).Error; err != nil {
-		log.Printf("[MQTT] Perangkat %s belum terdaftar di database, telemetri diabaikan", p.DeviceID)
-		return
-	}
+	// Pastikan perangkat terdaftar di database
+	s.ensureDevice(p.DeviceID)
 
 	// 1. Save to Database
 	reading := models.Telemetry{
@@ -186,12 +205,8 @@ func (s *MqttSubscriber) handleState(topic string, raw []byte) {
 		return
 	}
 
-	// Abaikan state jika perangkat tidak terdaftar di database
-	var dev models.Device
-	if err := database.DB.First(&dev, "id = ?", st.DeviceID).Error; err != nil {
-		log.Printf("[MQTT] Perangkat %s belum terdaftar di database, update state diabaikan", st.DeviceID)
-		return
-	}
+	// Pastikan perangkat terdaftar di database
+	s.ensureDevice(st.DeviceID)
 
 	status := st.Status
 	if status == "" {
@@ -345,14 +360,8 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	now := time.Now()
 	nowMs := now.UnixMilli()
 
-	// 2. Validasi pendaftaran perangkat:
-	// Hanya proses data jika perangkat sudah terdaftar di database.
-	// Jika perangkat belum/tidak terdaftar (atau telah dihapus oleh user), abaikan data agar tidak auto-register kembali.
-	var dev models.Device
-	if err := database.DB.First(&dev, "id = ?", devID).Error; err != nil {
-		// Perangkat tidak terdaftar di database, abaikan paket data ini
-		return
-	}
+	// 2. Pastikan perangkat terdaftar di database
+	s.ensureDevice(devID)
 
 	// 3. Simpan Telemetri ke Database
 	temp := 28.5
@@ -400,6 +409,11 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		RSSI:     &rssi,
 	}
 	handlers.Hub.Broadcast("telemetry", ingestPayload)
+	handlers.Hub.Broadcast("state", models.StatePayload{
+		V:        1,
+		DeviceID: devID,
+		Status:   "online",
+	})
 	handlers.Hub.Broadcast("motor", gin.H{
 		"deviceId":    devID,
 		"position":    motorPos,
