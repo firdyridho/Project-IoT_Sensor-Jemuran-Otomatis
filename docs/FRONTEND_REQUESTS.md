@@ -52,6 +52,26 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
   * Dokumen Rujukan: Sinkronisasi responsivitas deteksi offline-online dengan Backend & Firmware ESP32
   * Status: Siap Dikerjakan oleh Frontend
 
+* [ ] **REQ-FE-04: [CRITICAL BUG] Filter Telemetri & State Berdasarkan Device ID Aktif di `App.tsx`**
+  * Tanggal Diminta: 2026-10-12
+  * Diminta Oleh: Backend Engineer
+  * Lokasi Berkas Frontend: `frontend/src/App.tsx` (fungsi `handleIngestTelemetry`, `handleIngestState`, `handleIngestEvent`)
+  * Deskripsi Masalah:
+    Saat ini, WebSocket menyiarkan telemetri dari perangkat keras yang aktif (`hs-24e1796dc9a1`). Namun, fungsi penerima di Frontend tidak memfilter ID perangkat:
+    ```typescript
+    const handleIngestTelemetry = (telemetry: TelemetryPayload) => {
+      // BUG: langsung setLastSeenTs(Date.now()) tanpa memeriksa apakah data ini milik activeDevice!
+      setLastSeenTs(now);
+    ```
+    Akibatnya, jika pengguna beralih ke perangkat lain (termasuk perangkat fiktif/salah yang sebenarnya mati), perangkat fiktif tersebut ikut-ikutan berstatus **Online** dan grafiknya menampilkan data milik perangkat yang aktif.
+  * Solusi yang Diperlukan:
+    1. Di `handleIngestTelemetry`: Tambahkan validasi `if (telemetry.deviceId !== activeDevice.deviceId) return;`.
+    2. Di `handleIngestState`: Tambahkan validasi `if (state.deviceId !== activeDevice.deviceId) return;`.
+    3. Di `handleIngestEvent`: Tambahkan validasi `if (ev.deviceId !== activeDevice.deviceId) return;`.
+    4. Di `handleSelectDevice(deviceId)`: Pastikan `setLastSeenTs` dan `latestState` di-reset sesuai data spesifik perangkat yang dipilih.
+  * Status: Menunggu Perbaikan oleh Frontend Developer
+
+
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
