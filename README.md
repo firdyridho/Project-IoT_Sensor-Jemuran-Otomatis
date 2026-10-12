@@ -36,60 +36,60 @@ Sistem menggunakan pola arsitektur modular terdistribusi (Decoupled Microservice
 
 ```mermaid
 graph TD
-    subgraph Hardware ["Hardware Lapangan (IoT Node)"]
+    subgraph Hardware ["Hardware Lapangan"]
         ESP32["ESP32 Microcontroller"]
-        SensorHujan["Sensor Hujan FC-37 / MH-RD"]
+        SensorHujan["Sensor Hujan FC-37"]
         SensorLDR["Sensor Cahaya LDR"]
-        MotorJemuran["Driver Motor Stepper / Servo"]
-        OLEDDisplay["Layar OLED SSD1306 (128x64)"]
+        MotorJemuran["Driver Motor Stepper"]
+        OLEDDisplay["Layar OLED SSD1306"]
 
         SensorHujan -->|ADC Analog GPIO 33| ESP32
         SensorLDR -->|ADC Analog GPIO 34| ESP32
-        ESP32 -->|Kontrol Sinyal Step/Dir| MotorJemuran
-        ESP32 -->|I2C SDA/SCL| OLEDDisplay
+        ESP32 -->|Kontrol Step dan Dir| MotorJemuran
+        ESP32 -->|I2C SDA dan SCL| OLEDDisplay
     end
 
     subgraph Broker ["Private Cloud MQTT Broker"]
-        PrivateMosquitto["Dedicated Mosquitto Broker (TCP 1883)<br/>Local Loopback (127.0.0.1)"]
+        PrivateMosquitto["Dedicated Mosquitto Broker<br/>Port 1883 dan 127.0.0.1"]
     end
 
-    subgraph VPS ["Lighthouse Cloud VPS (aaPanel Linux AMD64)"]
+    subgraph VPS ["Lighthouse Cloud VPS"]
         subgraph BackendGo ["Golang Backend Service"]
             MQTTSub["MQTT Subscriber Daemon"]
             GinEngine["Gin REST API Engine"]
             WSHub["WebSocket Broadcast Hub"]
             AIEngine["AI Rain Prediction Engine"]
-            TelegramBot["Telegram Bot Poller & Notifier"]
+            TelegramBot["Telegram Bot Notifier"]
         end
         MySQL[("MySQL Database Storage")]
         RedisCache[("Redis In-Memory Cache")]
-        NginxProxy["Nginx Reverse Proxy & SSL"]
+        NginxProxy["Nginx Reverse Proxy"]
 
-        MQTTSub -->|Log Riwayat Telemetri| MySQL
+        MQTTSub -->|Simpan Log Telemetri| MySQL
         MQTTSub -->|Cache State Terkini| RedisCache
-        MQTTSub -->|Event Telemetri & State| WSHub
+        MQTTSub -->|Event Telemetri| WSHub
         MQTTSub -->|Notifikasi Darurat| TelegramBot
         AIEngine -->|Prakiraan Curah Hujan| MySQL
         WSHub --> NginxProxy
         GinEngine --> NginxProxy
     end
 
-    subgraph Client ["Client & Layanan Eksternal"]
+    subgraph Client ["Client dan Layanan Eksternal"]
         VercelCDN["Vercel Global Edge CDN"]
         WebDashboard["React 19 SPA Dashboard"]
-        BMKGAPI["API Cuaca Terbuka BMKG Indonesia"]
+        BMKGAPI["API Cuaca Terbuka BMKG"]
         TelegramUser["Aplikasi Telegram Pengguna"]
 
         VercelCDN --> WebDashboard
-        NginxProxy -->|WebSocket (/ws) & REST API| WebDashboard
+        NginxProxy -->|WebSocket dan REST API| WebDashboard
         WebDashboard -->|Data Prakiraan ADM4| BMKGAPI
         TelegramBot --> TelegramUser
     end
 
-    ESP32 -->|Publish Telemetry, State, & Data| PrivateMosquitto
+    ESP32 -->|Publish Telemetry dan State| PrivateMosquitto
     PrivateMosquitto -->|Subscribe Topics| MQTTSub
     GinEngine -->|Publish Kontrol Motor Manual| PrivateMosquitto
-    PrivateMosquitto -->|Perintah Tarik/Dorong| ESP32
+    PrivateMosquitto -->|Perintah Gerak Motor| ESP32
 ```
 
 ---
@@ -101,32 +101,32 @@ Alur kerja peristiwa saat mendeteksi air hujan dan eksekusi keselamatan perangka
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Cuaca as Curah Hujan / Tetesan Air
+    actor Cuaca as Curah Hujan
     participant S as Sensor Hujan FC-37
     participant E as ESP32 Microcontroller
     participant M as Motor Penggerak Jemuran
     participant B as Private MQTT Broker
     participant G as Golang Backend Service
-    participant D as MySQL & Redis Storage
+    participant D as MySQL dan Redis Storage
     participant W as React Frontend Web
-    actor U as Pengguna / Pemilik Jemuran
+    actor U as Pengguna Jemuran
 
     Cuaca->>S: Air membasahi permukaan konduktor sensor
-    S->>E: Penurunan drastis nilai analog ADC (ADC < 2500)
-    critical Tindakan Perlindungan Otonom (Failsafe Hardware)
+    S->>E: Penurunan drastis nilai analog ADC
+    critical Tindakan Perlindungan Otonom
         E->>M: Eksekusi penarikan jemuran ke area teduh seketika
-        E->>E: Perbarui tampilan layar OLED ("HUJAN! - Di Dalam")
+        E->>E: Perbarui status tampilan layar OLED
     end
-    E->>B: Publikasikan paket data JSON & LWT State (Online)
+    E->>B: Publikasikan paket data JSON dan status online
     B->>G: Worker Golang mengonsumsi payload telemetri
     par Persistensi Data
-        G->>D: Simpan log ke tabel telemetries & update Redis cache
+        G->>D: Simpan log ke tabel telemetries dan update Redis cache
     and Notifikasi Telegram
         G->>U: Kirim peringatan otomatis via Telegram Bot
     and Siaran Realtime
-        G->>W: Siarkan paket melalui WebSocket (/ws)
+        G->>W: Transmisikan event melalui WebSocket
     end
-    W->>U: Perbarui badge visual, audio sirene hujan, dan status jemuran
+    W->>U: Perbarui visualisasi status jemuran dan peringatan audio
 ```
 
 ---
