@@ -114,7 +114,10 @@ func main() {
 
 		// Web Push Notification PWA VAPID (REQ-BE-09)
 		api.GET("/notifications/vapid-key", handlers.GetVapidPublicKey)
+		api.GET("/notifications/vapid-public-key", handlers.GetVapidPublicKey)
 		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
+		api.POST("/notifications/test", handlers.TestWebPush)
+		api.POST("/notifications/test-push", handlers.TestWebPush)
 
 		// Motor DC / Jemuran Kanopi Status & Kendali (REQ-BE-01)
 		api.GET("/devices/:id/motor", handlers.GetMotorStatus)

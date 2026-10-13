@@ -59,15 +59,48 @@ func GetVapidPublicKey(c *gin.Context) {
 	vapidMu.RUnlock()
 
 	c.JSON(http.StatusOK, gin.H{
-		"publicKey": key,
+		"publicKey":  key,
+		"public_key": key,
+		"vapidKey":   key,
 	})
 }
 
 // SubscribeWebPush registers or updates a client PWA push subscription (REQ-BE-09)
 func SubscribeWebPush(c *gin.Context) {
-	var req models.SubscribeWebPushReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	// Dukung format payload bersarang { subscription: ... } maupun format langsung { endpoint, keys: ... }
+	var raw struct {
+		DeviceID string `json:"deviceId"`
+		Endpoint string `json:"endpoint"`
+		Keys     struct {
+			P256dh string `json:"p256dh"`
+			Auth   string `json:"auth"`
+		} `json:"keys"`
+		Subscription struct {
+			Endpoint string `json:"endpoint"`
+			Keys     struct {
+				P256dh string `json:"p256dh"`
+				Auth   string `json:"auth"`
+			} `json:"keys"`
+		} `json:"subscription"`
+	}
+
+	if err := c.ShouldBindJSON(&raw); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format subscription tidak valid: " + err.Error()})
+		return
+	}
+
+	endpoint := raw.Subscription.Endpoint
+	p256dh := raw.Subscription.Keys.P256dh
+	auth := raw.Subscription.Keys.Auth
+
+	if endpoint == "" {
+		endpoint = raw.Endpoint
+		p256dh = raw.Keys.P256dh
+		auth = raw.Keys.Auth
+	}
+
+	if endpoint == "" || p256dh == "" || auth == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Endpoint, p256dh, dan auth wajib disertakan"})
 		return
 	}
 
@@ -77,17 +110,17 @@ func SubscribeWebPush(c *gin.Context) {
 	}
 
 	var existing models.WebPushSubscription
-	err := database.DB.Where("endpoint = ?", req.Subscription.Endpoint).First(&existing).Error
+	err := database.DB.Where("endpoint = ?", endpoint).First(&existing).Error
 	if err == nil {
 		// Update existing
-		if req.DeviceID != "" {
-			existing.DeviceID = req.DeviceID
+		if raw.DeviceID != "" {
+			existing.DeviceID = raw.DeviceID
 		}
 		if userID != "" {
 			existing.UserID = userID
 		}
-		existing.P256dh = req.Subscription.Keys.P256dh
-		existing.Auth = req.Subscription.Keys.Auth
+		existing.P256dh = p256dh
+		existing.Auth = auth
 		if err := database.DB.Save(&existing).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui langganan notifikasi: " + err.Error()})
 			return
@@ -102,11 +135,11 @@ func SubscribeWebPush(c *gin.Context) {
 
 	// Buat subscription baru
 	newSub := models.WebPushSubscription{
-		DeviceID:  req.DeviceID,
+		DeviceID:  raw.DeviceID,
 		UserID:    userID,
-		Endpoint:  req.Subscription.Endpoint,
-		P256dh:    req.Subscription.Keys.P256dh,
-		Auth:      req.Subscription.Keys.Auth,
+		Endpoint:  endpoint,
+		P256dh:    p256dh,
+		Auth:      auth,
 		CreatedAt: time.Now(),
 	}
 
@@ -119,6 +152,40 @@ func SubscribeWebPush(c *gin.Context) {
 		"status":         "success",
 		"message":        "Langganan notifikasi push berhasil didaftarkan",
 		"subscriptionId": newSub.ID,
+	})
+}
+
+// TestWebPush sends a test notification to all or specific device subscriptions
+func TestWebPush(c *gin.Context) {
+	var req struct {
+		DeviceID string `json:"deviceId"`
+		Title    string `json:"title"`
+		Body     string `json:"body"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	title := req.Title
+	if title == "" {
+		title = "Uji Coba Notifikasi Rintik"
+	}
+	body := req.Body
+	if body == "" {
+		body = "Koneksi Web Push berhasil! HP Anda siap menerima peringatan hujan otomatis."
+	}
+
+	SendWebPushAlert(req.DeviceID, title, body)
+
+	var count int64
+	if req.DeviceID != "" {
+		database.DB.Model(&models.WebPushSubscription{}).Where("device_id = ? OR device_id = ''", req.DeviceID).Count(&count)
+	} else {
+		database.DB.Model(&models.WebPushSubscription{}).Count(&count)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":        "success",
+		"message":       "Perintah push notifikasi uji coba berhasil dikirim",
+		"targetedSubs": count,
 	})
 }
 
@@ -147,8 +214,8 @@ func SendWebPushAlert(deviceID string, title string, body string) {
 	payloadData, err := json.Marshal(gin.H{
 		"title":     title,
 		"body":      body,
-		"icon":      "/icon-192.png",
-		"badge":     "/badge-72.png",
+		"icon":      "/favicon.svg?v=2",
+		"badge":     "/favicon.svg?v=2",
 		"url":       "/",
 		"timestamp": time.Now().UnixMilli(),
 	})
