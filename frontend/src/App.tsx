@@ -863,6 +863,7 @@ export const App: React.FC = () => {
         theme={settings.tema}
         isLoggedIn={!!session}
         onGoHome={() => navigate(session ? '/dashboard' : '/')}
+        onToggleTheme={handleToggleTheme}
       />
     );
   }
