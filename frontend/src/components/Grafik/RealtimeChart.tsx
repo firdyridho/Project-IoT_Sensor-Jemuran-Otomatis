@@ -3,6 +3,7 @@ import { PembacaanHujan } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Activity, Droplets, Thermometer, Gauge, Download, FileSpreadsheet } from 'lucide-react';
 import { Button } from '../Common/Button';
+import { BackendService } from '../../services/api';
 
 export type ChartSeries = 'pct' | 'raw' | 'tempC' | 'hum';
 export type ChartRange = '5m' | '1h' | 'session';
@@ -10,17 +11,21 @@ export type ChartRange = '5m' | '1h' | 'session';
 interface RealtimeChartProps {
   readings: PembacaanHujan[];
   thresholdPct: number;
+  deviceId?: string;
+  backendUrl?: string;
 }
 
 export const RealtimeChart: React.FC<RealtimeChartProps> = ({
   readings,
   thresholdPct,
+  deviceId,
+  backendUrl,
 }) => {
   const [range, setRange] = useState<ChartRange>('1h');
   const [activeSeries, setActiveSeries] = useState<ChartSeries>('pct');
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
-  // Export Telemetry CSV (FE-08)
+  // Export Telemetry CSV Local Session (FE-08)
   const handleExportTelemetryCSV = () => {
     if (readings.length === 0) return;
     const header = 'Waktu,Timestamp_MS,DeviceId,Wet_Pct,ADC_Raw,Is_Wet,Suhu_C,Kelembapan_Pct,Baterai_V,Baterai_Pct,RSSI\r\n';
@@ -35,6 +40,13 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
     link.download = `telemetri-hujan-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Export Telemetry CSV from Backend VPS Server (BE-17)
+  const handleExportServerCSV = () => {
+    if (!backendUrl || !deviceId) return;
+    const url = BackendService.getTelemetryExportUrl(backendUrl, deviceId);
+    window.open(url, '_blank');
   };
 
   // Filter points according to selected range
@@ -181,17 +193,32 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
             ))}
           </div>
 
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExportTelemetryCSV}
-            disabled={readings.length === 0}
-            className="gap-1.5 shadow-xs bg-kartu/90 hover:bg-kartu"
-            title="Ekspor CSV Telemetri Sensor"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="hidden xs:inline font-bold">Ekspor CSV</span>
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleExportTelemetryCSV}
+              disabled={readings.length === 0}
+              className="gap-1.5 shadow-xs bg-kartu/90 hover:bg-kartu"
+              title="Ekspor CSV Telemetri Sesi Ini"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="hidden xs:inline font-bold">Ekspor Sesi</span>
+            </Button>
+
+            {backendUrl && deviceId && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExportServerCSV}
+                className="gap-1.5 shadow-xs bg-gradient-to-r from-emerald-500/10 to-teal-500/10 hover:from-emerald-500/20 hover:to-teal-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold"
+                title="Unduh CSV Telemetri Lengkap dari Server VPS (Database MySQL)"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="hidden sm:inline">Database VPS</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

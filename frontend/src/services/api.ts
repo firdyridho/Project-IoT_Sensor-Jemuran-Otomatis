@@ -149,6 +149,23 @@ export const BackendService = {
     }
   },
 
+  getTelemetryExportUrl(
+    baseUrl: string,
+    deviceId: string,
+    startDate?: string,
+    endDate?: string,
+    limit?: number
+  ): string {
+    if (!baseUrl) return '';
+    const clean = baseUrl.replace(/\/+$/, '');
+    const params = new URLSearchParams();
+    if (deviceId) params.append('deviceId', deviceId);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (limit) params.append('limit', String(limit));
+    return `${clean}/api/telemetry/export?${params.toString()}`;
+  },
+
   async getEvents(baseUrl: string, deviceId: string): Promise<Peristiwa[]> {
     if (!baseUrl || !deviceId) return [];
     try {

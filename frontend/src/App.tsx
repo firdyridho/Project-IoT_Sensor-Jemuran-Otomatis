@@ -1047,6 +1047,8 @@ export const App: React.FC = () => {
                 <RealtimeChart
                   readings={readings}
                   thresholdPct={activeDevice.ambangPct}
+                  deviceId={activeDevice.deviceId}
+                  backendUrl={settings.backendUrl}
                 />
               </div>
             )}

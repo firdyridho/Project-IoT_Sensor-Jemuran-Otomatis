@@ -14,12 +14,14 @@ import {
   Calendar,
   BrainCircuit,
   RotateCcw,
+  Download,
 } from 'lucide-react';
 import { Peristiwa, JenisPeristiwa, Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
 import { AIAccuracyView } from './AIAccuracyView';
+import { BackendService } from '../../services/api';
 
 interface HistoryViewProps {
   events: Peristiwa[];
@@ -248,6 +250,21 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   <FileJson className="w-3.5 h-3.5 text-sky-500" />
                   <span>JSON</span>
                 </Button>
+                {backendUrl && device.deviceId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const url = BackendService.getTelemetryExportUrl(backendUrl, device.deviceId, startDate, endDate);
+                      window.open(url, '_blank');
+                    }}
+                    className="gap-1.5 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 hover:from-teal-500/20 hover:to-cyan-500/20 border-teal-500/30 text-teal-600 dark:text-teal-400 font-bold"
+                    title="Unduh rekaman telemetri dari database VPS sesuai filter tanggal"
+                  >
+                    <Download className="w-3.5 h-3.5 text-teal-500" />
+                    <span className="hidden sm:inline">Telemetri VPS</span>
+                  </Button>
+                )}
                 {events.length > 0 && (
                   <Button
                     variant="ghost"
