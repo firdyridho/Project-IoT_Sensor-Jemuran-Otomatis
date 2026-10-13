@@ -42,34 +42,25 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-05: Implementasi Client-Side Routing (React Router) untuk Navigasi Halaman & Deep Linking**
-  * Tanggal Diminta: 2026-10-13
-  * Diminta Oleh: Backend Engineer
-  * Latar Belakang:
-    Saat ini navigasi antar-halaman di frontend masih menggunakan state lokal `activeTab`, sehingga URL pada address bar peramban tidak berganti (`/`), tombol Back/Forward browser tidak berfungsi secara semestinya, dan pengguna tidak dapat membagikan atau menyimpan tautan langsung (*deep linking*) ke halaman spesifik.
-  * Spesifikasi Teknis yang Diinginkan:
-    1. Pasang dan konfigurasikan pustaka routing modern (seperti `react-router-dom`).
-    2. Definisikan rute URL yang terstruktur dan bersih:
-       * `/` atau `/dashboard`: Tampilan utama Dashboard (status sensor, kartu kontrol jemuran, dan prediksi AI).
-       * `/cuaca`: Tampilan Prakiraan Cuaca BMKG.
-       * `/grafik`: Tampilan Analisis & Grafik Telemetri Realtime.
-       * `/riwayat`: Tampilan Riwayat Peristiwa & Ekspor Data CSV.
-       * `/perangkat`: Tampilan Manajemen & Pendaftaran Perangkat IoT.
-       * `/auth` atau `/login`: Tampilan Autentikasi Pengguna (Login & Registrasi).
-       * `*` (Wildcard Fallback): Halaman Khusus 404 Not Found (lihat poin 6).
-    3. Dukung tautan langsung (*deep linking*): Membuka URL `https://rintik-self.vercel.app/cuaca` langsung menampilkan tab cuaca tanpa harus diarahkan ke dashboard terlebih dahulu. Konfigurasi `vercel.json` di root frontend sudah mendukung rewrite SPA (`/(.*)` -> `/index.html`) sehingga seluruh request dialihkan ke SPA client-side router dan tidak memicu error 404 bawaan Vercel.
-    4. Sinkronkan rute aktif dengan status visual link pada `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx`.
-    5. Dukung navigasi riwayat peramban (tombol Back dan Forward) secara mulus.
-    6. Buat Komponen Halaman 404 Not Found (`NotFoundView.tsx` atau `NotFound.tsx`):
-       * Rute penangkap wildcard (`path="*"`) untuk menangani URL yang tidak terdaftar atau salah ketik.
-       * Desain antarmuka elegan dan modern yang selaras dengan tema sistem (mendukung Dark Mode dan Light Mode).
-       * Pesan informatif yang menjelaskan bahwa halaman atau perangkat yang dicari tidak ditemukan.
-       * Tombol aksi navigasi cepat seperti "Kembali ke Dashboard" (`/dashboard`) dan "Halaman Sebelumnya" (`history.back()`).
-  * Status: Siap Dikerjakan oleh Frontend Developer
+*Saat ini tidak ada permintaan aktif yang tertunda.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-05: Implementasi Client-Side Routing (React Router) untuk Navigasi Halaman & Deep Linking**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-13
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen Terkait: `frontend/src/main.tsx`, `frontend/src/App.tsx`, `frontend/src/components/Common/NotFoundView.tsx`
+  * Spesifikasi yang Terpenuhi:
+    1. Mengintegrasikan `react-router-dom` dengan `<BrowserRouter>` pada level root aplikasi.
+    2. Mendefinisikan struktur URL: `/` atau `/dashboard` (Dashboard), `/cuaca` (Prakiraan BMKG), `/grafik` (Grafik Realtime), `/riwayat` (Riwayat & Log), `/perangkat` (Kelola Perangkat), `/auth` atau `/login` (Login), `/register` (Registrasi), dan `*` (Halaman 404 Not Found).
+    3. Mendukung deep linking langsung ke halaman tanpa redirect ke dashboard. Konfigurasi `vercel.json` SPA rewrite (`/(.*) -> /index.html`) memastikan tidak ada 404 dari web server.
+    4. Menyinkronkan rute aktif dengan status visual link pada `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx`.
+    5. Mendukung riwayat navigasi browser (tombol Back dan Forward) secara mulus.
+    6. Membuat komponen `NotFoundView.tsx` untuk rute wildcard `*` dengan desain glassmorphism modern bertema dinamis (Dark & Light Mode) serta tombol kembali cepat ke Dashboard atau Halaman Sebelumnya.
+  * Status: [x] SELESAI
 
 * [x] **REQ-FE-03: Penyesuaian Ambang Batas Watchdog Offline Realtime (6 Detik) & Validasi Status Awal**
   * Tanggal Diminta: 2026-10-12

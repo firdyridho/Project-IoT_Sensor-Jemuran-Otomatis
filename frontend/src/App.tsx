@@ -26,6 +26,8 @@ import { DeviceView } from './components/Perangkat/DeviceView';
 import { ConfirmModal } from './components/Common/ConfirmModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/Landing/LandingPage';
+import { NotFoundView } from './components/Common/NotFoundView';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
 
@@ -47,10 +49,40 @@ import { BackendService } from './services/api';
 export const App: React.FC = () => {
   // 0. Auth Session State ("Ingat Saya" & User Data Isolation)
   const [session, setSession] = useState<AuthSession | null>(() => AuthService.getSession());
-  const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // 1. Core State
-  const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  // Helper function to resolve activeTab from URL path (REQ-FE-05)
+  const getActiveTabFromPath = (path: string): NavTab => {
+    const clean = path.replace(/\/+$/, '') || '/';
+    if (clean === '/grafik') return 'grafik';
+    if (clean === '/cuaca') return 'cuaca';
+    if (clean === '/riwayat') return 'riwayat';
+    if (clean === '/perangkat') return 'perangkat';
+    return 'dashboard';
+  };
+
+  const activeTab = getActiveTabFromPath(location.pathname);
+
+  // Check valid registered routes for 404 detection
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const isValidAppRoute = [
+    '/',
+    '/dashboard',
+    '/grafik',
+    '/cuaca',
+    '/riwayat',
+    '/perangkat',
+    '/auth',
+    '/login',
+    '/register',
+    '/landing',
+  ].includes(normalizedPath);
+
+  const handleTabChange = (tab: NavTab) => {
+    navigate(tab === 'dashboard' ? '/dashboard' : `/${tab}`);
+  };
+
   const [devices, setDevices] = useState<Perangkat[]>(() =>
     StorageService.getDevices(session?.user?.id)
   );
@@ -191,6 +223,7 @@ export const App: React.FC = () => {
     setSession(newSession);
     const userDevices = StorageService.getDevices(newSession.user.id);
     setDevices(userDevices);
+    navigate('/dashboard');
     Notifications.addToast({
       id: 'auth-success-' + Date.now(),
       type: 'success',
@@ -203,7 +236,7 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     AuthService.clearSession();
     setSession(null);
-    setAuthView('login');
+    navigate('/login');
     Notifications.addToast({
       id: 'auth-logout-' + Date.now(),
       type: 'info',
@@ -806,15 +839,18 @@ export const App: React.FC = () => {
   }, [activeTab, activeCondition, settings.tema]);
 
   if (!session) {
-    if (authView === 'login' || authView === 'register') {
+    const isAuthPath = normalizedPath === '/login' || normalizedPath === '/auth' || normalizedPath === '/register';
+    const authMode: 'login' | 'register' = normalizedPath === '/register' ? 'register' : 'login';
+
+    if (isAuthPath) {
       return (
         <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
           <ToastContainer isDashboard={false} theme={settings.tema} />
           <AuthPage
-            initialMode={authView}
+            initialMode={authMode}
             backendUrl={settings.backendUrl || ''}
             onSuccess={handleAuthSuccess}
-            onBackToLanding={() => setAuthView('landing')}
+            onBackToLanding={() => navigate('/')}
             theme={settings.tema}
             onToggleTheme={handleToggleTheme}
           />
@@ -826,7 +862,7 @@ export const App: React.FC = () => {
       <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
         <ToastContainer isDashboard={false} theme={settings.tema} />
         <LandingPage
-          onGoToAuth={(mode) => setAuthView(mode)}
+          onGoToAuth={(mode) => navigate(mode === 'register' ? '/register' : '/login')}
           onQuickDemo={() => {
             const demoSession = AuthService.demoLogin(true);
             handleAuthSuccess(demoSession);
@@ -866,7 +902,7 @@ export const App: React.FC = () => {
       {/* Sidebar: Desktop left column (Chrome Vertical Tabs Collapse Pane) */}
       <Sidebar
         activeTab={activeTab}
-        onChangeTab={setActiveTab}
+        onChangeTab={handleTabChange}
         deviceName={activeDevice.nama}
         isOnline={!isDeviceOffline}
         isRaining={effectiveWet}
@@ -906,8 +942,13 @@ export const App: React.FC = () => {
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
         <main className="flex-1 pb-24 lg:pb-12 pt-4 px-3.5 sm:px-6">
           <div className="mx-auto max-w-5xl space-y-5">
+            {/* Wildcard 404 Fallback View (REQ-FE-05) */}
+            {!isValidAppRoute && (
+              <NotFoundView theme={settings.tema} />
+            )}
+
             {/* 1. Dashboard Tab */}
-            {activeTab === 'dashboard' && (
+            {isValidAppRoute && activeTab === 'dashboard' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 {/* Digital Clock & Date Header (Top) */}
                 <DashboardClockHeader
@@ -1021,7 +1062,7 @@ export const App: React.FC = () => {
                 <QuickWeatherCard
                   weatherData={weatherData}
                   isLoading={isWeatherLoading}
-                  onOpenWeatherTab={() => setActiveTab('cuaca')}
+                  onOpenWeatherTab={() => handleTabChange('cuaca')}
                 />
 
                 {/* Live Telemetry Grid */}
@@ -1042,7 +1083,7 @@ export const App: React.FC = () => {
             )}
 
             {/* 2. Grafik Tab */}
-            {activeTab === 'grafik' && (
+            {isValidAppRoute && activeTab === 'grafik' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <RealtimeChart
                   readings={readings}
@@ -1054,7 +1095,7 @@ export const App: React.FC = () => {
             )}
 
             {/* 3. Cuaca Tab (BMKG) */}
-            {activeTab === 'cuaca' && (
+            {isValidAppRoute && activeTab === 'cuaca' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <WeatherView
                   weatherData={weatherData}
@@ -1076,7 +1117,7 @@ export const App: React.FC = () => {
             )}
 
             {/* 4. Riwayat Tab */}
-            {activeTab === 'riwayat' && (
+            {isValidAppRoute && activeTab === 'riwayat' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <HistoryView
                   events={events}
@@ -1091,7 +1132,7 @@ export const App: React.FC = () => {
             )}
 
             {/* 5. Perangkat Tab */}
-            {activeTab === 'perangkat' && (
+            {isValidAppRoute && activeTab === 'perangkat' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 <DeviceView
                   devices={devices}
@@ -1113,7 +1154,7 @@ export const App: React.FC = () => {
       {/* Mobile Fixed Bottom Navigation Bar (< 1024px) */}
       <BottomNav
         activeTab={activeTab}
-        onChangeTab={setActiveTab}
+        onChangeTab={handleTabChange}
         isRaining={effectiveWet}
         theme={settings.tema}
         weatherCondition={activeCondition}

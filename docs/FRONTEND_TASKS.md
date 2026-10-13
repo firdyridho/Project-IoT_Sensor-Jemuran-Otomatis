@@ -127,6 +127,16 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
 
 ---
 
+### Fase 4: Routing, Deep Linking & Halaman 404 [SELESAI]
+
+* [x] **FE-12: Implementasi Client-Side Routing & Halaman 404 (REQ-FE-05)**:
+  * Integrasi pustaka `react-router-dom` dengan `<BrowserRouter>` pada level root aplikasi.
+  * Deep linking langsung ke `/dashboard`, `/cuaca`, `/grafik`, `/riwayat`, `/perangkat`, `/auth`, `/login`, dan `/register`.
+  * Sinkronisasi navigasi URL dengan `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx` serta dukungan tombol Back/Forward browser.
+  * Halaman 404 Not Found (`NotFoundView.tsx`) dengan desain modern, tema adaptif (Dark & Light Mode), pesan informatif, dan tombol cepat kembali ke Dashboard.
+
+---
+
 ## 3. Mock Data untuk Pengembangan Frontend
 
 Frontend dapat mulai mengoding tampilan UI fitur AI sebelum endpoint backend selesai, menggunakan struktur mock data berikut:
