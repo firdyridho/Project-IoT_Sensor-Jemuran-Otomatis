@@ -1,7 +1,8 @@
 import React from 'react';
-import { CloudSun, ChevronRight, Droplets, MapPin } from 'lucide-react';
+import { ChevronRight, Droplets, MapPin } from 'lucide-react';
 import { Card } from '../Common/Card';
-import { BmkgResponse, ikonAman, berpotensiHujan, semuaSlot } from '../../types/bmkg';
+import { BmkgResponse, ikonAman, berpotensiHujan, getCurrentBmkgSlot } from '../../types/bmkg';
+import { BmkgWeatherIcon } from '../Cuaca/WeatherView';
 
 interface QuickWeatherCardProps {
   weatherData: BmkgResponse | null;
@@ -25,8 +26,7 @@ export const QuickWeatherCard: React.FC<QuickWeatherCardProps> = ({
 
   if (!weatherData) return null;
 
-  const slots = semuaSlot(weatherData);
-  const nextSlot = slots[0];
+  const nextSlot = getCurrentBmkgSlot(weatherData);
   const lokasi = weatherData.lokasi;
 
   const isRainRisk = nextSlot ? berpotensiHujan(nextSlot) : false;
@@ -39,20 +39,13 @@ export const QuickWeatherCard: React.FC<QuickWeatherCardProps> = ({
       className="border border-garis flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 md:p-5"
     >
       <div className="flex items-start sm:items-center gap-3.5">
-        <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
-          {safeIcon ? (
-            <img
-              src={safeIcon}
-              alt={nextSlot?.weather_desc || 'Cuaca BMKG'}
-              className="w-10 h-10 object-contain"
-              onError={(e) => {
-                // fallback if BMKG SVG fails
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <CloudSun className="w-9 h-9" />
-          )}
+        <div className="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0 flex items-center justify-center min-w-12 min-h-12">
+          <BmkgWeatherIcon
+            iconUrl={safeIcon}
+            weatherDesc={nextSlot?.weather_desc || 'Prakiraan Cuaca'}
+            className="w-10 h-10 object-contain"
+            fallbackIconClassName="w-9 h-9"
+          />
         </div>
 
         <div className="space-y-1 min-w-0">

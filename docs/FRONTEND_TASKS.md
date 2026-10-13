@@ -134,6 +134,10 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Deep linking langsung ke `/dashboard`, `/cuaca`, `/grafik`, `/riwayat`, `/perangkat`, `/auth`, `/login`, dan `/register`.
   * Sinkronisasi navigasi URL dengan `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx` serta dukungan tombol Back/Forward browser.
   * Halaman 404 Not Found (`NotFoundView.tsx`) dengan desain modern, tema adaptif (Dark & Light Mode), pesan informatif, dan tombol cepat kembali ke Dashboard.
+* [x] **FE-13: Perbaikan Logika Status Potensi Hujan BMKG & Dynamic Fallback Icon (REQ-FE-06)**:
+  * Koreksi fungsi `berpotensiHujan` di `bmkg.ts` dengan memprioritaskan teks kondisi cuaca BMKG (`weather_desc`) sebagai *ground truth* untuk mengeliminasi anomali residu desimal precipitation `tp`.
+  * Pembuatan komponen `BmkgWeatherIcon` di `WeatherView.tsx` dan `QuickWeatherCard.tsx` dengan fallback ikon Lucide dinamis (`Sun`, `CloudSun`, `Cloud`, `CloudRain`, `CloudLightning`, `CloudDrizzle`) ketika gambar SVG BMKG tidak termuat.
+  * Implementasi helper `getCurrentBmkgSlot` untuk menyelaraskan slot cuaca BMKG secara dinamis sesuai waktu jam lokal pengguna di `WeatherView.tsx`, `QuickWeatherCard.tsx`, dan `App.tsx`.
 
 ---
 

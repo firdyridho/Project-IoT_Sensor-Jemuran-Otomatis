@@ -45,17 +45,52 @@ export interface BmkgResponse {
   }[];
 }
 
-// Helpers specified in bmkg-weather/SKILL.md
+// Helpers specified in bmkg-weather/SKILL.md & REQ-FE-06
 export const ikonAman = (raw: string | null): string | null => {
   if (!raw) return null;
   return raw.replace(/ /g, '%20');
 };
 
 export const berpotensiHujan = (slot: Slot): boolean => {
-  return (slot.tp != null && slot.tp > 0) || /hujan|petir|guntur/i.test(slot.weather_desc);
+  if (!slot) return false;
+  const desc = slot.weather_desc?.toLowerCase() || '';
+  if (/hujan|petir|guntur|badai|gerimis/i.test(desc)) return true;
+  if (/cerah|berawan|kabut|asap/i.test(desc)) return false;
+  return slot.tp != null && slot.tp >= 0.5;
 };
 
 export const semuaSlot = (response: BmkgResponse): Slot[] => {
   if (!response?.data || !Array.isArray(response.data)) return [];
   return response.data.flatMap((d) => (Array.isArray(d.cuaca) ? d.cuaca.flat() : []));
+};
+
+export const getCurrentBmkgSlot = (weatherData: BmkgResponse | null): Slot | null => {
+  if (!weatherData) return null;
+  const slots = semuaSlot(weatherData);
+  if (!slots.length) return null;
+
+  const now = Date.now();
+  let closestSlot = slots[0];
+  let minDiff = Infinity;
+
+  for (const slot of slots) {
+    let slotTs = 0;
+    if (slot.local_datetime) {
+      const [d, t] = slot.local_datetime.split(' ');
+      if (d && t) slotTs = new Date(`${d}T${t}`).getTime();
+    }
+    if (!slotTs && slot.datetime) {
+      slotTs = new Date(slot.datetime).getTime();
+    }
+
+    if (slotTs > 0) {
+      const diff = Math.abs(now - slotTs);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestSlot = slot;
+      }
+    }
+  }
+
+  return closestSlot;
 };

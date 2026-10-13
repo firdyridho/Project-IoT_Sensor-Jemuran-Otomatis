@@ -39,7 +39,7 @@ import {
   TelemetryPayload,
   EventPayload,
 } from './types/iot';
-import { BmkgResponse } from './types/bmkg';
+import { BmkgResponse, getCurrentBmkgSlot } from './types/bmkg';
 import { StorageService } from './services/storage';
 import { mqttClient, MqttConnectionStatus } from './services/mqtt';
 import { fetchBmkgWeather } from './services/bmkg';
@@ -750,7 +750,7 @@ export const App: React.FC = () => {
 
   // Real weather condition inferred directly from IoT hardware sensor (cerah, mendung, hujan, badai)
   // Dilengkapi integrasi cerdas data cuaca BMKG lokal saat sensor fisik sedang kering
-  const bmkgSlotNow = weatherData?.data?.[0]?.cuaca?.[0]?.[0];
+  const bmkgSlotNow = getCurrentBmkgSlot(weatherData);
   const bmkgDesc = bmkgSlotNow?.weather_desc?.toLowerCase() || '';
 
   const bmkgCondition: WeatherCondition = /petir|badai|guntur/i.test(bmkgDesc)

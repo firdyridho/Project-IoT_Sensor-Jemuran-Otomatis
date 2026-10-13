@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
+  Sun,
   CloudSun,
+  Cloud,
   CloudRain,
+  CloudLightning,
+  CloudDrizzle,
   MapPin,
   RefreshCw,
   AlertTriangle,
   Clock,
   Wind,
   Droplets,
-  Cloud,
   Eye,
   CheckCircle2,
   LocateFixed,
@@ -18,6 +21,61 @@ import { ADM4_PRESETS, findNearestAdm4 } from '../../services/bmkg';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
+
+// Dynamic Fallback Weather Icon Component (REQ-FE-06)
+interface BmkgWeatherIconProps {
+  iconUrl: string | null;
+  weatherDesc: string;
+  className?: string;
+  fallbackIconClassName?: string;
+}
+
+export const BmkgWeatherIcon: React.FC<BmkgWeatherIconProps> = ({
+  iconUrl,
+  weatherDesc,
+  className = 'w-9 h-9 object-contain',
+  fallbackIconClassName = 'w-8 h-8',
+}) => {
+  const [hasError, setHasError] = useState(false);
+
+  const desc = (weatherDesc || '').toLowerCase();
+  const FallbackIcon = /petir|badai|guntur/i.test(desc)
+    ? CloudLightning
+    : /hujan lebat|hujan sedang|hujan/i.test(desc)
+    ? CloudRain
+    : /gerimis|hujan ringan/i.test(desc)
+    ? CloudDrizzle
+    : /cerah berawan/i.test(desc)
+    ? CloudSun
+    : /berawan|mendung|kabut|asap/i.test(desc)
+    ? Cloud
+    : /cerah/i.test(desc)
+    ? Sun
+    : CloudSun;
+
+  const fallbackColorClass = /petir|badai|guntur/i.test(desc)
+    ? 'text-purple-400'
+    : /hujan/i.test(desc)
+    ? 'text-cyan-400'
+    : /cerah berawan/i.test(desc)
+    ? 'text-amber-400'
+    : /berawan/i.test(desc)
+    ? 'text-slate-400'
+    : 'text-amber-500';
+
+  if (!iconUrl || hasError) {
+    return <FallbackIcon className={`${fallbackIconClassName} ${fallbackColorClass}`} aria-label={weatherDesc} />;
+  }
+
+  return (
+    <img
+      src={iconUrl}
+      alt={weatherDesc}
+      className={className}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 interface WeatherViewProps {
   weatherData: BmkgResponse | null;
@@ -346,18 +404,7 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
               {/* Weather Icon & Temperature */}
               <div className="flex items-center gap-3 py-1">
                 <div className="p-2 rounded-xl bg-kartu-muted shrink-0 w-12 h-12 flex items-center justify-center">
-                  {iconUrl ? (
-                    <img
-                      src={iconUrl}
-                      alt={slot.weather_desc}
-                      className="w-9 h-9 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <CloudSun className="w-8 h-8 text-cyan-500" />
-                  )}
+                  <BmkgWeatherIcon iconUrl={iconUrl} weatherDesc={slot.weather_desc} />
                 </div>
                 <div>
                   <div className="text-2xl font-extrabold text-teks-utama tracking-tight">
