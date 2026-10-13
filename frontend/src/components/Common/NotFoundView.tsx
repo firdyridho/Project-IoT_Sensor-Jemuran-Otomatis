@@ -597,26 +597,8 @@ export const NotFoundView: React.FC<NotFoundViewProps> = ({
           }} />
         </div>
 
-        {/* Signal badge */}
-        <div className="_sin _d2" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '5px 14px', borderRadius: 99,
-          background: isDark ? 'rgba(239,68,68,0.09)' : 'rgba(220,38,38,0.07)',
-          border: isDark ? '1px solid rgba(239,68,68,0.18)' : '1px solid rgba(220,38,38,0.16)',
-          marginBottom: 18,
-        }}>
-          <span className="_sigblink" style={{
-            display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
-            background: isDark ? '#f87171' : '#dc2626',
-            boxShadow: isDark ? '0 0 6px rgba(248,113,113,0.55)' : '0 0 4px rgba(220,38,38,0.35)',
-          }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: isDark ? '#fca5a5' : '#dc2626', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-            SINYAL RUTE TIDAK TERDETEKSI
-          </span>
-        </div>
-
         {/* Headline */}
-        <h1 className="_sin _d3" style={{
+        <h1 className="_sin _d2" style={{
           fontFamily: "'Outfit',sans-serif", fontWeight: 900,
           fontSize: 'clamp(22px,5vw,27px)', color: txt,
           letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 10,
