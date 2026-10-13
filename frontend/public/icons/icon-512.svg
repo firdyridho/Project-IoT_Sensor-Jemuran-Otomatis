@@ -1,11 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <rect width="512" height="512" rx="128" fill="#0f172a"/>
-  <circle cx="256" cy="230" r="150" fill="#22d3ee" opacity="0.15"/>
-  <path d="M170 300 H350 C388 300 420 268 420 230 C420 193 392 163 356 160 C345 115 304 80 256 80 C208 80 167 115 156 160 C120 163 92 193 92 230 C92 268 124 300 170 300 Z" fill="#22d3ee" fill-opacity="0.2" stroke="#22d3ee" stroke-width="16" stroke-linejoin="round"/>
-  <path d="M190 350 L170 400" stroke="#0891b2" stroke-width="14" stroke-linecap="round"/>
-  <path d="M256 350 L236 410" stroke="#22d3ee" stroke-width="16" stroke-linecap="round"/>
-  <path d="M322 350 L302 400" stroke="#38bdf8" stroke-width="14" stroke-linecap="round"/>
-  <circle cx="256" cy="200" r="16" fill="#38bdf8"/>
-  <path d="M230 180 C246 164 266 164 282 180" stroke="#38bdf8" stroke-width="8" stroke-linecap="round"/>
-  <path d="M210 160 C238 132 274 132 302 160" stroke="#38bdf8" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+  <title>Rintik Icon 512</title>
+  <defs>
+    <linearGradient id="rintik-tile-grad-512" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5B86E5"/>
+      <stop offset="40%" stop-color="#7B78EA"/>
+      <stop offset="75%" stop-color="#9D65E8"/>
+      <stop offset="100%" stop-color="#B854E6"/>
+    </linearGradient>
+    <filter id="rintik-shadow-512" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#312E81" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="124" fill="url(#rintik-tile-grad-512)"/>
+  <rect x="2" y="2" width="508" height="508" rx="122" stroke="#FFFFFF" stroke-opacity="0.3" stroke-width="3" fill="none"/>
+  <g transform="translate(80, 80) scale(1.38)" filter="url(#rintik-shadow-512)">
+    <path d="M 46 54
+             C 46 44, 54 38, 64 38
+             L 152 38
+             C 192 38, 218 64, 218 104
+             L 218 114
+             C 218 122, 212 128, 204 128
+             L 168 128
+             C 158 128, 150 136, 150 146
+             C 150 156, 158 164, 168 164
+             L 204 164
+             C 212 164, 218 170, 218 178
+             L 218 200
+             C 218 210, 210 218, 200 218
+             L 164 218
+             C 152 218, 140 186, 130 160
+             C 122 140, 114 130, 104 130
+             C 96 130, 92 136, 92 146
+             L 92 204
+             C 92 212, 84 218, 76 218
+             L 60 218
+             C 50 218, 46 210, 46 204
+             Z"
+          fill="#FFFFFF"/>
+  </g>
 </svg>
