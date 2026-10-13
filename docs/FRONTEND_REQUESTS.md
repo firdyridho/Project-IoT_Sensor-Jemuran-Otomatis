@@ -182,6 +182,36 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ---
 
+* [ ] **REQ-FE-11: Implementasi Skeleton Loading (Shimmer Animation) untuk Status Loading Data (Cuaca, Telemetri, Grafik, & Riwayat)**
+  * Tanggal Diminta: 2026-10-13
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Common/Skeleton.tsx` (komponen reusable Skeleton / Shimmer)
+    * `frontend/src/components/Cuaca/WeatherView.tsx` & `frontend/src/components/Dashboard/QuickWeatherCard.tsx` (saat fetching data BMKG)
+    * `frontend/src/components/Grafik/ChartsView.tsx` & `frontend/src/components/Grafik/TelemetryTable.tsx` (saat query telemetri riwayat)
+    * `frontend/src/components/Riwayat/EventsView.tsx` (saat memuat log event sensor & jemuran)
+    * `frontend/src/components/Perangkat/DeviceManager.tsx` (saat memuat daftar perangkat ESP32)
+  * Spesifikasi Desain & Tampilan yang Diinginkan:
+    1. **Komponen Reusable Skeleton (`Skeleton.tsx`)**:
+       * Sediakan utilitas komponen `<Skeleton className="..." />` yang luwes dengan efek gelombang kilau (*shimmer animation wave* / `animate-pulse` halus).
+       * Dukungan penuh dual-mode:
+         * **Dark Mode**: basis `bg-slate-800/70` dengan highlight shimmer translusen `bg-slate-700/50`.
+         * **Light Mode**: basis `bg-slate-200/80` dengan highlight shimmer translusen `bg-slate-100`.
+       * Hindari balok abu-abu mati kaku (*flat grey block*) yang terkesan murahan; gunakan sudut membulat (`rounded-xl` / `rounded-lg`) serasi dengan desain kartu aplikasi.
+    2. **Pencegahan Cumulative Layout Shift (Zero CLS)**:
+       * Dimensi dan hierarki skeleton wajib menyerupai struktur visual komponen target saat terisi data.
+       * Contoh:
+         * **Kartu Cuaca BMKG**: placeholder lingkaran untuk ikon cuaca, placeholder teks tebal untuk angka temperatur (°C), dan baris-baris info kelembapan & angin.
+         * **Tabel Telemetri & Log Riwayat**: baris header tabel dummy disertai 5 baris data placeholder bergaris tipis.
+         * **Grafik Telemetri**: placeholder kontur kurva / balok area chart dengan tinggi proporsional (`h-64` atau `h-80`).
+         * **Kartu Perangkat**: placeholder status pill badge, judul perangkat, dan tombol aksi.
+    3. **Transisi Konten Halus (Smooth Transition)**:
+       * Terapkan transisi memudar halus (`transition-opacity duration-300`) ketika data selesai dimuat dari API backend atau BMKG agar perpindahan dari skeleton ke data riil tidak tersentak atau flicker.
+  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: Siap Dikerjakan oleh Frontend Developer
+
+---
+
 ## Riwayat Permintaan Selesai (Archive)
 
 * [x] **REQ-FE-06: Perbaikan Logika Status Potensi Hujan BMKG (Sinkronisasi Badge Hujan vs Ilustrasi & Deskripsi Cuaca)**
