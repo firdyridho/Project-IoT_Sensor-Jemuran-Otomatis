@@ -42,7 +42,24 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini tidak ada permintaan aktif yang tertunda.*
+* [ ] **REQ-FE-05: Implementasi Client-Side Routing (React Router) untuk Navigasi Halaman & Deep Linking**
+  * Tanggal Diminta: 2026-10-13
+  * Diminta Oleh: Backend Engineer
+  * Latar Belakang:
+    Saat ini navigasi antar-halaman di frontend masih menggunakan state lokal `activeTab`, sehingga URL pada address bar peramban tidak berganti (`/`), tombol Back/Forward browser tidak berfungsi secara semestinya, dan pengguna tidak dapat membagikan atau menyimpan tautan langsung (*deep linking*) ke halaman spesifik.
+  * Spesifikasi Teknis yang Diinginkan:
+    1. Pasang dan konfigurasikan pustaka routing modern (seperti `react-router-dom`).
+    2. Definisikan rute URL yang terstruktur dan bersih:
+       * `/` atau `/dashboard`: Tampilan utama Dashboard (status sensor, kartu kontrol jemuran, dan prediksi AI).
+       * `/cuaca`: Tampilan Prakiraan Cuaca BMKG.
+       * `/grafik`: Tampilan Analisis & Grafik Telemetri Realtime.
+       * `/riwayat`: Tampilan Riwayat Peristiwa & Ekspor Data CSV.
+       * `/perangkat`: Tampilan Manajemen & Pendaftaran Perangkat IoT.
+       * `/auth` atau `/login`: Tampilan Autentikasi Pengguna (Login & Registrasi).
+    3. Dukung tautan langsung (*deep linking*): Membuka URL `https://rintik-self.vercel.app/cuaca` langsung menampilkan tab cuaca tanpa harus diarahkan ke dashboard terlebih dahulu. Konfigurasi `vercel.json` di root frontend sudah mendukung rewrite SPA (`/(.*)` -> `/index.html`) sehingga tidak akan memicu error 404 di Vercel.
+    4. Sinkronkan rute aktif dengan status visual link pada `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx`.
+    5. Dukung navigasi riwayat peramban (tombol Back dan Forward) secara mulus.
+  * Status: Siap Dikerjakan oleh Frontend Developer
 
 ---
 
