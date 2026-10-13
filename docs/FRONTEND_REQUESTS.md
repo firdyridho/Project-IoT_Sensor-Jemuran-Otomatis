@@ -151,6 +151,37 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ---
 
+* [ ] **REQ-FE-10: Pembuatan Halaman / Modal Ketentuan Layanan (Terms of Service) dan Kebijakan Privasi (Privacy Policy)**
+  * Tanggal Diminta: 2026-10-13
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Common/LegalModal.tsx` atau `frontend/src/components/Legal/LegalView.tsx`
+    * `frontend/src/components/Landing/LandingPage.tsx` (Footer / Legal Links)
+    * `frontend/src/components/Auth/AuthPage.tsx` (Register terms checkbox / note)
+    * `frontend/src/App.tsx` (Routing `/terms`, `/privacy`, dan validasi rute 404)
+  * Spesifikasi Desain & Tampilan yang Diinginkan:
+    1. **Format Akses & Navigasi**:
+       * Sediakan tautan pada footer `LandingPage.tsx` dan catatan pendaftaran di `AuthPage.tsx` ("Dengan mendaftar, Anda menyetujui Ketentuan Layanan & Kebijakan Privasi Rintik").
+       * Dapat dibuka sebagai rute halaman mandiri (`/terms` dan `/privacy`) atau modal dialog elegan (*read-friendly modal*) dengan tab switcher antara *"Ketentuan Layanan"* dan *"Kebijakan Privasi"*.
+       * Pastikan rute `/terms` dan `/privacy` didaftarkan ke array `isValidAppRoute` di `App.tsx` agar tidak memicu halaman 404.
+    2. **Struktur Konten Ketentuan Layanan (Terms of Service)**:
+       * **Ruang Lingkup**: Layanan monitoring telemetri cuaca sensor fisik ESP32, otomatisasi motor penutup jemuran, dan integrasi prakiraan BMKG.
+       * **Batas Tanggung Jawab (Disclaimer)**: Sensor fisik dan data BMKG disajikan sebagai alat bantu presisi; pengguna bertanggung jawab atas keamanan jemuran/aset saat terjadi bencana cuaca ekstrem di luar batas operasional hardware.
+       * **Akun & Perangkat**: Pengguna bertanggung jawab menjaga kerahasiaan kata sandi dan ID perangkat ESP32 masing-masing.
+       * **Penggunaan Wajar (Fair Use)**: Larangan melakukan spamming request HTTP/WebSocket/MQTT atau manipulasi telemetri ilegal.
+    3. **Struktur Konten Kebijakan Privasi (Privacy Policy)**:
+       * **Data yang Dikumpulkan**: Kredensial akun (nama, email), data telemetri sensor (nilai analog kelembapan, status basah, RSSI WiFi), kode wilayah BMKG (Adm4), dan push subscription token.
+       * **Tujuan Pengolahan Data**: Pengoperasian kendali motor jemuran otomatis, peringatan dini cuaca, serta analitik riwayat cuaca personal.
+       * **Keamanan & Multi-Tenancy**: Data telemetri dan perangkat terisolasi per akun pengguna (*multi-tenant*), password di-hash dengan standar industri, dan tidak dibagikan/dijual ke pihak ketiga.
+       * **Hak Pengguna**: Hak mengekspor data telemetri (fitur CSV Export), hak menghapus riwayat telemetri/event, dan hak menghapus perangkat/akun sewaktu-waktu.
+    4. **Estetika Tampilan**:
+       * Tipografi bersih, mudah dibaca (*prose typography*, line-height proporsional, heading hierarkis, badge versi dokumen).
+       * Mendukung tema Dark dan Light mode secara konsisten dengan tombol kembali / tutup yang intuitif.
+  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: Siap Dikerjakan oleh Frontend Developer
+
+---
+
 ## Riwayat Permintaan Selesai (Archive)
 
 * [x] **REQ-FE-06: Perbaikan Logika Status Potensi Hujan BMKG (Sinkronisasi Badge Hujan vs Ilustrasi & Deskripsi Cuaca)**
