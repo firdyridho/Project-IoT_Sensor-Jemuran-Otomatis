@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
-  CloudRain,
   Shield,
   Zap,
   Server,
   CloudSun,
   BellRing,
-  Lock,
   ArrowRight,
   Sun,
   Moon,
@@ -15,9 +13,6 @@ import {
   Cpu,
   Sparkles,
   Smartphone,
-  ChevronRight,
-  Activity,
-  Layers,
 } from 'lucide-react';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
@@ -40,31 +35,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
       {/* Background Decorative Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1000px] h-[350px] sm:h-[500px] bg-gradient-to-b from-cyan-500/10 via-blue-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1100px] h-[380px] sm:h-[520px] bg-gradient-to-b from-indigo-500/10 via-blue-500/5 to-transparent blur-3xl pointer-events-none -z-10"
+        aria-hidden="true"
+      />
 
-      {/* 1. Responsive Navbar */}
+      {/* 1. Clean Responsive Navbar */}
       <header className="sticky top-0 z-40 w-full border-b bg-kartu/85 backdrop-blur-md border-garis">
-        <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 shrink-0">
-              <CloudRain className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="font-heading font-black text-sm sm:text-base md:text-lg tracking-tight text-teks-utama truncate">
-                HujanPantau
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
+          {/* Logo & Brand (No AI-slop badges) */}
+          <div className="flex items-center gap-3 min-w-0">
+            <img
+              src="/favicon.svg?v=2"
+              alt="Rintik Logo"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md shrink-0"
+            />
+            <div className="flex flex-col min-w-0">
+              <span className="font-heading font-black text-base sm:text-lg tracking-tight text-teks-utama leading-tight truncate">
+                Rintik
               </span>
-              <span className="hidden xs:inline-block text-[9px] sm:text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold border border-cyan-500/20 shrink-0">
-                IoT 2.0
+              <span className="text-[10px] text-teks-sekunder font-medium hidden xs:block truncate">
+                IoT Jemuran Otomatis
               </span>
             </div>
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onToggleTheme}
-              className="min-h-9 min-w-9 p-1.5 sm:p-2 rounded-xl text-teks-sekunder hover:text-teks-utama hover:bg-kartu-muted border border-transparent hover:border-garis transition-all flex items-center justify-center"
+              className="min-h-9 min-w-9 p-2 rounded-xl text-teks-sekunder hover:text-teks-utama hover:bg-kartu-muted border border-transparent hover:border-garis transition-all flex items-center justify-center"
               aria-label="Ganti tema"
               title="Ganti Tema"
             >
@@ -81,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               variant="secondary"
               size="sm"
               onClick={() => onGoToAuth('login')}
-              className="text-xs px-2.5 sm:px-3.5 py-1.5 font-bold"
+              className="text-xs px-3 sm:px-4 py-1.5 font-bold"
             >
               Masuk
             </Button>
@@ -90,7 +90,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               variant="primary"
               size="sm"
               onClick={() => onGoToAuth('register')}
-              className="text-xs px-2.5 sm:px-4 py-1.5 shadow-md shadow-cyan-500/20 font-bold"
+              className="text-xs px-3 sm:px-4 py-1.5 shadow-md shadow-indigo-600/20 font-bold"
             >
               <span className="hidden xs:inline">Daftar Akun</span>
               <span className="xs:hidden">Daftar</span>
@@ -99,36 +99,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="pt-8 sm:pt-16 pb-12 sm:pb-16 px-3.5 sm:px-6 max-w-6xl mx-auto text-center space-y-5 sm:space-y-6">
-        {/* Release Pill */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-kartu border border-garis text-[11px] sm:text-xs text-teks-sekunder shadow-xs max-w-full overflow-hidden">
-          <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse shrink-0" />
-          <span className="font-semibold text-teks-utama truncate">Cloud VPS 24/7 Realtime</span>
-          <span className="text-garis hidden xs:inline">|</span>
-          <span className="text-[10px] font-mono hidden xs:inline">WebSocket & MySQL</span>
-        </div>
-
+      {/* 2. Hero Section (Clean Typographic Hierarchy, No Slop Badges) */}
+      <section className="pt-10 sm:pt-16 pb-12 sm:pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-5 sm:space-y-6">
         {/* Headline */}
-        <h1 className="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.15] px-1">
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.12]">
           Pantau Hujan Realtime.{' '}
-          <span className="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 bg-clip-text text-transparent">
             Amankan Jemuran Otomatis.
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-xs xs:text-sm sm:text-base lg:text-lg text-teks-sekunder max-w-2xl mx-auto leading-relaxed px-2">
-          Platform IoT pintar untuk mendeteksi percikan air hujan sub-detik, mengendalikan motor servo penarik jemuran 24/7, dan mengisolasi data tiap pengguna secara aman.
+        <p className="text-xs xs:text-sm sm:text-base lg:text-lg text-teks-sekunder max-w-2xl mx-auto leading-relaxed">
+          Sistem IoT pintar dengan sensor presisi sub-detik untuk menggerakkan servo penutup jemuran seketika tetesan air pertama terdeteksi, menjaga pakaian tetap kering tanpa rasa cemas.
         </p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 pt-2 max-w-md mx-auto sm:max-w-none px-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 pt-2 max-w-md mx-auto sm:max-w-none">
           <Button
             variant="primary"
             size="lg"
             onClick={() => onGoToAuth('register')}
-            className="w-full sm:w-auto gap-2 text-xs sm:text-sm shadow-xl shadow-cyan-500/25 px-6 py-3 font-bold"
+            className="w-full sm:w-auto gap-2 text-xs sm:text-sm shadow-xl shadow-indigo-600/25 px-6 py-3 font-bold"
           >
             <span>Mulai Sekarang (Buat Akun)</span>
             <ArrowRight className="w-4 h-4" />
@@ -152,37 +144,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             onClick={() => onGoToAuth('login')}
             className="w-full sm:w-auto gap-2 text-xs sm:text-sm px-6 py-3 font-semibold"
           >
-            <span>Masuk ke Dashboard</span>
+            <span>Masuk ke Akun</span>
           </Button>
         </div>
 
         {/* 3. Interactive Live Simulator Preview Card */}
         <div className="pt-6 sm:pt-10 max-w-3xl mx-auto w-full">
-          <div className="p-4 sm:p-7 rounded-2xl sm:rounded-3xl bg-kartu border border-garis shadow-2xl backdrop-blur-xl relative space-y-4 sm:space-y-5 text-left">
+          <div className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-kartu border border-garis shadow-2xl backdrop-blur-xl relative space-y-4 sm:space-y-5 text-left">
             {/* Simulator Header */}
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-garis/60 pb-3 sm:pb-4">
               <div className="flex items-center gap-2.5 min-w-0">
-                <span className="p-1.5 sm:p-2 rounded-xl bg-cyan-500/10 text-cyan-500 shrink-0">
+                <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-500 shrink-0">
                   <Cpu className="w-4 h-4 sm:w-5 sm:h-5" />
                 </span>
                 <div className="min-w-0">
                   <h3 className="font-bold text-xs sm:text-sm text-teks-utama truncate">
-                    Simulasi Sensor Jemuran Utama
+                    Konsol Hardware Sensor Jemuran
                   </h3>
                   <p className="text-[10px] sm:text-xs text-teks-sekunder font-mono truncate">
-                    ESP32 FC-37 Unit (hs-8f3a1c9d2b70)
+                    ESP32 Microcontroller & Servo Drive
                   </p>
                 </div>
               </div>
 
               <Badge variant={previewWet ? 'hujan' : 'kering'} dot className="shrink-0 text-xs">
-                {previewWet ? 'Terdeteksi Hujan' : 'Cuaca Kering'}
+                {previewWet ? 'Kondisi: Terdeteksi Hujan' : 'Kondisi: Cuaca Kering'}
               </Badge>
             </div>
 
             {/* Metrics Responsive Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
                 <span className="text-[10px] sm:text-[11px] text-teks-sekunder font-medium block truncate">
                   Status Servo
                 </span>
@@ -191,27 +183,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </p>
               </div>
 
-              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
+              <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
                 <span className="text-[10px] sm:text-[11px] text-teks-sekunder font-medium block truncate">
-                  ADC Sensor
+                  ADC Sensor Air
                 </span>
                 <p className="text-xs sm:text-base font-bold font-mono text-cyan-600 dark:text-cyan-400 truncate">
                   {previewWet ? '1420 ADC' : '3850 ADC'}
                 </p>
               </div>
 
-              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
+              <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
                 <span className="text-[10px] sm:text-[11px] text-teks-sekunder font-medium block truncate">
-                  Kelembapan
+                  Kelembapan Air
                 </span>
                 <p className="text-xs sm:text-base font-bold font-mono text-teks-utama truncate">
                   {previewWet ? '88% Basah' : '12% Kering'}
                 </p>
               </div>
 
-              <div className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
+              <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/50 space-y-0.5 sm:space-y-1">
                 <span className="text-[10px] sm:text-[11px] text-teks-sekunder font-medium block truncate">
-                  WebSocket Cloud
+                  WebSocket Latency
                 </span>
                 <p className="text-xs sm:text-base font-bold text-emerald-500 flex items-center gap-1 truncate">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -221,11 +213,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Interactive Toggle for the user */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-xl sm:rounded-2xl bg-cyan-500/5 border border-cyan-500/20">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-xl sm:rounded-2xl bg-indigo-500/5 border border-indigo-500/15">
               <div className="text-xs space-y-0.5">
                 <span className="font-semibold text-teks-utama block">Uji Respon Sensor:</span>
                 <span className="text-[11px] text-teks-sekunder block">
-                  Tekan tombol di samping untuk menyimulasikan percikan air hujan secara langsung
+                  Uji coba pergerakan servo motor saat sensor mendeteksi tetesan air hujan
                 </span>
               </div>
               <Button
@@ -234,7 +226,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 onClick={() => setPreviewWet(!previewWet)}
                 className="w-full sm:w-auto text-xs shrink-0 py-2 sm:py-1.5 font-bold"
               >
-                {previewWet ? '☀️ Keringkan Sensor' : '🌧️ Simulasikan Hujan'}
+                {previewWet ? 'Keringkan Sensor' : 'Simulasikan Hujan'}
               </Button>
             </div>
           </div>
@@ -242,19 +234,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 4. Core Features Section */}
-      <section className="py-12 sm:py-16 px-3.5 sm:px-6 max-w-6xl mx-auto space-y-8 sm:space-y-10 border-t border-garis">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-6xl mx-auto space-y-8 sm:space-y-10 border-t border-garis">
         <div className="text-center space-y-2">
           <h2 className="text-xl xs:text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
-            Dirancang Andal untuk Kebutuhan Rumah Tangga
+            Dirancang Andal untuk Rumah Tangga
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-lg mx-auto">
-            Sistem IoT berdaya rendah dengan keamanan tingkat industri dan isolasi akun pengguna.
+            Sistem IoT berdaya rendah dengan ketepatan deteksi air dan keandalan motor servo.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
-          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-cyan-500/40 transition-all">
-            <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 text-cyan-500 flex items-center justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-indigo-500/40 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
               <Zap className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-sm sm:text-base text-teks-utama font-heading">
@@ -265,7 +257,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </p>
           </div>
 
-          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-blue-500/40 transition-all">
+          <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-blue-500/40 transition-all">
             <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
               <Server className="w-5 h-5" />
             </div>
@@ -273,25 +265,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               Backend Cloud Golang VPS
             </h3>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Didukung server pribadi di Tencent Cloud Lighthouse dengan WebSocket hub untuk broadcast data realtime lintas perangkat tanpa delay.
+              Didukung server pribadi di Cloud dengan WebSocket hub untuk broadcast data realtime lintas perangkat tanpa delay.
             </p>
           </div>
 
-          <div className="p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-indigo-500/40 transition-all">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+          <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-3 shadow-xs hover:border-violet-500/40 transition-all">
+            <div className="w-10 h-10 rounded-2xl bg-violet-500/10 text-violet-500 flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-sm sm:text-base text-teks-utama font-heading">
               Isolasi Multi-User Aman
             </h3>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Setiap pengguna memiliki akun pribadi dengan penyimpanan perangkat terpisah. Data sensor Anda dijamin tidak akan pernah tertukar dengan pengguna lain.
+              Setiap pengguna memiliki akun pribadi dengan penyimpanan perangkat terpisah. Data sensor Anda terisolasi secara privat.
             </p>
           </div>
         </div>
 
         {/* Secondary Perks Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
           <div className="p-4 rounded-2xl bg-kartu-muted border border-garis/50 flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
               <CloudSun className="w-5 h-5" />
@@ -325,15 +317,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </section>
 
       {/* 5. Bottom Call to Action */}
-      <section className="py-12 sm:py-16 px-3.5 sm:px-6 max-w-4xl mx-auto text-center">
-        <div className="p-6 sm:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-cyan-600/15 via-blue-600/10 to-indigo-600/15 border border-cyan-500/30 space-y-4 sm:space-y-5">
+      <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto text-center">
+        <div className="p-7 sm:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-blue-600/15 via-indigo-600/10 to-violet-600/15 border border-indigo-500/25 space-y-4 sm:space-y-5">
           <h2 className="text-xl sm:text-3xl font-black font-heading text-teks-utama">
             Siap Mengamankan Jemuran Anda?
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-md mx-auto">
-            Daftarkan akun gratis sekarang dan nikmati monitoring jemuran otomatis secara realtime.
+            Daftarkan akun gratis sekarang dan nikmati monitoring jemuran otomatis secara realtime bersama Rintik.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Button
               variant="primary"
               size="lg"
@@ -348,7 +340,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={() => onGoToAuth('login')}
               className="w-full sm:w-auto text-xs sm:text-sm px-6 py-3 font-semibold"
             >
-              Masuk dengan Username
+              Masuk dengan Akun
             </Button>
           </div>
         </div>
@@ -356,9 +348,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 6. Footer */}
       <footer className="py-6 border-t border-garis text-center text-xs text-teks-sekunder px-4 space-y-2">
-        <p>© 2026 HujanPantau • Sistem IoT Sensor Jemuran Otomatis</p>
+        <p>© 2026 Rintik • Platform IoT Sensor Jemuran Otomatis Realtime</p>
         <p className="text-[11px] opacity-75">
-          Didukung oleh Tencent Cloud Lighthouse & Data BMKG Indonesia
+          Didukung oleh Server Cloud & Data Terpadu BMKG Indonesia
         </p>
       </footer>
     </div>

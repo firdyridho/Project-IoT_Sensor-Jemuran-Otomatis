@@ -128,7 +128,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
     const rows = filteredEvents.map((e) => {
       const d = new Date(e.ts).toISOString();
       const meta = JSON.stringify(e.data || {}).replace(/"/g, '""');
-      return `"${d}",${e.ts},"${e.deviceId}","${e.jenis}","${meta}","HujanPantau & BMKG"`;
+      return `"${d}",${e.ts},"${e.deviceId}","${e.jenis}","${meta}","Rintik & BMKG"`;
     });
     const blob = new Blob([header + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -143,7 +143,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   const handleExportJSON = () => {
     if (filteredEvents.length === 0) return;
     const exportData = {
-      app: 'HujanPantau',
+      app: 'Rintik',
       exportTs: Date.now(),
       attribution: 'Sumber data cuaca: Badan Meteorologi, Klimatologi, dan Geofisika (BMKG)',
       device: {

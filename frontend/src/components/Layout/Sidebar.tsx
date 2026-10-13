@@ -145,27 +145,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         {isCollapsed ? (
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-1.5 py-1">
             <button
               onClick={onToggleCollapse}
-              className={`p-2 rounded-xl border flex items-center justify-center transition-all ${toggleBtnClass}`}
-              title="Perluas Sidebar (Tab Vertikal)"
+              className="p-0.5 rounded-xl group transition-transform active:scale-95"
+              title="Perluas Sidebar (Rintik)"
+            >
+              <img
+                src="/favicon.svg?v=2"
+                alt="Rintik Logo"
+                className="w-8 h-8 rounded-xl shadow-md group-hover:scale-105 transition-transform"
+              />
+            </button>
+            <button
+              onClick={onToggleCollapse}
+              className={`p-1.5 rounded-lg border flex items-center justify-center transition-all ${toggleBtnClass}`}
+              title="Perluas Sidebar"
               aria-label="Perluas Sidebar"
             >
-              <PanelLeftOpen className="w-5 h-5" />
+              <PanelLeftOpen className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-3 min-w-0">
               <img
-                src="/favicon.svg"
-                alt="HujanPantau Logo"
+                src="/favicon.svg?v=2"
+                alt="Rintik Logo"
                 className="w-9 h-9 rounded-xl shadow-md shrink-0"
               />
               <div className="truncate">
-                <h1 className="font-heading font-bold text-base tracking-tight leading-tight truncate">
-                  HujanPantau
+                <h1 className="font-heading font-black text-base tracking-wide leading-tight truncate">
+                  Rintik
                 </h1>
                 <p className={`text-[10px] font-medium truncate ${textMutedClass}`}>
                   IoT Jemuran Otomatis

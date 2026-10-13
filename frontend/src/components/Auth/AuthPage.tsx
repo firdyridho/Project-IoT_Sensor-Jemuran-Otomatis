@@ -104,8 +104,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             aria-label="Kembali ke Beranda"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Beranda</span>
+            <span className="hidden xs:inline">Kembali ke Beranda</span>
+            <span className="xs:hidden">Beranda</span>
           </button>
+
+          <div
+            onClick={onBackToLanding}
+            className="flex items-center gap-2 cursor-pointer group"
+          >
+            <img
+              src="/favicon.svg?v=2"
+              alt="Rintik Logo"
+              className="w-7 h-7 rounded-lg shadow-sm group-hover:scale-105 transition-transform"
+            />
+            <span className="font-heading font-black text-sm tracking-tight text-teks-utama group-hover:text-indigo-400 transition-colors">
+              Rintik
+            </span>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
@@ -130,15 +145,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       <main className="flex-1 flex items-center justify-center py-8 sm:py-12 px-3.5 sm:px-6">
         <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Left Column: Visual & Perks (Hidden on small mobile, visible on lg or desktop) */}
-          <div className="hidden lg:flex lg:col-span-5 flex-col justify-between space-y-6 p-8 rounded-3xl bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-transparent border border-garis/80">
+          <div className="hidden lg:flex lg:col-span-5 flex-col justify-between space-y-6 p-8 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent border border-garis/80">
             <div className="space-y-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
-                <CloudRain className="w-7 h-7" />
-              </div>
+              <img
+                src="/favicon.svg?v=2"
+                alt="Rintik Logo"
+                className="w-14 h-14 rounded-2xl shadow-xl shadow-indigo-600/30 shrink-0"
+              />
 
               <div>
                 <h2 className="font-heading font-black text-2xl tracking-tight text-teks-utama">
-                  HujanPantau IoT
+                  Rintik IoT
                 </h2>
                 <p className="text-xs text-teks-sekunder mt-1">
                   Proteksi jemuran cerdas dengan isolasi multi-user aman.
@@ -196,8 +213,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             <div className="p-6 sm:p-8 rounded-3xl bg-kartu border border-garis shadow-2xl backdrop-blur-xl space-y-6">
               {/* Header inside Form Card */}
               <div className="text-center space-y-2">
-                <div className="lg:hidden inline-flex p-3 rounded-2xl bg-cyan-500/10 text-cyan-500 mb-1">
-                  <CloudRain className="w-6 h-6" />
+                <div className="lg:hidden inline-flex mb-1">
+                  <img
+                    src="/favicon.svg?v=2"
+                    alt="Rintik Logo"
+                    className="w-10 h-10 rounded-xl shadow-md mx-auto shrink-0"
+                  />
                 </div>
                 <h1 className="font-heading font-black text-xl sm:text-2xl tracking-tight text-teks-utama">
                   {mode === 'login' ? 'Masuk ke Akun Anda' : 'Buat Akun Baru'}
@@ -246,7 +267,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               {/* Error Alert Box */}
               {errorMsg && (
                 <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-600 dark:text-red-400 animate-in fade-in flex items-start gap-2">
-                  <span className="shrink-0 font-bold">⚠️</span>
+                  <span className="shrink-0 font-bold">[!]</span>
                   <span>{errorMsg}</span>
                 </div>
               )}
@@ -391,7 +412,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-teks-sekunder border-t border-garis/60">
-        <p>© 2026 HujanPantau • Sistem IoT Sensor Jemuran Otomatis</p>
+        <p>© 2026 Rintik • Platform IoT Sensor Jemuran Otomatis Realtime</p>
       </footer>
     </div>
   );

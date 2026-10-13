@@ -113,8 +113,8 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Mobile Logo Favicon */}
           <div className="lg:hidden flex items-center gap-2 shrink-0">
             <img
-              src="/favicon.svg"
-              alt="HujanPantau Logo"
+              src="/favicon.svg?v=2"
+              alt="Rintik Logo"
               className="w-8 h-8 rounded-xl shadow-xs"
             />
           </div>

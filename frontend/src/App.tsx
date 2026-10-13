@@ -27,6 +27,7 @@ import { ConfirmModal } from './components/Common/ConfirmModal';
 import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/Landing/LandingPage';
 import { NotFoundView } from './components/Common/NotFoundView';
+import { SplashScreen } from './components/Common/SplashScreen';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
@@ -51,6 +52,23 @@ export const App: React.FC = () => {
   const [session, setSession] = useState<AuthSession | null>(() => AuthService.getSession());
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Logo Reveal Splash Screen (only for first-time unauthenticated visitors)
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    if (AuthService.getSession()) return false;
+    try {
+      return !sessionStorage.getItem('rintik_splash_seen');
+    } catch {
+      return false;
+    }
+  });
+
+  const handleSplashComplete = () => {
+    try {
+      sessionStorage.setItem('rintik_splash_seen', 'true');
+    } catch {}
+    setShowSplash(false);
+  };
 
   // Helper function to resolve activeTab from URL path (REQ-FE-05)
   const getActiveTabFromPath = (path: string): NavTab => {
@@ -382,7 +400,7 @@ export const App: React.FC = () => {
       Notifications.addToast({
         id: 'toast-' + Date.now(),
         type: 'rain',
-        title: '🌧️ Hujan Terdeteksi',
+        title: 'Hujan Terdeteksi',
         message: `Sensor di ${activeDevice.nama} mendeteksi hujan! Basah: ${ev.data?.pct ?? '—'}%`,
         timestamp: Date.now(),
       });
@@ -390,7 +408,7 @@ export const App: React.FC = () => {
       Notifications.addToast({
         id: 'toast-' + Date.now(),
         type: 'info',
-        title: '☀️ Hujan Telah Reda',
+        title: 'Hujan Telah Reda',
         message: `Kondisi sensor kembali kering di ${activeDevice.nama}.`,
         timestamp: Date.now(),
       });
@@ -517,7 +535,7 @@ export const App: React.FC = () => {
           Notifications.addToast({
             id: 'forecast-alert-' + Date.now(),
             type: 'warning',
-            title: '⚠️ Peringatan Hujan Mendadak (AI)',
+            title: 'Peringatan Hujan Mendadak (AI)',
             message: `${alert.message} (${alert.probabilityPct}% potensi hujan dalam ~${alert.estimatedMin} menit)`,
             timestamp: Date.now(),
           });
@@ -838,6 +856,23 @@ export const App: React.FC = () => {
     }
   }, [activeTab, activeCondition, settings.tema]);
 
+  // 1. Dedicated Standalone 404 Page (No Sidebar, No Header)
+  if (!isValidAppRoute) {
+    return (
+      <NotFoundView
+        theme={settings.tema}
+        isLoggedIn={!!session}
+        onGoHome={() => navigate(session ? '/dashboard' : '/')}
+      />
+    );
+  }
+
+  // 2. Initial Unauthenticated Splash Screen (Auto-bypassed when logged in)
+  if (!session && showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
+  // 3. Unauthenticated Visitors (Auth or Landing Page)
   if (!session) {
     const isAuthPath = normalizedPath === '/login' || normalizedPath === '/auth' || normalizedPath === '/register';
     const authMode: 'login' | 'register' = normalizedPath === '/register' ? 'register' : 'login';
@@ -942,13 +977,8 @@ export const App: React.FC = () => {
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
         <main className="flex-1 pb-24 lg:pb-12 pt-4 px-3.5 sm:px-6">
           <div className="mx-auto max-w-5xl space-y-5">
-            {/* Wildcard 404 Fallback View (REQ-FE-05) */}
-            {!isValidAppRoute && (
-              <NotFoundView theme={settings.tema} />
-            )}
-
             {/* 1. Dashboard Tab */}
-            {isValidAppRoute && activeTab === 'dashboard' && (
+            {activeTab === 'dashboard' && (
               <div className="space-y-4 animate-in fade-in duration-150">
                 {/* Digital Clock & Date Header (Top) */}
                 <DashboardClockHeader

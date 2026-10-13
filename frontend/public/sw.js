@@ -1,10 +1,11 @@
-// HujanPantau Service Worker
-const CACHE_NAME = 'hujan-pantau-v1';
+// Rintik Service Worker
+const CACHE_NAME = 'rintik-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
   '/favicon.svg',
+  '/favicon.ico',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg'
 ];
