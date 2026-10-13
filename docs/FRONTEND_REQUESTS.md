@@ -56,9 +56,15 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
        * `/riwayat`: Tampilan Riwayat Peristiwa & Ekspor Data CSV.
        * `/perangkat`: Tampilan Manajemen & Pendaftaran Perangkat IoT.
        * `/auth` atau `/login`: Tampilan Autentikasi Pengguna (Login & Registrasi).
-    3. Dukung tautan langsung (*deep linking*): Membuka URL `https://rintik-self.vercel.app/cuaca` langsung menampilkan tab cuaca tanpa harus diarahkan ke dashboard terlebih dahulu. Konfigurasi `vercel.json` di root frontend sudah mendukung rewrite SPA (`/(.*)` -> `/index.html`) sehingga tidak akan memicu error 404 di Vercel.
+       * `*` (Wildcard Fallback): Halaman Khusus 404 Not Found (lihat poin 6).
+    3. Dukung tautan langsung (*deep linking*): Membuka URL `https://rintik-self.vercel.app/cuaca` langsung menampilkan tab cuaca tanpa harus diarahkan ke dashboard terlebih dahulu. Konfigurasi `vercel.json` di root frontend sudah mendukung rewrite SPA (`/(.*)` -> `/index.html`) sehingga seluruh request dialihkan ke SPA client-side router dan tidak memicu error 404 bawaan Vercel.
     4. Sinkronkan rute aktif dengan status visual link pada `Sidebar.tsx`, `Header.tsx`, dan `BottomNav.tsx`.
     5. Dukung navigasi riwayat peramban (tombol Back dan Forward) secara mulus.
+    6. Buat Komponen Halaman 404 Not Found (`NotFoundView.tsx` atau `NotFound.tsx`):
+       * Rute penangkap wildcard (`path="*"`) untuk menangani URL yang tidak terdaftar atau salah ketik.
+       * Desain antarmuka elegan dan modern yang selaras dengan tema sistem (mendukung Dark Mode dan Light Mode).
+       * Pesan informatif yang menjelaskan bahwa halaman atau perangkat yang dicari tidak ditemukan.
+       * Tombol aksi navigasi cepat seperti "Kembali ke Dashboard" (`/dashboard`) dan "Halaman Sebelumnya" (`history.back()`).
   * Status: Siap Dikerjakan oleh Frontend Developer
 
 ---
