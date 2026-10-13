@@ -38,11 +38,46 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
    * Ubah status menjadi `[x] SELESAI`.
    * Pindahkan atau centang di [FRONTEND_TASKS.md](FRONTEND_TASKS.md).
 
----
-
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini tidak ada permintaan aktif yang tertunda.*
+* [ ] **REQ-FE-06: Perbaikan Logika Status Potensi Hujan BMKG (Sinkronisasi Badge Hujan vs Ilustrasi & Deskripsi Cuaca)**
+  * Tanggal Diminta: 2026-10-13
+  * Diminta Oleh: Backend Engineer
+  * Prioritas: Tinggi (Inkonsistensi Data & Tampilan Antarmuka)
+  * Berkas Terkait:
+    * `frontend/src/types/bmkg.ts` (fungsi pembantu `berpotensiHujan`)
+    * `frontend/src/components/Cuaca/WeatherView.tsx` (kartu slot cuaca, badge header, dan rendering gambar/ikon)
+    * `frontend/src/components/Dashboard/QuickWeatherCard.tsx` (kartu cuaca ringkas di dashboard)
+    * `frontend/src/App.tsx` (evaluasi `bmkgSlotNow` dan `realCondition`)
+  * Deskripsi Masalah:
+    1. Anomali Evaluasi Curah Hujan (`slot.tp > 0`):
+       Pada `frontend/src/types/bmkg.ts`, fungsi `berpotensiHujan(slot)` dievaluasi dengan:
+       `(slot.tp != null && slot.tp > 0) || /hujan|petir|guntur/i.test(slot.weather_desc)`.
+       Pada server API BMKG, parameter `tp` (Total Precipitation) sering kali berisi residu numerik kecil (seperti 0.01 mm atau 0.1 mm) meskipun klasifikasi cuaca resmi (`weather_desc`) adalah "Cerah" atau "Cerah Berawan". Hal ini menyebabkan fungsi mengembalikan `true` dan memunculkan badge `Hujan`.
+    2. Paradoks Tampilan Kartu:
+       Pada `WeatherView.tsx`, kartu slot menampilkan badge `Hujan` pada header, namun ilustrasi di bawahnya menampilkan gambar matahari/awan cerah (`cerah-am.svg` / `cerah berawan-am.svg`) dan teks bertuliskan "Cerah Berawan" atau "Cerah".
+    3. Fallback Ikon Statis:
+       Jika berkas gambar dari CDN BMKG gagal dimuat atau URL bernilai null, komponen `WeatherView.tsx` secara statis menampilkan `<CloudSun className="w-8 h-8 text-cyan-500" />` (ikon matahari & awan) tanpa memeriksa apakah slot tersebut sebenarnya adalah hujan atau petir.
+  * Spesifikasi Teknis yang Diinginkan:
+    1. Koreksi Fungsi `berpotensiHujan` di `frontend/src/types/bmkg.ts`:
+       Jadikan `slot.weather_desc` sebagai sumber kebenaran utama (*ground truth*). Kondisi "Cerah", "Cerah Berawan", atau "Berawan" tidak boleh memicu potensi hujan hanya karena nilai jejak `tp` desimal kecil.
+       Rekomendasi implementasi:
+       ```ts
+       export const berpotensiHujan = (slot: Slot): boolean => {
+         if (!slot) return false;
+         const desc = slot.weather_desc?.toLowerCase() || '';
+         if (/hujan|petir|guntur|badai|gerimis/i.test(desc)) return true;
+         if (/cerah|berawan|kabut|asap/i.test(desc)) return false;
+         return slot.tp != null && slot.tp >= 0.5;
+       };
+       ```
+    2. Sinkronisasi Tampilan Kartu pada `WeatherView.tsx`:
+       Pastikan badge status selaras dengan `weather_desc`. Jangan tampilkan badge `Hujan` jika teks deskripsi menyatakan `Cerah` atau `Cerah Berawan`.
+    3. Pemetaan Ikon Cadangan Dinamis (*Dynamic Fallback Icon*):
+       Di `WeatherView.tsx` dan `QuickWeatherCard.tsx`, sediakan pemetaan ikon Lucide dinamis berdasarkan `weather_desc` atau kode cuaca (`Sun` untuk cerah, `CloudSun` untuk cerah berawan, `Cloud` untuk berawan, `CloudRain` untuk hujan, `CloudLightning` untuk petir/badai) agar ketika gambar SVG tidak tersedia atau gagal dimuat via `onError`, tampilan ilustrasi tetap sesuai dengan kondisi cuaca sebenarnya.
+    4. Penyelarasan Slot Cuaca Terkini pada `App.tsx`:
+       Pastikan penentuan slot cuaca saat ini (`bmkgSlotNow`) mencocokkan waktu lokal perangkat saat ini, bukan selalu mengambil index slot pertama (`cuaca[0][0]` / jam 00:00 tengah malam), sehingga kondisi mikroklimat dashboard tetap akurat.
+  * Status: Siap Dikerjakan oleh Frontend Developer
 
 ---
 
