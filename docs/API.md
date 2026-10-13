@@ -130,7 +130,60 @@ Seluruh tanggapan sukses menggunakan kode HTTP standar (200 OK, 201 Created). Ta
   * Header: `Authorization: Bearer <token>`
   * Respon `200 OK`: Data entitas user.
 
-### B.3 Manajemen Perangkat
+* **PUT `/api/auth/profile`**
+  * Keterangan: Memperbarui nama tampilan profil pengguna.
+  * Header: `Authorization: Bearer <token>`
+  * Request Body:
+    ```json
+    {
+      "name": "Budi Santoso Baru"
+    }
+    ```
+  * Respon `200 OK`: Objek pengguna yang diperbarui.
+
+* **PUT `/api/auth/password`**
+  * Keterangan: Mengubah kata sandi akun pengguna dengan verifikasi kata sandi lama.
+  * Header: `Authorization: Bearer <token>`
+  * Request Body:
+    ```json
+    {
+      "oldPassword": "passwordLama123",
+      "newPassword": "passwordBaru456"
+    }
+    ```
+  * Respon `200 OK`: Pesan sukses perubahan kata sandi.
+
+### B.3 Pengaturan Pengguna (Cloud Preferences)
+* **GET `/api/user/settings`**
+  * Keterangan: Mengambil preferensi akun (tema visual, nada dering alarm, volume audio).
+  * Header: `Authorization: Bearer <token>`
+  * Respon `200 OK`:
+    ```json
+    {
+      "userId": "usr-demo-admin",
+      "tema": "dark",
+      "alarmSound": "sirine",
+      "alarmVolume": 80,
+      "weatherAudioMuted": false,
+      "updatedAt": "2026-10-13T10:00:00Z"
+    }
+    ```
+
+* **PUT `/api/user/settings`**
+  * Keterangan: Menyimpan atau memperbarui preferensi akun pengguna di cloud.
+  * Header: `Authorization: Bearer <token>`
+  * Request Body:
+    ```json
+    {
+      "tema": "light",
+      "alarmSound": "bell",
+      "alarmVolume": 90,
+      "weatherAudioMuted": true
+    }
+    ```
+  * Respon `200 OK`: Objek preferensi yang tersimpan.
+
+### B.4 Manajemen Perangkat
 * **GET `/api/devices`**
   * Keterangan: Mengambil daftar perangkat yang terdaftar untuk akun aktif.
   * Parameter Query: `userId` (opsional bila header Bearer disertakan).
@@ -217,6 +270,30 @@ Seluruh tanggapan sukses menggunakan kode HTTP standar (200 OK, 201 Created). Ta
     * `range`: `5m`, `1h`, `24h`, atau `7d` (default: `1h`).
   * Respon `200 OK`: Array objek pembacaan telemetri (`raw`, `pct`, `wet`, `tempC`, `hum`, `vbat`, `rssi`).
 
+* **DELETE `/api/devices/:id/telemetry`**
+  * Keterangan: Membersihkan data telemetri historis perangkat tanpa menghapus pendaftaran unit perangkat.
+  * Parameter Query: `before` (opsional timestamp unix ms, contoh: `?before=1791782340000`).
+  * Respon `200 OK`:
+    ```json
+    {
+      "message": "Riwayat data telemetri berhasil dibersihkan",
+      "deviceId": "hs-24e1796dc9a1",
+      "rowsAffected": 42
+    }
+    ```
+
+* **DELETE `/api/devices/:id/events`**
+  * Keterangan: Membersihkan log peristiwa historis perangkat.
+  * Parameter Query: `before` (opsional timestamp unix ms).
+  * Respon `200 OK`:
+    ```json
+    {
+      "message": "Riwayat log peristiwa berhasil dibersihkan",
+      "deviceId": "hs-24e1796dc9a1",
+      "rowsAffected": 15
+    }
+    ```
+
 * **GET `/api/telemetry/export`**
   * Keterangan: Mengunduh riwayat telemetri dalam format berkas CSV.
   * Parameter Query: `deviceId` (wajib), `limit` (opsional, default 5000).
@@ -288,6 +365,40 @@ Seluruh tanggapan sukses menggunakan kode HTTP standar (200 OK, 201 Created). Ta
     ```
     *Pilihan `condition`: `cerah`, `mendung`, `gerimis`, `hujan`, `badai`.*
   * Respon `200 OK`: Mengembalikan data simulasi yang langsung disiarkan ke WebSocket.
+
+### B.8 Notifikasi Web Push PWA (VAPID)
+* **GET `/api/notifications/vapid-key`**
+  * Keterangan: Mengambil Public VAPID Key server untuk inisialisasi langganan peramban via `registration.pushManager.subscribe()`.
+  * Respon `200 OK`:
+    ```json
+    {
+      "publicKey": "BIvH7..."
+    }
+    ```
+
+* **POST `/api/notifications/subscribe`**
+  * Keterangan: Mendaftarkan objek langganan Web Push peramban ke database backend.
+  * Request Body:
+    ```json
+    {
+      "deviceId": "hs-24e1796dc9a1",
+      "subscription": {
+        "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+        "keys": {
+          "p256dh": "...",
+          "auth": "..."
+        }
+      }
+    }
+    ```
+  * Respon `201 Created`:
+    ```json
+    {
+      "status": "success",
+      "message": "Langganan notifikasi push berhasil didaftarkan",
+      "subscriptionId": 1
+    }
+    ```
 
 ---
 

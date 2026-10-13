@@ -42,91 +42,55 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-BE-06: Endpoint Sinkronisasi Pengaturan Akun & Preferensi Cloud (`GET /api/user/settings` & `PUT /api/user/settings`)**
-  * Tanggal Diminta: 2026-10-13
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Komponen `DeviceView.tsx` (FE-10) dan `Header.tsx` memiliki konfigurasi pilihan nada dering alarm (`sirine`, `bell`, `hujan`), volume audio alarm (0-100), preferensi tema visual (`light`, `dark`, `system`), dan status audio efek cuaca yang saat ini hanya tersimpan di `localStorage` peramban lokal. Jika pengguna membuka aplikasi di ponsel atau perangkat lain, preferensi ini tidak tersinkronisasi. Frontend membutuhkan endpoint penyimpanan pengaturan berbasis akun user yang aktif.
-  * Usulan Endpoint: `GET /api/user/settings` dan `PUT /api/user/settings` (memerlukan Header `Authorization: Bearer <token>`).
-  * Format Request / Response yang Diharapkan:
-    ```json
-    // Request PUT /api/user/settings
-    {
-      "tema": "dark",
-      "alarmSound": "sirine",
-      "alarmVolume": 75,
-      "weatherAudioMuted": false
-    }
-
-    // Response GET / PUT (200 OK)
-    {
-      "userId": "usr-xxx",
-      "tema": "dark",
-      "alarmSound": "sirine",
-      "alarmVolume": 75,
-      "weatherAudioMuted": false,
-      "updatedAt": "2026-10-13T09:30:00Z"
-    }
-    ```
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-07: Endpoint Pembersihan Riwayat Telemetri & Log Event Tertentu (`DELETE /api/devices/:id/telemetry` & `DELETE /api/devices/:id/events`)**
-  * Tanggal Diminta: 2026-10-13
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Pada tab Riwayat (`HistoryView.tsx`), terdapat tombol aksi pembersihan log event (`onClearEvents`). Saat ini aksi tersebut hanya membersihkan array `localStorage` lokal di browser. Pengguna memerlukan kemampuan untuk membersihkan rekaman data telemetri historis atau log peristiwa pada database server VPS aaPanel tanpa harus menghapus unit perangkatnya secara keseluruhan (`DELETE /api/devices/:id`).
-  * Usulan Endpoint:
-    * `DELETE /api/devices/:id/telemetry` (Menghapus data pembacaan telemetri untuk device tertentu, dengan opsi query rentang waktu `?before={ts}` atau semua).
-    * `DELETE /api/devices/:id/events` (Menghapus data log peristiwa untuk device tertentu).
-  * Format Request / Response yang Diharapkan:
-    ```json
-    // Response DELETE (200 OK)
-    {
-      "message": "Riwayat data perangkat berhasil dibersihkan",
-      "deviceId": "hs-xxx",
-      "rowsAffected": 42
-    }
-    ```
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-08: Endpoint Pembaruan Profil & Keamanan Pengguna (`PUT /api/auth/profile` & `PUT /api/auth/password`)**
-  * Tanggal Diminta: 2026-10-13
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Frontend telah menyediakan identitas akun pengguna di header dan pengaturan. Namun pengguna belum memiliki antarmuka API untuk mengganti nama lengkap profil tampilan atau mengubah kata sandi akun setelah registrasi.
-  * Usulan Endpoint:
-    * `PUT /api/auth/profile` (Memperbarui nama lengkap: payload `{"name": "Nama Baru"}`).
-    * `PUT /api/auth/password` (Mengubah kata sandi: payload `{"oldPassword": "...", "newPassword": "..."}`).
-  * Format Request / Response yang Diharapkan:
-    ```json
-    // Response PUT (200 OK)
-    {
-      "status": "success",
-      "message": "Profil berhasil diperbarui",
-      "user": { "id": "usr-1", "username": "budi", "name": "Budi Santoso" }
-    }
-    ```
-  * Status: Menunggu Dikerjakan
-
-* [ ] **REQ-BE-09: Dukungan Web Push Notification PWA VAPID (`GET /api/notifications/vapid-key` & `POST /api/notifications/subscribe`)**
-  * Tanggal Diminta: 2026-10-13
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI: Di perangkat mobile PWA, ketika browser ditutup atau layar HP terkunci, `Notification API` biasa tidak dapat bersuara jika halaman web tidak sedang terbuka di layar. Agar PWA dapat menerima push alert darurat saat jemuran ditarik otomatis (sebagai pendamping bot Telegram), backend perlu mengirimkan Web Push melalui Service Worker `sw.js`.
-  * Usulan Endpoint:
-    * `GET /api/notifications/vapid-key` (Mengembalikan public VAPID key server).
-    * `POST /api/notifications/subscribe` (Menyimpan subscription object dari browser klien).
-  * Format Request:
-    ```json
-    {
-      "deviceId": "hs-xxx",
-      "subscription": {
-        "endpoint": "https://fcm.googleapis.com/fcm/send/...",
-        "keys": { "p256dh": "...", "auth": "..." }
-      }
-    }
-    ```
-  * Status: Menunggu Dikerjakan
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-BE-06: Endpoint Sinkronisasi Pengaturan Akun & Preferensi Cloud (`GET /api/user/settings` & `PUT /api/user/settings`)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-13
+  * Diminta Oleh: Frontend Team
+  * Diselesaikan Oleh: Backend Engineer
+  * Implementasi:
+    * Endpoint `GET /api/user/settings` dan `PUT /api/user/settings` di `handlers/auth.go`.
+    * Model tabel database `models.UserSettings` (`user_settings`) dengan kolom `user_id`, `tema`, `alarm_sound`, `alarm_volume`, `weather_audio_muted`, dan `updated_at`.
+    * Autentikasi berbasis token Bearer dengan fallback default settings jika user baru pertama kali mengambil data.
+  * Status: [x] SELESAI (Tercatat di BACKEND_TASKS.md sebagai BE-19).
+
+* [x] **REQ-BE-07: Endpoint Pembersihan Riwayat Telemetri & Log Event Tertentu (`DELETE /api/devices/:id/telemetry` & `DELETE /api/devices/:id/events`)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-13
+  * Diminta Oleh: Frontend Team
+  * Diselesaikan Oleh: Backend Engineer
+  * Implementasi:
+    * Endpoint `DELETE /api/devices/:id/telemetry` dan `DELETE /api/devices/:id/events` di `handlers/api.go`.
+    * Mendukung filter rentang waktu opsional via query `?before={unix_ms}`.
+    * Mengosongkan cache Redis telemetri secara otomatis (`database.ClearTelemetryCache`) agar data cache tidak stale.
+    * Mengembalikan jumlah baris yang dibersihkan (`rowsAffected`).
+  * Status: [x] SELESAI (Tercatat di BACKEND_TASKS.md sebagai BE-20).
+
+* [x] **REQ-BE-08: Endpoint Pembaruan Profil & Keamanan Pengguna (`PUT /api/auth/profile` & `PUT /api/auth/password`)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-13
+  * Diminta Oleh: Frontend Team
+  * Diselesaikan Oleh: Backend Engineer
+  * Implementasi:
+    * Endpoint `PUT /api/auth/profile` untuk memperbarui nama lengkap pengguna di tabel `users`.
+    * Endpoint `PUT /api/auth/password` untuk mengubah kata sandi dengan verifikasi `oldPassword` via bcrypt dan hashing aman kata sandi baru.
+  * Status: [x] SELESAI (Tercatat di BACKEND_TASKS.md sebagai BE-21).
+
+* [x] **REQ-BE-09: Dukungan Web Push Notification PWA VAPID (`GET /api/notifications/vapid-key` & `POST /api/notifications/subscribe`)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-13
+  * Diminta Oleh: Frontend Team
+  * Diselesaikan Oleh: Backend Engineer
+  * Implementasi:
+    * Endpoint `GET /api/notifications/vapid-key` untuk mengembalikan Public VAPID Key server.
+    * Endpoint `POST /api/notifications/subscribe` untuk menyimpan langganan token Web Push ke tabel `web_push_subscriptions`.
+    * Fungsi `SendWebPushAlert` di `handlers/webpush.go` yang otomatis dipanggil saat mendeteksi event hujan (`rain_start`) untuk membunyikan push alert di ponsel pengguna.
+  * Status: [x] SELESAI (Tercatat di BACKEND_TASKS.md sebagai BE-22).
 
 * [x] **REQ-BE-03: Endpoint Riwayat Log Prediksi AI & Evaluasi Akurasi (`GET /api/ai/predictions/history`)**
   * Tanggal Diminta: 2026-10-09

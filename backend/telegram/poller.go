@@ -102,7 +102,7 @@ func StartBotPoller(botToken string) {
 					}
 
 					// Kirim pesan konfirmasi ke pengguna di Telegram
-					replyText := fmt.Sprintf("🎉 <b>Halo %s!</b>\n\nAkun Telegram Anda <b>BERHASIL TERHUBUNG</b> ke aplikasi <b>Rintik IoT</b> untuk perangkat <code>%s</code>!\n\nID Obrolan Anda: <code>%s</code>\n\nSekarang Anda akan menerima pesan darurat otomatis di sini jika hujan turun dan jemuran ditarik ke kanopi.",
+					replyText := fmt.Sprintf("<b>Halo %s!</b>\n\nAkun Telegram Anda <b>BERHASIL TERHUBUNG</b> ke aplikasi <b>Rintik IoT</b> untuk perangkat <code>%s</code>!\n\nID Obrolan Anda: <code>%s</code>\n\nSekarang Anda akan menerima pesan darurat otomatis di sini jika hujan turun dan jemuran ditarik ke kanopi.",
 						userName, targetDeviceID, chatID)
 
 					sendReply(botToken, chatID, replyText)

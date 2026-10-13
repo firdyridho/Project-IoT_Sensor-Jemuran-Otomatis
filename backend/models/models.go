@@ -187,4 +187,48 @@ type SimulatorWeatherRequest struct {
 	Condition string `json:"condition"` // "cerah" | "mendung" | "gerimis" | "hujan" | "badai"
 }
 
+// UserSettings format for GET & PUT /api/user/settings (REQ-BE-06)
+type UserSettings struct {
+	UserID            string    `gorm:"primaryKey;size:64" json:"userId"`
+	Tema              string    `gorm:"size:32;default:'dark'" json:"tema"`
+	AlarmSound        string    `gorm:"size:32;default:'sirine'" json:"alarmSound"`
+	AlarmVolume       int       `gorm:"default:80" json:"alarmVolume"`
+	WeatherAudioMuted bool      `gorm:"default:false" json:"weatherAudioMuted"`
+	UpdatedAt         time.Time `json:"updatedAt"`
+}
+
+// UpdateProfileReq format for PUT /api/auth/profile (REQ-BE-08)
+type UpdateProfileReq struct {
+	Name string `json:"name" binding:"required"`
+}
+
+// UpdatePasswordReq format for PUT /api/auth/password (REQ-BE-08)
+type UpdatePasswordReq struct {
+	OldPassword string `json:"oldPassword" binding:"required"`
+	NewPassword string `json:"newPassword" binding:"required,min=6"`
+}
+
+// WebPushSubscription format for PWA push notification subscriptions (REQ-BE-09)
+type WebPushSubscription struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	DeviceID  string    `gorm:"index;size:64" json:"deviceId"`
+	UserID    string    `gorm:"index;size:64" json:"userId"`
+	Endpoint  string    `gorm:"type:text;not null" json:"endpoint"`
+	P256dh    string    `gorm:"size:256" json:"p256dh"`
+	Auth      string    `gorm:"size:128" json:"auth"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+// SubscribeWebPushReq format for POST /api/notifications/subscribe (REQ-BE-09)
+type SubscribeWebPushReq struct {
+	DeviceID     string `json:"deviceId"`
+	Subscription struct {
+		Endpoint string `json:"endpoint" binding:"required"`
+		Keys     struct {
+			P256dh string `json:"p256dh" binding:"required"`
+			Auth   string `json:"auth" binding:"required"`
+		} `json:"keys" binding:"required"`
+	} `json:"subscription" binding:"required"`
+}
+
 

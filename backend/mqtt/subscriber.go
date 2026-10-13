@@ -250,6 +250,7 @@ func (s *MqttSubscriber) handleEvent(topic string, raw []byte) {
 	// Trigger Telegram alert on rain_start or HUJAN_TERDETEKSI (with 10-minute cooldown) (BE-11)
 	if ev.Type == "rain_start" || ev.Type == "HUJAN_TERDETEKSI" {
 		s.triggerTelegramAlert(ev)
+		handlers.SendWebPushAlert(ev.DeviceID, "Peringatan Hujan!", fmt.Sprintf("Sensor mendeteksi air hujan pada perangkat %s. Kanopi jemuran diamankan!", ev.DeviceID))
 	}
 
 	handlers.Hub.Broadcast("event", ev)
@@ -279,7 +280,7 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 	}
 	s.lastAlert = now
 
-	text := fmt.Sprintf("🌧️ <b>[Rintik] Peringatan Hujan!</b>\nPerangkat: <code>%s</code>\nWaktu: %s WIB\n\nSensor mendeteksi air hujan. Rel motor telah mengamankan jemuran ke tempat teduh!",
+	text := fmt.Sprintf("<b>[Rintik] Peringatan Hujan!</b>\nPerangkat: <code>%s</code>\nWaktu: %s WIB\n\nSensor mendeteksi air hujan. Rel motor telah mengamankan jemuran ke tempat teduh!",
 		ev.DeviceID, now.Format("15:04:05"))
 
 	go func() {

@@ -188,6 +188,69 @@ func GetEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
+// ClearTelemetry removes telemetry history for a specific device (REQ-BE-07)
+func ClearTelemetry(c *gin.Context) {
+	deviceID := c.Param("id")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceId parameter wajib diisi"})
+		return
+	}
+
+	beforeParam := c.Query("before")
+	tx := database.DB.Where("device_id = ?", deviceID)
+	if beforeParam != "" {
+		if ts, err := strconv.ParseInt(beforeParam, 10, 64); err == nil && ts > 0 {
+			tx = tx.Where("timestamp <= ?", ts)
+		}
+	}
+
+	result := tx.Delete(&models.Telemetry{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membersihkan riwayat telemetri: " + result.Error.Error()})
+		return
+	}
+
+	// Bersihkan cache Redis jika menghapus semua
+	if beforeParam == "" {
+		database.ClearTelemetryCache(deviceID)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Riwayat data telemetri berhasil dibersihkan",
+		"deviceId":     deviceID,
+		"rowsAffected": result.RowsAffected,
+	})
+}
+
+// ClearEvents removes event logs for a specific device (REQ-BE-07)
+func ClearEvents(c *gin.Context) {
+	deviceID := c.Param("id")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceId parameter wajib diisi"})
+		return
+	}
+
+	beforeParam := c.Query("before")
+	tx := database.DB.Where("device_id = ?", deviceID)
+	if beforeParam != "" {
+		if ts, err := strconv.ParseInt(beforeParam, 10, 64); err == nil && ts > 0 {
+			tx = tx.Where("timestamp <= ?", ts)
+		}
+	}
+
+	result := tx.Delete(&models.Event{})
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membersihkan log peristiwa: " + result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Riwayat log peristiwa berhasil dibersihkan",
+		"deviceId":     deviceID,
+		"rowsAffected": result.RowsAffected,
+	})
+}
+
 // GetLatest returns latest status and reading for a device
 func GetLatest(c *gin.Context) {
 	deviceID := c.Param("id")
@@ -296,7 +359,7 @@ func TestTelegram(c *gin.Context) {
 		return
 	}
 
-	text := "🌧️ <b>Tes Notifikasi Rintik Bot!</b>\nKoneksi bot Telegram ke backend Rintik berhasil aktif.\n\nSistem siap mengirimkan peringatan darurat otomatis saat jemuran ditarik akibat hujan!"
+	text := "<b>Tes Notifikasi Rintik Bot!</b>\nKoneksi bot Telegram ke backend Rintik berhasil aktif.\n\nSistem siap mengirimkan peringatan darurat otomatis saat jemuran ditarik akibat hujan!"
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
 	body, _ := json.Marshal(map[string]interface{}{
 		"chat_id":    chatID,

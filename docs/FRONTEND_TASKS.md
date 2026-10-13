@@ -48,7 +48,7 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Penyelarasan warna background dan border sidebar desktop agar 100% identik dengan warna footer mobile di seluruh kondisi cuaca.
   * Desain tema cerah tipe clean & minimalis: menghilangkan warna silau/berlebih dan patch gelap yang kontras tajam, memastikan semua teks, kartu, dan ikon terbaca dengan jelas dan nyaman di mata.
 * [x] **FE-04f: Ikon Vektor Panel Manual, Penyesuaian Transparansi Awan Sidebar & Harmonisasi Ikon Motor DC**:
-  * Mengganti seluruh emoticon pada judul Panel Kendali Tombol Manual (`🎮` & `⚡`) dengan ikon vektor Lucide (`SlidersHorizontal` & `Zap`).
+  * Mengganti seluruh emoticon pada judul Panel Kendali Tombol Manual (kontrol dan daya) dengan ikon vektor Lucide (SlidersHorizontal dan Zap).
   * Menerapkan transparansi halus (opacity ~85% + backdrop-blur) pada sidebar desktop dan kartu perangkat agar efek awan latar belakang terlihat samar tanpa mengurangi keterbacaan ikon dan menu.
   * Menyelaraskan warna ikon dan badge "Motor DC: Siaga di Luar (Idle)" pada kondisi cerah agar identik dengan tema kondisi mendung (`bg-blue-500/20 text-blue-400` dan badge amber).
 * [x] **FE-04g: Optimasi Responsif Mobile Slider Rel Jemuran, Header Sensor ADC & Status Offline Merah**:

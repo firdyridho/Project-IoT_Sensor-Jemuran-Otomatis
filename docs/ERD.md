@@ -20,9 +20,12 @@ Arsitektur penyimpanan data HujanPantau menerapkan pola penyimpanan ganda (*Hybr
 ```mermaid
 erDiagram
     USERS ||--o{ DEVICES : "memiliki dan mengelola"
+    USERS ||--o| USER_SETTINGS : "memiliki preferensi"
+    USERS ||--o{ WEB_PUSH_SUBSCRIPTIONS : "memiliki langganan push"
     DEVICES ||--o{ TELEMETRIES : "menghasilkan data berkala"
     DEVICES ||--o{ EVENTS : "memicu peristiwa diskret"
     DEVICES ||--o{ AI_PREDICTIONS : "memiliki analisis prediksi"
+    DEVICES ||--o{ WEB_PUSH_SUBSCRIPTIONS : "menerima notifikasi push"
 
     USERS {
         string id PK "UUID string unik pengguna"
@@ -31,6 +34,25 @@ erDiagram
         string password_hash "Bcrypt hash password aman"
         datetime created_at "Waktu pembuatan akun"
         datetime updated_at "Waktu pembaruan akun"
+    }
+
+    USER_SETTINGS {
+        string user_id PK "Relasi ke tabel users"
+        string tema "Tema visual dark atau light"
+        string alarm_sound "Nada alarm sirine bell hujan"
+        int alarm_volume "Volume suara 0 hingga 100"
+        boolean weather_audio_muted "Status mute efek audio cuaca"
+        datetime updated_at "Waktu pembaruan preferensi"
+    }
+
+    WEB_PUSH_SUBSCRIPTIONS {
+        bigint id PK "Auto increment primary key"
+        string device_id FK "Relasi ke tabel devices"
+        string user_id FK "Relasi ke tabel users"
+        text endpoint "URL endpoint FCM atau Web Push"
+        string p256dh "Kunci publik kriptografi klien"
+        string auth "Kunci autentikasi klien"
+        datetime created_at "Waktu pendaftaran langganan"
     }
 
     DEVICES {
@@ -167,6 +189,31 @@ Mendokumentasikan hasil inferensi mesin kecerdasan buatan untuk evaluasi perform
 | `accuracy_score` | `DOUBLE` | NULLABLE | Skor evaluasi akurasi metrik prediksi. |
 | `summary` | `TEXT` | NOT NULL | Deskripsi naratif alasan prediksi AI. |
 | `created_at` | `DATETIME` | INDEX, NOT NULL | Waktu eksekusi inferensi AI disimpan. |
+
+### 2.6 Tabel `user_settings`
+Menyimpan preferensi tampilan antarmuka dan audio pengguna berbasis akun.
+
+| Nama Kolom | Tipe Data | Atribut | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `user_id` | `VARCHAR(64)` | PK, NOT NULL | Foreign key merujuk ke `users.id`. |
+| `tema` | `VARCHAR(32)` | DEFAULT 'dark' | Tema antarmuka visual (`dark`, `light`, atau `system`). |
+| `alarm_sound` | `VARCHAR(32)` | DEFAULT 'sirine' | Jenis audio alarm darurat (`sirine`, `bell`, `hujan`). |
+| `alarm_volume` | `INT` | DEFAULT 80 | Tingkat kekerasan audio alarm (rentang 0-100). |
+| `weather_audio_muted` | `TINYINT(1)` | DEFAULT 0 | Status pembisuan audio ambient cuaca (0 = aktif, 1 = bisu). |
+| `updated_at` | `DATETIME` | NOT NULL | Waktu terakhir preferensi diperbarui. |
+
+### 2.7 Tabel `web_push_subscriptions`
+Menyimpan endpoint dan token kriptografi langganan Web Push PWA peramban pengguna.
+
+| Nama Kolom | Tipe Data | Atribut | Deskripsi |
+| :--- | :--- | :--- | :--- |
+| `id` | `BIGINT UNSIGNED`| PK, AUTO_INCREMENT | Pengidentifikasi rekaman langganan push. |
+| `device_id` | `VARCHAR(64)` | INDEX | ID perangkat jemuran target (opsional). |
+| `user_id` | `VARCHAR(64)` | INDEX | ID akun pengguna pemilik langganan. |
+| `endpoint` | `TEXT` | NOT NULL | URL push service vendor peramban (misal: FCM Google). |
+| `p256dh` | `VARCHAR(256)` | NOT NULL | Kunci publik kurva eliptik klien P-256. |
+| `auth` | `VARCHAR(128)` | NOT NULL | Rahasia autentikasi klien peramban. |
+| `created_at` | `DATETIME` | NOT NULL | Waktu peramban pertama kali mendaftarkan langganan push. |
 
 ---
 

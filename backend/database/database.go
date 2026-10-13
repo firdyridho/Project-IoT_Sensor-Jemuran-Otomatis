@@ -103,11 +103,13 @@ func InitDB() (*gorm.DB, error) {
 		&models.Telemetry{},
 		&models.Event{},
 		&models.AIPrediction{},
+		&models.UserSettings{},
+		&models.WebPushSubscription{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("gagal migrasi tabel: %w", err)
 	}
-	log.Printf("[Database SUCCESS] AutoMigrate tabel selesai (users, devices, telemetries, events, ai_predictions siap)!")
+	log.Printf("[Database SUCCESS] AutoMigrate tabel selesai (users, devices, telemetries, events, ai_predictions, user_settings, web_push_subscriptions siap)!")
 
 	// Connection pool
 	sqlDB, err := db.DB()

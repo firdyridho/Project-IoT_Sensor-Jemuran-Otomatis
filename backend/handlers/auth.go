@@ -152,16 +152,20 @@ func Login(c *gin.Context) {
 	})
 }
 
-// GetMe returns current logged in user from header token
-func GetMe(c *gin.Context) {
+// ExtractUserID extracts the authenticated user ID from Authorization Bearer header
+func ExtractUserID(c *gin.Context) (string, error) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header diperlukan"})
-		return
+		return "", fmt.Errorf("Authorization header diperlukan")
 	}
-
 	token := strings.TrimPrefix(authHeader, "Bearer ")
-	userID, err := parseToken(token)
+	token = strings.TrimSpace(token)
+	return parseToken(token)
+}
+
+// GetMe returns current logged in user from header token
+func GetMe(c *gin.Context) {
+	userID, err := ExtractUserID(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
 		return
@@ -174,4 +178,140 @@ func GetMe(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+// UpdateProfile updates the display name of current user (REQ-BE-08)
+func UpdateProfile(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	var req models.UpdateProfileReq
+	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Name) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama lengkap tidak boleh kosong"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Akun pengguna tidak ditemukan"})
+		return
+	}
+
+	user.Name = strings.TrimSpace(req.Name)
+	user.UpdatedAt = time.Now()
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui profil: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Profil berhasil diperbarui",
+		"user":    user,
+	})
+}
+
+// UpdatePassword updates user password after verifying old password (REQ-BE-08)
+func UpdatePassword(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	var req models.UpdatePasswordReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input kata sandi tidak valid (minimal 6 karakter)"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Akun pengguna tidak ditemukan"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi lama salah"})
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengenkripsi kata sandi baru"})
+		return
+	}
+
+	user.PasswordHash = string(newHash)
+	user.UpdatedAt = time.Now()
+	if err := database.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui kata sandi: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Kata sandi berhasil diperbarui",
+	})
+}
+
+// GetUserSettings returns cloud preferences for current user (REQ-BE-06)
+func GetUserSettings(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	var settings models.UserSettings
+	if err := database.DB.First(&settings, "user_id = ?", userID).Error; err != nil {
+		// Default settings jika belum pernah disimpan
+		settings = models.UserSettings{
+			UserID:            userID,
+			Tema:              "dark",
+			AlarmSound:        "sirine",
+			AlarmVolume:       80,
+			WeatherAudioMuted: false,
+			UpdatedAt:         time.Now(),
+		}
+	}
+
+	c.JSON(http.StatusOK, settings)
+}
+
+// UpdateUserSettings updates or creates cloud preferences for current user (REQ-BE-06)
+func UpdateUserSettings(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	var req models.UserSettings
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format data pengaturan tidak valid"})
+		return
+	}
+
+	req.UserID = userID
+	req.UpdatedAt = time.Now()
+	if req.Tema == "" {
+		req.Tema = "dark"
+	}
+	if req.AlarmSound == "" {
+		req.AlarmSound = "sirine"
+	}
+	if req.AlarmVolume <= 0 {
+		req.AlarmVolume = 80
+	}
+
+	if err := database.DB.Save(&req).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan pengaturan: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, req)
 }

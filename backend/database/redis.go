@@ -39,12 +39,12 @@ func InitRedis() *redis.Client {
 
 	_, err := client.Ping(pingCtx).Result()
 	if err != nil {
-		log.Printf("[Redis] ⚠️ Redis tidak aktif di %s (%v). Sistem berjalan normal tanpa cache Redis.", redisAddr, err)
+		log.Printf("[Redis] PERINGATAN: Redis tidak aktif di %s (%v). Sistem berjalan normal tanpa cache Redis.", redisAddr, err)
 		return nil
 	}
 
 	RedisClient = client
-	log.Printf("[Redis] ✅ Tersambung ke Redis di: %s (In-Memory Cache Aktif)", redisAddr)
+	log.Printf("[Redis] Tersambung ke Redis di: %s (In-Memory Cache Aktif)", redisAddr)
 	return client
 }
 
@@ -98,5 +98,15 @@ func GetCachedTelemetryList(deviceID string, limit int64) ([]string, error) {
 	}
 	key := fmt.Sprintf("hujan:list:%s", deviceID)
 	return RedisClient.LRange(ctx, key, 0, limit-1).Result()
+}
+
+// ClearTelemetryCache purges redis cache for a specific device (REQ-BE-07)
+func ClearTelemetryCache(deviceID string) {
+	if RedisClient == nil {
+		return
+	}
+	keyLatest := fmt.Sprintf("hujan:latest:%s", deviceID)
+	keyList := fmt.Sprintf("hujan:list:%s", deviceID)
+	_ = RedisClient.Del(ctx, keyLatest, keyList).Err()
 }
 

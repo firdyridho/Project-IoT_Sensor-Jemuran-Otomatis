@@ -87,6 +87,12 @@ func main() {
 		api.POST("/auth/register", handlers.Register)
 		api.POST("/auth/login", handlers.LoginBruteForceMiddleware(), handlers.Login)
 		api.GET("/auth/me", handlers.GetMe)
+		api.PUT("/auth/profile", handlers.UpdateProfile)   // REQ-BE-08
+		api.PUT("/auth/password", handlers.UpdatePassword) // REQ-BE-08
+
+		// Sinkronisasi Pengaturan Akun & Preferensi Cloud (REQ-BE-06)
+		api.GET("/user/settings", handlers.GetUserSettings)
+		api.PUT("/user/settings", handlers.UpdateUserSettings)
 
 		// Fitur Kecerdasan Buatan (AI Engine & Predictions) (BE-05 & BE-06 & REQ-BE-03)
 		api.POST("/ai/predict-rain", handlers.PredictRain)
@@ -99,10 +105,16 @@ func main() {
 		api.DELETE("/devices/:id", handlers.DeleteDevice)
 
 		api.GET("/devices/:id/telemetry", handlers.GetTelemetry)
+		api.DELETE("/devices/:id/telemetry", handlers.ClearTelemetry) // REQ-BE-07
 		api.GET("/telemetry/export", handlers.ExportTelemetryCSV)
 		api.GET("/devices/:id/events", handlers.GetEvents)
+		api.DELETE("/devices/:id/events", handlers.ClearEvents) // REQ-BE-07
 		api.GET("/devices/:id/latest", handlers.GetLatest)
 		api.POST("/devices/:id/telegram", handlers.SaveDeviceTelegram)
+
+		// Web Push Notification PWA VAPID (REQ-BE-09)
+		api.GET("/notifications/vapid-key", handlers.GetVapidPublicKey)
+		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
 
 		// Motor DC / Jemuran Kanopi Status & Kendali (REQ-BE-01)
 		api.GET("/devices/:id/motor", handlers.GetMotorStatus)

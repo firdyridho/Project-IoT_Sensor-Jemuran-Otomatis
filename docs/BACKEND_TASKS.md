@@ -153,10 +153,48 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 
 ---
 
+### Fase 6: Preferensi Akun, Keamanan Profil, Pembersihan Riwayat & Web Push PWA [SELESAI]
+
+* [x] **BE-19: Sinkronisasi Pengaturan Akun & Preferensi Cloud (REQ-BE-06)**:
+  * **Tujuan**: Menyimpan konfigurasi tema visual (`light`/`dark`), nada dering alarm (`sirine`/`bell`/`hujan`), volume suara, dan mute audio efek cuaca di server agar tersinkronisasi antar perangkat pengguna.
+  * **Endpoint**: `GET /api/user/settings` & `PUT /api/user/settings`
+  * **Implementasi**:
+    * Model tabel database `models.UserSettings` (`user_settings`).
+    * Handler `GetUserSettings` dan `UpdateUserSettings` di `handlers/auth.go`.
+  * **Status**: Selesai dan lulus pengujian `TestUserSettingsSync`.
+
+* [x] **BE-20: Pembersihan Riwayat Telemetri & Log Event (REQ-BE-07)**:
+  * **Tujuan**: Memungkinkan pengguna membersihkan data riwayat telemetri atau log peristiwa perangkat tanpa menghapus pendaftaran unit perangkat itu sendiri.
+  * **Endpoint**: `DELETE /api/devices/:id/telemetry` & `DELETE /api/devices/:id/events`
+  * **Implementasi**:
+    * Handler `ClearTelemetry` dan `ClearEvents` di `handlers/api.go`.
+    * Mendukung filter rentang waktu opsional via query `?before={unix_ms}`.
+    * Pembersihan otomatis cache Redis telemetri (`database.ClearTelemetryCache`).
+  * **Status**: Selesai dan lulus pengujian `TestClearTelemetryAndEvents`.
+
+* [x] **BE-21: Pembaruan Profil & Keamanan Pengguna (REQ-BE-08)**:
+  * **Tujuan**: Menyediakan antarmuka pergantian nama lengkap akun dan pergantian kata sandi yang aman.
+  * **Endpoint**: `PUT /api/auth/profile` & `PUT /api/auth/password`
+  * **Implementasi**:
+    * Handler `UpdateProfile` dan `UpdatePassword` di `handlers/auth.go`.
+    * Verifikasi kata sandi lama menggunakan Bcrypt dan enkripsi kata sandi baru min 6 karakter.
+  * **Status**: Selesai dan lulus pengujian `TestUpdateProfileAndPassword`.
+
+* [x] **BE-22: Dukungan Web Push Notification PWA VAPID (REQ-BE-09)**:
+  * **Tujuan**: Mengirimkan notifikasi darurat langsung ke peramban ponsel / PWA pengguna bahkan saat website sedang tidak dibuka di layar.
+  * **Endpoint**: `GET /api/notifications/vapid-key` & `POST /api/notifications/subscribe`
+  * **Implementasi**:
+    * Handler `GetVapidPublicKey` dan `SubscribeWebPush` di `handlers/webpush.go`.
+    * Model tabel database `models.WebPushSubscription` (`web_push_subscriptions`).
+    * Integrasi broadcast otomatis `SendWebPushAlert` di `mqtt/subscriber.go` saat event `rain_start` terdeteksi.
+  * **Status**: Selesai dan lulus pengujian `TestWebPushEndpoints`.
+
+---
+
 ## 3. Alur Serah Terima ke Frontend (Handoff)
 
 Bila Anda telah selesai membuat salah satu endpoint backend:
 1. Uji endpoint secara lokal atau di staging dengan cURL / Postman.
 2. Centang task di atas dari `[ ]` menjadi `[x]`.
 3. Sampaikan kepada asisten AI atau developer frontend:
-   > *"Endpoint BE-16 (/api/ai/predictions/history) dan BE-17 (/api/telemetry/export) sudah aktif di backend. Tolong buatkan tampilan antarmuka di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md."*
+   > *"Endpoint BE-19 s/d BE-22 (/api/user/settings, /api/auth/profile, /api/auth/password, DELETE /api/devices/:id/telemetry, /api/notifications/vapid-key) sudah aktif di backend. Tolong buatkan tampilan antarmuka di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md."*
