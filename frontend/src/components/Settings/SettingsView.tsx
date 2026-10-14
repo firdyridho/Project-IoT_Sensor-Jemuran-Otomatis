@@ -3,6 +3,8 @@ import {
   User as UserIcon,
   Key,
   Send,
+  Bell,
+  BellOff,
   BellRing,
   Volume2,
   VolumeX,
@@ -24,6 +26,7 @@ import {
   Music,
   FileAudio,
   RefreshCw,
+  LogOut,
 } from 'lucide-react';
 import { User, AuthSession } from '../../types/auth';
 import { AuthService } from '../../services/auth';
@@ -35,10 +38,14 @@ interface SettingsViewProps {
   user?: User;
   onUpdateUser?: (updated: User) => void;
   theme: 'light' | 'dark' | 'system';
-  onToggleTheme: () => void;
+  onToggleTheme?: () => void;
+  onChangeTheme?: (newTheme: 'light' | 'dark' | 'system') => void;
   onClose?: () => void;
   initialTab?: 'profile' | 'password' | 'telegram' | 'preferences';
   backendUrl?: string;
+  notifPermission?: NotificationPermission;
+  onRequestNotif?: () => void;
+  onLogout?: () => void;
 }
 
 type SettingsTab = 'profile' | 'password' | 'telegram' | 'preferences';
@@ -48,9 +55,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateUser,
   theme,
   onToggleTheme,
+  onChangeTheme,
   onClose,
   initialTab = 'profile',
   backendUrl,
+  notifPermission = 'default',
+  onRequestNotif,
+  onLogout,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
@@ -521,6 +532,154 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             Kembali ke Dashboard
           </button>
         )}
+      </div>
+
+      {/* Top Quick Actions Bar (Features moved from Header: Theme, Notifications, Logout) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl shadow-xl">
+        {/* 1. Mode Tema (Light / Dark / System) */}
+        <div className="flex flex-col justify-between gap-2 p-3 sm:p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
+            <span className="flex items-center gap-1.5">
+              {theme === 'dark' ? (
+                <Moon className="w-4 h-4 text-cyan-400" />
+              ) : theme === 'light' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Laptop className="w-4 h-4 text-indigo-400" />
+              )}
+              Tema Tampilan
+            </span>
+            <span className="text-[10px] font-mono capitalize px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">
+              {theme === 'system' ? 'Sistem' : theme === 'dark' ? 'Gelap' : 'Terang'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1 pt-0.5">
+            <button
+              type="button"
+              onClick={() => (onChangeTheme ? onChangeTheme('light') : onToggleTheme?.())}
+              className={`py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                theme === 'light'
+                  ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 font-bold shadow-xs'
+                  : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800/80'
+              }`}
+              title="Aktifkan Mode Terang"
+            >
+              <Sun className="w-3.5 h-3.5" />
+              <span>Terang</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => (onChangeTheme ? onChangeTheme('dark') : onToggleTheme?.())}
+              className={`py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                theme === 'dark'
+                  ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 font-bold shadow-xs'
+                  : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800/80'
+              }`}
+              title="Aktifkan Mode Gelap"
+            >
+              <Moon className="w-3.5 h-3.5" />
+              <span>Gelap</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => (onChangeTheme ? onChangeTheme('system') : onToggleTheme?.())}
+              className={`py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                theme === 'system'
+                  ? 'bg-indigo-500/25 text-indigo-300 border border-indigo-500/40 font-bold shadow-xs'
+                  : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800/80'
+              }`}
+              title="Ikuti Setelan Tema Sistem Perangkat"
+            >
+              <Laptop className="w-3.5 h-3.5" />
+              <span>Sistem</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Status Notifikasi Browser & PWA */}
+        <div className="flex flex-col justify-between gap-2 p-3 sm:p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
+            <span className="flex items-center gap-1.5">
+              {notifPermission === 'granted' ? (
+                <BellRing className="w-4 h-4 text-emerald-400" />
+              ) : notifPermission === 'denied' ? (
+                <BellOff className="w-4 h-4 text-red-400" />
+              ) : (
+                <Bell className="w-4 h-4 text-cyan-400" />
+              )}
+              Notifikasi Hujan
+            </span>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                notifPermission === 'granted'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : notifPermission === 'denied'
+                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                  : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+              }`}
+            >
+              {notifPermission === 'granted'
+                ? 'Aktif'
+                : notifPermission === 'denied'
+                ? 'Diblokir'
+                : 'Belum Aktif'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onRequestNotif}
+            className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              notifPermission === 'granted'
+                ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35'
+                : notifPermission === 'denied'
+                ? 'bg-slate-700 text-slate-400 border border-transparent cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xs hover:opacity-95'
+            }`}
+            title="Kelola izin push notification browser"
+          >
+            {notifPermission === 'granted' ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Notifikasi Siaga</span>
+              </>
+            ) : notifPermission === 'denied' ? (
+              <>
+                <BellOff className="w-3.5 h-3.5 text-red-400" />
+                <span>Izin Diblokir di Browser</span>
+              </>
+            ) : (
+              <>
+                <Bell className="w-3.5 h-3.5" />
+                <span>Aktifkan Notifikasi</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* 3. Keluar Akun (Logout) */}
+        <div className="flex flex-col justify-between gap-2 p-3 sm:p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="truncate">{user?.name || 'Pengguna'}</span>
+            </span>
+            <span className="text-[10px] font-mono text-slate-400 truncate max-w-[90px]">
+              @{user?.username || 'user'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-full py-1.5 px-3 rounded-xl text-xs font-bold text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            title="Keluar dari sesi akun saat ini"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Keluar Akun (Logout)</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Sidebar Tabs + Content Area */}

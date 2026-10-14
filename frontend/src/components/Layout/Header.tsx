@@ -1,17 +1,9 @@
 import React from 'react';
 import {
-  Sun,
-  Moon,
-  Laptop,
-  Bell,
-  BellOff,
-  BellRing,
   CloudRain,
   CloudLightning,
   Volume2,
   VolumeX,
-  LogOut,
-  Menu,
   Settings,
 } from 'lucide-react';
 import { Perangkat } from '../../types/iot';
@@ -25,10 +17,10 @@ interface HeaderProps {
   brokerStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
   isOnline: boolean;
   isRaining: boolean;
-  theme: 'light' | 'dark' | 'system';
-  onToggleTheme: () => void;
-  notifPermission: NotificationPermission;
-  onRequestNotif: () => void;
+  theme?: 'light' | 'dark' | 'system';
+  onToggleTheme?: () => void;
+  notifPermission?: NotificationPermission;
+  onRequestNotif?: () => void;
   user?: User;
   onLogout?: () => void;
   onOpenMobileMenu?: () => void;
@@ -113,8 +105,8 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="mx-auto max-w-6xl px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Left: Mobile Hamburger Trigger & Brand */}
         <div className="flex items-center gap-2 min-w-0">
-          {/* Mobile Logo Favicon */}
-          <div className="lg:hidden flex items-center gap-2 shrink-0">
+          {/* Logo Favicon */}
+          <div className="flex items-center gap-2 shrink-0">
             <img
               src="/favicon.svg?v=2"
               alt="Rintik Logo"
@@ -244,85 +236,17 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           )}
-          {/* Browser Notification Button */}
-          <button
-            onClick={onRequestNotif}
-            className={`min-h-11 min-w-11 p-2 rounded-xl border flex items-center justify-center transition-all ${
-              notifPermission === 'granted'
-                ? 'bg-blue-500/25 text-cyan-200 border-blue-400/50 shadow-xs'
-                : notifPermission === 'denied'
-                ? 'bg-red-500/20 text-red-200 border-red-500/40'
-                : buttonBgClass
-            }`}
-            aria-label="Status Notifikasi Browser"
-            title={
-              notifPermission === 'granted'
-                ? 'Notifikasi browser aktif'
-                : notifPermission === 'denied'
-                ? 'Notifikasi diblokir di browser'
-                : 'Klik untuk mengaktifkan notifikasi hujan'
-            }
-          >
-            {notifPermission === 'granted' ? (
-              <BellRing className="w-4 h-4" />
-            ) : notifPermission === 'denied' ? (
-              <BellOff className="w-4 h-4" />
-            ) : (
-              <Bell className="w-4 h-4" />
-            )}
-          </button>
-
-          {/* Theme Switcher */}
-          <button
-            onClick={onToggleTheme}
-            className={`min-h-11 min-w-11 p-2 rounded-xl border flex items-center justify-center transition-all ${buttonBgClass}`}
-            aria-label={`Ganti tema, tema saat ini: ${theme}`}
-            title={`Tema: ${theme}`}
-          >
-            {theme === 'dark' ? (
-              <Moon className="w-4 h-4 text-cyan-300" />
-            ) : theme === 'light' ? (
-              <Sun className="w-4 h-4 text-amber-300" />
-            ) : (
-              <Laptop className="w-4 h-4 opacity-80" />
-            )}
-          </button>
-
-          {/* Settings Button (REQ-FE-12) */}
+          {/* Settings Button */}
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className={`min-h-11 min-w-11 p-2 rounded-xl border flex items-center justify-center transition-all ${buttonBgClass}`}
+              className={`min-h-10 min-w-10 sm:min-h-11 sm:min-w-11 px-2.5 sm:px-3 py-1.5 rounded-xl border flex items-center justify-center gap-1.5 transition-all text-xs font-bold ${buttonBgClass} cursor-pointer group`}
               aria-label="Buka Pengaturan Akun & Sistem"
-              title="Pengaturan Akun, Kata Sandi, Telegram & Alarm"
+              title="Buka Pengaturan (Akun, Tema, Notifikasi, Telegram & Alarm)"
             >
-              <Settings className="w-4 h-4 text-cyan-300 hover:rotate-45 transition-transform" />
+              <Settings className="w-4 h-4 text-cyan-400 group-hover:rotate-45 transition-transform" />
+              <span className="hidden md:inline text-[11px]">Pengaturan</span>
             </button>
-          )}
-
-          {/* User profile & Logout */}
-          {user && (
-            <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/15">
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                className={`hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs cursor-pointer hover:border-cyan-400/50 transition-all ${buttonBgClass}`}
-                title={`Masuk sebagai: @${user.username} (Klik untuk buka Pengaturan)`}
-              >
-                <div className="w-5 h-5 rounded-lg bg-blue-500/30 text-cyan-300 font-bold flex items-center justify-center text-[10px] border border-blue-400/30">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-semibold truncate max-w-[110px]">{user.name}</span>
-              </button>
-              <button
-                onClick={onLogout}
-                className="min-h-11 min-w-11 p-2 rounded-xl text-slate-300 hover:text-red-300 hover:bg-red-500/20 border border-transparent hover:border-red-500/30 flex items-center justify-center transition-all"
-                title="Keluar dari akun"
-                aria-label="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
           )}
         </div>
       </div>

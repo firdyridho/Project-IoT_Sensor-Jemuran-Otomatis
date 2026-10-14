@@ -207,12 +207,14 @@ export const App: React.FC = () => {
   const prevWetRef = useRef<boolean>(false);
 
   // ---------------------------------------------------------------------------
-  // Theme Manager (Dashboard selalu menggunakan tema atmosferik gelap mandiri)
+  // Theme Manager (Dashboard menggunakan tema atmosferik gelap saat aktif, landing & halaman lain mematuhi tema pilihan)
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    const isDashboardPage = Boolean(session) && activeTab === 'dashboard' && (normalizedPath === '/' || normalizedPath === '/dashboard');
+
     const applyTheme = () => {
-      // Khusus Dashboard, mode terang tidak berlaku agar atmosfer cuaca dan tetesan air kaca tetap optimal
-      if (activeTab === 'dashboard') {
+      // Khusus Dashboard atmosferik saat login aktif
+      if (isDashboardPage) {
         document.documentElement.dataset.tema = 'dark';
         document.documentElement.classList.add('dark');
         return;
@@ -237,11 +239,11 @@ export const App: React.FC = () => {
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = () => {
-      if (settings.tema === 'system' && activeTab !== 'dashboard') applyTheme();
+      if (settings.tema === 'system') applyTheme();
     };
     media.addEventListener('change', listener);
     return () => media.removeEventListener('change', listener);
-  }, [settings.tema, activeTab]);
+  }, [settings.tema, activeTab, session, normalizedPath]);
 
   // Smooth Scrolling with Lenis
   useEffect(() => {
@@ -1052,12 +1054,6 @@ export const App: React.FC = () => {
           brokerStatus={brokerStatus}
           isOnline={!isDeviceOffline}
           isRaining={effectiveWet}
-          theme={settings.tema}
-          onToggleTheme={handleToggleTheme}
-          notifPermission={notifPermission}
-          onRequestNotif={handleRequestNotification}
-          user={session.user}
-          onLogout={handleLogout}
           isDashboard={activeTab === 'dashboard'}
           weatherCondition={activeCondition}
           isAudioMuted={isAudioMuted}
@@ -1284,8 +1280,12 @@ export const App: React.FC = () => {
                   }}
                   theme={settings.tema}
                   onToggleTheme={handleToggleTheme}
+                  onChangeTheme={handleChangeTheme}
                   onClose={() => navigate('/dashboard')}
                   backendUrl={settings.backendUrl}
+                  notifPermission={notifPermission}
+                  onRequestNotif={handleRequestNotification}
+                  onLogout={handleLogout}
                 />
               </div>
             )}
