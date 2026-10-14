@@ -172,6 +172,13 @@ Untuk menjamin sinkronisasi visual yang akurat antara kondisi fisik perangkat da
    * Frontend wajib menangkap respon `401 Unauthorized`.
    * Frontend wajib menghapus kunci `rintik_session` dari LocalStorage dan mengarahkan tampilan ke halaman login tanpa menimbulkan crash aplikasi.
 
+### 7.1 Kontrak Upload Nada Dering Alarm Kustom (`POST /api/user/custom-alarm`)
+* **Metode & Format**: `POST /api/user/custom-alarm` dengan payload `multipart/form-data` pada field `audio`.
+* **Batasan Ukuran & Format**: Maksimal 5 MB; format yang didukung: `.mp3`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.webm`.
+* **Arsitektur Penyimpanan**: Berkas disimpan di filesystem VPS Linux pada direktori `uploads/tones/` untuk menjaga efisiensi RAM/CPU server dan menghindari database bloat. Database hanya menyimpan URL ringkas (`customAlarmUrl: "/uploads/tones/..."`).
+* **Serving Berkas**: Dapat diakses langsung oleh peramban secara statis via `GET /uploads/tones/:filename` dengan dukungan HTTP caching dan byte-range streaming.
+
+
 ---
 
 ## 8. Prosedur Perubahan Kontrak (Change Protocol)

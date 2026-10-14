@@ -40,6 +40,30 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
+* [ ] **REQ-FE-13: Antarmuka Unggah Nada Dering Alarm Kustom (Custom Audio Upload) & Caching Audio Offline**
+  * Tanggal Diminta: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Endpoint Backend yang Tersedia:
+    * `POST /api/user/custom-alarm` (Multipart `audio`, max 5MB, format `.mp3`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.webm`)
+    * `PUT /api/user/profile` (Mendukung `customAlarmUrl: string` dan `alarmTone: "custom"`)
+    * `GET /uploads/tones/:filename` (Static file serving dari filesystem VPS dengan HTTP cache & byte-range streaming)
+  * Alasan Arsitektur Penyimpanan:
+    * **Disimpan di Filesystem VPS (`uploads/tones/`)**, BUKAN di database BLOB. Hal ini sesuai standar clean code & high performance untuk mencegah bloat database, fragmentasi tabel, lonjakan RAM server, dan kelambatan backup. Database hanya menyimpan URL ringkas (`user.customAlarmUrl`).
+  * Spesifikasi Tampilan & UX yang Diinginkan:
+    1. **Tab Preferensi Pengaturan (`SettingsView.tsx`)**:
+       * Tambahkan pilihan nada dering baru: *"Nada Dering Kustom (Unggah Sendiri)"* (`value: "custom"`).
+       * Tombol / Area Dropzone *"Unggah Audio (.mp3, .wav, .ogg, max 5MB)"*.
+       * Validasi ukuran file di sisi client (maksimal 5MB) sebelum request dikirim.
+       * Indikator progress/loading unggah yang estetik.
+       * Pemutar audio preview instan (Play/Pause) untuk menguji nada dering kustom yang telah diunggah.
+    2. **Pemutaran Alarm Persisten (`audioAlarm.ts` & `PersistentRainAlarmModal.tsx`)**:
+       * Jika user memilih nada kustom, putar file audio dari `customAlarmUrl` secara berulang (*looping = true*) saat alarm hujan terpicu.
+       * **Offline Resilience**: Simpan buffer audio kustom ke IndexedDB / Cache Storage agar alarm tetap berbunyi keras meski koneksi internet terputus saat badai hujan deras.
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md)
+  * Status: Siap Dikerjakan oleh Frontend
+
+---
+
 * [x] **REQ-FE-07: Peningkatan Responsivitas Mobile (Mobile-First Layout) pada Header Dashboard, Navigasi Tab, dan Komponen Fitur**
   * Tanggal Diminta: 2026-10-13
   * Tanggal Selesai: 2026-10-14

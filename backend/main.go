@@ -80,6 +80,10 @@ func main() {
 	// Realtime WebSocket endpoint untuk Frontend Vercel
 	r.GET("/ws", handlers.Hub.HandleWebSocket)
 
+	// Static directory untuk file audio nada dering kustom (REQ-BE-13)
+	_ = os.MkdirAll("uploads/tones", 0755)
+	r.Static("/uploads", "./uploads")
+
 	// REST API Routes
 	api := r.Group("/api")
 	{
@@ -94,6 +98,7 @@ func main() {
 		api.PUT("/user/password", handlers.UpdatePassword) // REQ-BE-11
 		api.POST("/user/test-telegram", handlers.TestUserTelegram) // REQ-BE-09
 		api.POST("/user/accept-terms", handlers.AcceptTerms)       // REQ-BE-11
+		api.POST("/user/custom-alarm", handlers.UploadCustomAlarm) // REQ-BE-13: Upload nada dering alarm kustom
 
 		// Sinkronisasi Pengaturan Akun & Preferensi Cloud (REQ-BE-06)
 		api.GET("/user/settings", handlers.GetUserSettings)

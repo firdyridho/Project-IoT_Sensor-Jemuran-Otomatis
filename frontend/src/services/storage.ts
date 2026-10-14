@@ -31,17 +31,18 @@ export function getDefaultBackendUrl(): string {
   }
   if (typeof window !== 'undefined') {
     const host = window.location.hostname.toLowerCase();
-    // Staging / Dev detection:
+    // Staging / Dev / Vercel Preview detection:
     if (
       host.includes('staging') ||
       host.includes('-git-staging') ||
       host.includes('dev') ||
       host === 'localhost' ||
-      host === '127.0.0.1'
+      host === '127.0.0.1' ||
+      (host.endsWith('.vercel.app') && host !== 'rintik-self.vercel.app')
     ) {
       return 'https://staging-43-133-136-149.sslip.io';
     }
-    // Production (e.g. rintik-self.vercel.app, main branch, or custom domain)
+    // Production (e.g. rintik-self.vercel.app or custom production domain)
     return 'https://43-133-136-149.sslip.io';
   }
   return 'https://staging-43-133-136-149.sslip.io';

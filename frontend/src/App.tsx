@@ -1275,6 +1275,7 @@ export const App: React.FC = () => {
                   theme={settings.tema}
                   onToggleTheme={handleToggleTheme}
                   onClose={() => navigate('/dashboard')}
+                  backendUrl={settings.backendUrl}
                 />
               </div>
             )}

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { User, AuthSession } from '../../types/auth';
 import { AuthService } from '../../services/auth';
+import { getDefaultBackendUrl } from '../../services/storage';
 import { PasswordStrengthMeter, evaluatePassword } from './PasswordStrengthMeter';
 import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType } from '../../utils/audioAlarm';
 
@@ -33,6 +34,7 @@ interface SettingsViewProps {
   onToggleTheme: () => void;
   onClose?: () => void;
   initialTab?: 'profile' | 'password' | 'telegram' | 'preferences';
+  backendUrl?: string;
 }
 
 type SettingsTab = 'profile' | 'password' | 'telegram' | 'preferences';
@@ -44,6 +46,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onToggleTheme,
   onClose,
   initialTab = 'profile',
+  backendUrl,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
@@ -85,12 +88,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [prefMsg, setPrefMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const backendBase =
-    typeof window !== 'undefined'
-      ? window.location.hostname.includes('sslip.io')
-        ? window.location.origin
-        : 'https://staging-43-133-136-149.sslip.io'
-      : '';
+  const backendBase = backendUrl
+    ? backendUrl.replace(/\/+$/, '')
+    : typeof window !== 'undefined' && window.location.hostname.includes('sslip.io')
+    ? window.location.origin
+    : getDefaultBackendUrl();
 
   const session = AuthService.getSession();
   const token = session?.token || '';

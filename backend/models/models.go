@@ -11,7 +11,8 @@ type User struct {
 	Name           string    `gorm:"size:128;not null" json:"name"`
 	PasswordHash   string    `gorm:"size:256;not null" json:"-"`
 	TelegramChatID string    `gorm:"size:64" json:"telegramChatId"`
-	AlarmTone      string    `gorm:"size:64;default:'emergency_siren'" json:"alarmTone"`
+	AlarmTone       string     `gorm:"size:64;default:'emergency_siren'" json:"alarmTone"`
+	CustomAlarmUrl  string     `gorm:"size:256" json:"customAlarmUrl"`
 	Theme           string     `gorm:"size:32;default:'dark'" json:"theme"`
 	TermsAcceptedAt *time.Time `json:"termsAcceptedAt"`
 	CreatedAt       time.Time  `json:"createdAt"`
@@ -196,6 +197,7 @@ type UserSettings struct {
 	UserID            string    `gorm:"primaryKey;size:64" json:"userId"`
 	Tema              string    `gorm:"size:32;default:'dark'" json:"tema"`
 	AlarmSound        string    `gorm:"size:32;default:'sirine'" json:"alarmSound"`
+	CustomAlarmUrl    string    `gorm:"size:256" json:"customAlarmUrl"`
 	AlarmVolume       int       `gorm:"default:80" json:"alarmVolume"`
 	WeatherAudioMuted bool      `gorm:"default:false" json:"weatherAudioMuted"`
 	UpdatedAt         time.Time `json:"updatedAt"`
@@ -203,11 +205,12 @@ type UserSettings struct {
 
 // UpdateProfileReq format for PUT /api/user/profile and /api/auth/profile (REQ-BE-08 & REQ-BE-11)
 type UpdateProfileReq struct {
-	Name           string `json:"name"`
-	Username       string `json:"username"`
+	Name           string  `json:"name"`
+	Username       string  `json:"username"`
 	TelegramChatID *string `json:"telegramChatId"`
-	AlarmTone      string `json:"alarmTone"`
-	Theme          string `json:"theme"`
+	AlarmTone      string  `json:"alarmTone"`
+	CustomAlarmUrl *string `json:"customAlarmUrl"`
+	Theme          string  `json:"theme"`
 }
 
 // UpdatePasswordReq format for PUT /api/user/password and /api/auth/password (REQ-BE-08 & REQ-BE-11)

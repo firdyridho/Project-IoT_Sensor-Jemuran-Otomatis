@@ -2,11 +2,17 @@ package main
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +41,7 @@ func setupUserSettingsTestRouter() *gin.Engine {
 		api.PUT("/user/password", handlers.UpdatePassword)
 		api.POST("/user/test-telegram", handlers.TestUserTelegram)
 		api.POST("/user/accept-terms", handlers.AcceptTerms)
+		api.POST("/user/custom-alarm", handlers.UploadCustomAlarm)
 		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
 		api.POST("/notifications/unsubscribe", handlers.UnsubscribeWebPush)
 		api.DELETE("/notifications/subscribe", handlers.UnsubscribeWebPush)
@@ -416,4 +423,160 @@ func TestWebPushUnsubscribe(t *testing.T) {
 	database.DB.Model(&models.WebPushSubscription{}).Where("endpoint = ?", testEndpoint).Count(&count)
 	assert.Equal(t, int64(0), count)
 }
+
+func createMultipartRequest(url, fieldName, filename string, fileContent []byte, token string) (*http.Request, error) {
+	var b bytes.Buffer
+	w := multipart.NewWriter(&b)
+	part, err := w.CreateFormFile(fieldName, filename)
+	if err != nil {
+		return nil, err
+	}
+	_, err = part.Write(fileContent)
+	if err != nil {
+		return nil, err
+	}
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", url, &b)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	return req, nil
+}
+
+func TestUploadCustomAlarm(t *testing.T) {
+	r := setupUserSettingsTestRouter()
+
+	// 1. Register User
+	regUser := map[string]string{
+		"name":     "Audio Tester",
+		"username": "audiotester",
+		"password": "Password123!",
+	}
+	body, _ := json.Marshal(regUser)
+	reqReg, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(body))
+	reqReg.Header.Set("Content-Type", "application/json")
+	wReg := httptest.NewRecorder()
+	r.ServeHTTP(wReg, reqReg)
+	assert.Equal(t, http.StatusCreated, wReg.Code)
+
+	var authResp handlers.AuthResponse
+	_ = json.Unmarshal(wReg.Body.Bytes(), &authResp)
+	token := authResp.Token
+
+	// 2. Upload file dengan format tidak diizinkan (.exe)
+	reqBad, err := createMultipartRequest("/api/user/custom-alarm", "audio", "virus.exe", []byte("fake binary"), token)
+	assert.NoError(t, err)
+	wBad := httptest.NewRecorder()
+	r.ServeHTTP(wBad, reqBad)
+	assert.Equal(t, http.StatusBadRequest, wBad.Code)
+
+	// 3. Upload file audio valid (.mp3)
+	fakeAudioBytes := []byte("ID3\x04\x00\x00\x00\x00\x00#TSSE\x00\x00\x00\x0f\x00\x00\x03Lavf58.29.100")
+	reqGood, err := createMultipartRequest("/api/user/custom-alarm", "audio", "my_custom_siren.mp3", fakeAudioBytes, token)
+	assert.NoError(t, err)
+	wGood := httptest.NewRecorder()
+	r.ServeHTTP(wGood, reqGood)
+	assert.Equal(t, http.StatusOK, wGood.Code)
+
+	var resp struct {
+		Status         string      `json:"status"`
+		Message        string      `json:"message"`
+		AlarmTone      string      `json:"alarmTone"`
+		CustomAlarmUrl string      `json:"customAlarmUrl"`
+		User           models.User `json:"user"`
+	}
+	_ = json.Unmarshal(wGood.Body.Bytes(), &resp)
+	assert.Equal(t, "success", resp.Status)
+	assert.Equal(t, "custom", resp.AlarmTone)
+	assert.NotEmpty(t, resp.CustomAlarmUrl)
+	assert.Contains(t, resp.CustomAlarmUrl, "/uploads/tones/tone_")
+
+	// Pastikan data tersimpan di DB
+	var userDB models.User
+	err = database.DB.First(&userDB, "id = ?", authResp.User.ID).Error
+	assert.NoError(t, err)
+	assert.Equal(t, "custom", userDB.AlarmTone)
+	assert.Equal(t, resp.CustomAlarmUrl, userDB.CustomAlarmUrl)
+
+	// Bersihkan file yang di-upload
+	filePath := "." + resp.CustomAlarmUrl
+	_ = os.Remove(filePath)
+}
+
+func TestCrossEnvironmentTokenSyncAndDemo(t *testing.T) {
+	r := setupUserSettingsTestRouter()
+
+	// 1. Uji Demo token bypass ("demo-token-bypass")
+	reqDemo, _ := http.NewRequest("GET", "/api/user/profile", nil)
+	reqDemo.Header.Set("Authorization", "Bearer demo-token-bypass")
+	wDemo := httptest.NewRecorder()
+	r.ServeHTTP(wDemo, reqDemo)
+	assert.Equal(t, http.StatusOK, wDemo.Code)
+
+	var demoUser models.User
+	_ = json.Unmarshal(wDemo.Body.Bytes(), &demoUser)
+	assert.Equal(t, "usr-demo-admin", demoUser.ID)
+	assert.Equal(t, "admin", demoUser.Username)
+
+	// 2. Uji Token dari environment lain (misal token dibuat di Prod, lalu diuji di Staging)
+	ts := time.Now().Add(30 * 24 * time.Hour).Unix()
+	payload := fmt.Sprintf("usr-remote-prod-123:remoteproduser:%d", ts)
+	mac := hmac.New(sha256.New, []byte("hujan-pantau-secret-key-2026"))
+	mac.Write([]byte(payload))
+	sig := hex.EncodeToString(mac.Sum(nil))
+	remoteToken := fmt.Sprintf("%s.%s", hex.EncodeToString([]byte(payload)), sig)
+
+	// Pastikan user belum ada di DB lokal sebelumnya
+	var notFoundUser models.User
+	err := database.DB.First(&notFoundUser, "id = ?", "usr-remote-prod-123").Error
+	assert.Error(t, err)
+
+	// Panggil GET /api/user/profile dengan remote token -> Harus otomatis sync dan mengembalikan 200 OK (BUKAN 404!)
+	reqRemote, _ := http.NewRequest("GET", "/api/user/profile", nil)
+	reqRemote.Header.Set("Authorization", "Bearer "+remoteToken)
+	wRemote := httptest.NewRecorder()
+	r.ServeHTTP(wRemote, reqRemote)
+	assert.Equal(t, http.StatusOK, wRemote.Code)
+
+	var syncedUser models.User
+	_ = json.Unmarshal(wRemote.Body.Bytes(), &syncedUser)
+	assert.Equal(t, "usr-remote-prod-123", syncedUser.ID)
+	assert.Equal(t, "remoteproduser", syncedUser.Username)
+
+	// Panggil PUT /api/user/profile untuk update Telegram Chat ID
+	teleID := "987654321"
+	updatePayload := models.UpdateProfileReq{
+		TelegramChatID: &teleID,
+		AlarmTone:      "custom",
+	}
+	upBody, _ := json.Marshal(updatePayload)
+	reqUp, _ := http.NewRequest("PUT", "/api/user/profile", bytes.NewBuffer(upBody))
+	reqUp.Header.Set("Authorization", "Bearer "+remoteToken)
+	reqUp.Header.Set("Content-Type", "application/json")
+	wUp := httptest.NewRecorder()
+	r.ServeHTTP(wUp, reqUp)
+	assert.Equal(t, http.StatusOK, wUp.Code)
+
+	// Panggil POST /api/user/test-telegram (tanpa token bot di env)
+	testTgPayload := map[string]string{
+		"chatId": "987654321",
+	}
+	tgBody, _ := json.Marshal(testTgPayload)
+	reqTg, _ := http.NewRequest("POST", "/api/user/test-telegram", bytes.NewBuffer(tgBody))
+	reqTg.Header.Set("Authorization", "Bearer "+remoteToken)
+	reqTg.Header.Set("Content-Type", "application/json")
+	wTg := httptest.NewRecorder()
+	r.ServeHTTP(wTg, reqTg)
+	// Response harus 400 Bad Request karena bot token belum dikonfigurasi di server testing, BUKAN 404 "Akun pengguna tidak ditemukan"!
+	assert.NotEqual(t, http.StatusNotFound, wTg.Code)
+}
+
 

@@ -4,6 +4,7 @@ export interface User {
   username: string;
   telegramChatId?: string;
   alarmTone?: string;
+  customAlarmUrl?: string;
   theme?: string;
   createdAt?: string;
 }
