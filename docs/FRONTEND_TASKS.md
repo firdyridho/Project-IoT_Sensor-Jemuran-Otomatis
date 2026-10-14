@@ -177,6 +177,11 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Integrasi endpoint multipart form `POST /api/user/custom-alarm` dan penyimpanan preferensi URL ke `PUT /api/user/profile`.
   * Implementasi caching offline menggunakan Web Cache Storage API (`rintik-custom-tones-v1`) melalui helper `cacheCustomAudio`, menjamin alarm kustom tetap berbunyi saat perangkat offline di tengah cuaca ekstrem.
   * Integrasi pemutaran looping persisten pada `App.tsx` & `audioAlarm.ts` dengan fallback otomatis ke `emergency_siren` bila pemutaran berkas audio kustom mengalami kegagalan.
+* [x] **FE-21: Penyatuan Notifikasi Peringatan Hujan ke Telegram Bot & Deprekasi Web Push Browser (REQ-FE-14)**:
+  * Pembersihan antarmuka dari fitur aktivasi Web Push browser (menghapus tombol lonceng izin push di Header, kartu push VAPID di `DeviceView.tsx`, serta toggle push di `SettingsView.tsx`).
+  * Penyatuan saluran peringatan darurat eksternal 100% ke Telegram Bot (`@Rintik_Iot_Bot`), didukung Quick Action Bar integrasi Telegram di bagian atas Pengaturan Akun dan Tab Preferensi.
+  * Pembersihan event listener push Google FCM pada Service Worker `sw.js` tanpa mengorbankan caching offline aset statis (`rintik-v2`) dan berkas audio nada dering kustom (`rintik-custom-tones-v1`).
+  * Pemeliharaan arsitektur frontend yang bersih tanpa mengubah berkas backend apa pun, berhasil lulus validasi build Vite & TypeScript.
 
 ---
 

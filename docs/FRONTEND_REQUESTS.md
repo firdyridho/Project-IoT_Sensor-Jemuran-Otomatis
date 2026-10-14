@@ -40,30 +40,37 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-14: Penghapusan Fitur Web Push Browser (Google VAPID) & Penyatuan Notifikasi 100% ke Telegram Bot**
-  * Tanggal Diminta: 2026-10-14
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/components/Layout/Header.tsx` (hapus ikon lonceng izin notifikasi browser atau popover pendaftaran web push)
-    * `frontend/src/components/Perangkat/DeviceView.tsx` (hapus kartu pendaftaran notifikasi push browser jika masih ada)
-    * `frontend/src/components/Settings/SettingsView.tsx` (pastikan info notifikasi mengarahkan pengguna ke konfigurasi Telegram Bot)
-    * `frontend/src/services/webpush.ts` (hentikan pendaftaran otomatis ke `/api/notifications/subscribe` dan `/api/notifications/vapid-key`)
-    * `frontend/public/sw.js` (bersihkan event handler push Google FCM yang menampilkan toast native OS, namun **tetap pertahankan** caching berkas offline & nada dering kustom)
-  * Spesifikasi & Instruksi Kerja Frontend:
-    1. **Penyatuan Notifikasi ke Telegram Bot (Unified Alerts Strategy)**:
-       * Project Owner telah memutuskan bahwa fitur Web Push Notification browser (Google VAPID/FCM) tidak lagi digunakan karena keterbatasan peramban seluler (sering diblokir, butuh konfigurasi SSL/domain ketat, dan tidak stabil saat diakses via IP).
-       * Seluruh pengiriman peringatan hujan keluar (eksternal) kini ditangani **100% oleh Telegram Bot**.
-       * Di dalam aplikasi web (foreground), peringatan tetap mengandalkan **Modal HUD Alarm Darurat Hujan & Nada Dering Looping Persisten** (`PersistentRainAlarmModal.tsx` & `audioAlarm.ts`).
-    2. **Pembersihan Antarmuka (UI Cleanup)**:
-       * Hapus elemen UI aktivasi push notification browser (misal: tombol *"Aktifkan Notifikasi"*, tombol lonceng izin push browser, atau snackbar izin browser).
-       * Hapus pemanggilan fungsi `subscribeUserToPush()` saat aplikasi pertama kali dimuat.
-       * Pada tab Pengaturan atau kartu informasi, tambahkan keterangan jelas: *"Peringatan hujan otomatis dikirimkan langsung ke Telegram Anda. Pastikan Chat ID Telegram Anda sudah terhubung."*
-  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md) Bagian 7.2
-  * Status: Siap Dikerjakan oleh Frontend
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-14: Penghapusan Fitur Web Push Browser (Google VAPID) & Penyatuan Notifikasi 100% ke Telegram Bot**
+  * Tanggal Diminta: 2026-10-14
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Layout/Header.tsx` (dibersihkan dari aksi web push browser; header fokus pada kontrol perangkat, tema, status koneksi broker, dan pengaturan)
+    * `frontend/src/components/Perangkat/DeviceView.tsx` (kartu pendaftaran dan status Web Push API + VAPID resmi dihapus)
+    * `frontend/src/components/Settings/SettingsView.tsx` (mengganti kartu Web Push pada Quick Actions Bar dan Tab Preferensi dengan status integrasi bot Telegram, tautan langsung ke `@Rintik_Iot_Bot`, serta tombol uji kirim pesan bot)
+    * `frontend/src/services/webpush.ts` (deprekasi WebPushService dengan aman tanpa panggilan jaringan ke endpoint `/api/notifications/subscribe` dan `/api/notifications/vapid-key`)
+    * `frontend/public/sw.js` (event handler push Google FCM yang menampilkan banner native OS dihapus, sementara arsitektur caching offline `rintik-v2` dan berkas audio kustom `rintik-custom-tones-v1` tetap dipertahankan utuh)
+    * `frontend/src/App.tsx` (pembersihan state dan prop `notifPermission` / `isNotifSubscribed` yang sudah tidak lagi digunakan)
+  * Spesifikasi & Instruksi Kerja yang Terpenuhi:
+    1. **Penyatuan Notifikasi ke Telegram Bot (Unified Alerts Strategy)**:
+       * Fitur Web Push Notification browser (Google VAPID/FCM) tidak lagi digunakan untuk menghindari friksi izin peramban seluler, pembatasan background OS, dan keharusan domain/SSL ketat.
+       * Seluruh pengiriman peringatan hujan keluar (eksternal) kini dipusatkan **100% ke Telegram Bot**.
+       * Di dalam aplikasi web (foreground), peringatan tetap didukung oleh **Modal HUD Alarm Darurat Hujan & Nada Dering Looping Persisten** (`PersistentRainAlarmModal.tsx` & `audioAlarm.ts`).
+    2. **Pembersihan Antarmuka (UI Cleanup)**:
+       * Seluruh elemen aktivasi push notification browser telah dibersihkan.
+       * Quick Actions Bar dan Tab Preferensi pada menu Pengaturan kini menampilkan status koneksi Telegram Bot yang terhubung secara realtime dengan tombol pintas *"Buka Bot"* dan *"Uji Pesan"*.
+       * Informasi panduan notifikasi dengan jelas menerangkan: *"Peringatan hujan otomatis dikirimkan langsung ke Telegram Anda. Pastikan Chat ID Telegram Anda sudah terhubung."*
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md) Bagian 7.2
+  * Status: [x] SELESAI
+
+---
 
 * [x] **REQ-FE-13: Antarmuka Unggah Nada Dering Alarm Kustom (Custom Audio Upload) & Caching Audio Offline**
   * Tanggal Diminta: 2026-10-14

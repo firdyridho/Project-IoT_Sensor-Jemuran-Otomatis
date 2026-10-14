@@ -30,7 +30,6 @@ import {
 import { weatherAudio } from '../../services/weatherAudio';
 import { Notifications } from '../../services/notifications';
 import { getDefaultBackendUrl } from '../../services/storage';
-import { WebPushService } from '../../services/webpush';
 import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
@@ -94,43 +93,6 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [isSendingTelegram, setIsSendingTelegram] = useState(false);
   const [isSavingTelegram, setIsSavingTelegram] = useState(false);
 
-  // Web Push Notification State (REQ-FE-09)
-  const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => {
-    return typeof Notification !== 'undefined' ? Notification.permission : 'default';
-  });
-  const [isPushSubscribing, setIsPushSubscribing] = useState(false);
-  const [isPushTesting, setIsPushTesting] = useState(false);
-
-  const handleToggleWebPush = async () => {
-    setIsPushSubscribing(true);
-    const backendBase = getDefaultBackendUrl();
-    const res = await WebPushService.subscribe(backendBase, activeDevice.deviceId);
-    setIsPushSubscribing(false);
-    if (typeof Notification !== 'undefined') {
-      setPushPermission(Notification.permission);
-    }
-    Notifications.addToast({
-      id: 'webpush-' + Date.now(),
-      type: res.success ? 'success' : 'warning',
-      title: res.success ? 'Notifikasi Push Aktif' : 'Gagal Mengaktifkan',
-      message: res.message,
-      timestamp: Date.now(),
-    });
-  };
-
-  const handleTestWebPush = async () => {
-    setIsPushTesting(true);
-    const backendBase = getDefaultBackendUrl();
-    const res = await WebPushService.testPush(backendBase, activeDevice.deviceId);
-    setIsPushTesting(false);
-    Notifications.addToast({
-      id: 'test-push-' + Date.now(),
-      type: res.success ? 'success' : 'warning',
-      title: res.success ? 'Uji Coba Push Terkirim' : 'Gagal Uji Coba',
-      message: res.message,
-      timestamp: Date.now(),
-    });
-  };
 
   // Ambil konfigurasi bot Telegram dari backend server
   useEffect(() => {
@@ -752,89 +714,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
         </Card>
       </section>
 
-      {/* 6. Integrasi Notifikasi Realtime PWA & Browser Push (REQ-FE-09 / REQ-BE-09) */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
-            Notifikasi Realtime PWA & Browser Web Push (REQ-FE-09)
-          </h3>
-          <Badge
-            variant={pushPermission === 'granted' ? 'sukses' : pushPermission === 'denied' ? 'bahaya' : 'netral'}
-            className="text-[10px] gap-1 font-bold"
-          >
-            {pushPermission === 'granted' ? (
-              <>
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Push Aktif</span>
-              </>
-            ) : pushPermission === 'denied' ? (
-              <span>Izin Diblokir</span>
-            ) : (
-              <span>Belum Diizinkan</span>
-            )}
-          </Badge>
-        </div>
 
-        <Card className="p-4 md:p-6 space-y-4">
-          <div className="flex items-start justify-between gap-3 border-b border-garis pb-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
-                  <Bell className="w-5 h-5" />
-                </span>
-                <h4 className="font-bold text-sm text-teks-utama">
-                  Notifikasi Push Sistem Native (Web Push API + VAPID)
-                </h4>
-              </div>
-              <p className="text-xs text-teks-sekunder mt-0.5">
-                Menerima notifikasi darurat langsung di action center peramban/layar ponsel saat hujan terdeteksi, bahkan saat aplikasi terminimalkan.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/20">
-            <div className="space-y-0.5">
-              <span className="text-xs font-bold text-teks-utama block">
-                Status Layanan Push: {pushPermission === 'granted' ? 'Terhubung & Siaga' : 'Perlu Izin Browser'}
-              </span>
-              <span className="text-[11px] text-teks-sekunder block">
-                Terhubung ke VAPID Gateway PostgreSQL Backend.
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant={pushPermission === 'granted' ? 'secondary' : 'primary'}
-                size="sm"
-                onClick={handleToggleWebPush}
-                disabled={isPushSubscribing}
-                className="gap-1.5 font-bold"
-              >
-                <Bell className="w-3.5 h-3.5" />
-                <span>
-                  {isPushSubscribing
-                    ? 'Mendaftarkan...'
-                    : pushPermission === 'granted'
-                    ? 'Perbarui Langganan Push'
-                    : 'Izinkan Notifikasi Push'}
-                </span>
-              </Button>
-              {pushPermission === 'granted' && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleTestWebPush}
-                  disabled={isPushTesting}
-                  className="gap-1.5 font-bold"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isPushTesting ? 'Mengirim...' : 'Uji Coba Push'}</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </Card>
-      </section>
     </div>
   );
 };

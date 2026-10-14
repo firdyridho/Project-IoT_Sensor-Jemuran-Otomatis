@@ -32,7 +32,6 @@ import { LegalView } from './components/Legal/LegalView';
 import { SettingsView } from './components/Settings/SettingsView';
 import { PersistentRainAlarmModal } from './components/Alert/PersistentRainAlarmModal';
 import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType } from './utils/audioAlarm';
-import { WebPushService } from './services/webpush';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
@@ -193,24 +192,7 @@ export const App: React.FC = () => {
   const [isWeatherStale, setIsWeatherStale] = useState(false);
   const [weatherError, setWeatherError] = useState<string | undefined>(undefined);
 
-  // 4. Notifications & Modals State
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
-    Notifications.getPermission()
-  );
-  const [isNotifSubscribed, setIsNotifSubscribed] = useState<boolean>(() => {
-    return (
-      typeof window !== 'undefined' &&
-      localStorage.getItem('rintik.notif.subscribed') === 'true' &&
-      localStorage.getItem('rintik.notif.disabled_by_user') !== 'true'
-    );
-  });
-
-  useEffect(() => {
-    WebPushService.isSubscribed().then((active) => {
-      setIsNotifSubscribed(active);
-    });
-  }, []);
-
+  // 4. Modals State
   const [deviceToDelete, setDeviceToDelete] = useState<Perangkat | null>(null);
   const [showClearStorageModal, setShowClearStorageModal] = useState<boolean>(false);
 
@@ -653,75 +635,6 @@ export const App: React.FC = () => {
     };
   }, [activeDevice.deviceId, activeDevice.brokerUrl, settings.backendUrl]);
 
-  // Toggle / Request / Disable browser notifications with Web Push VAPID API (REQ-FE-09 / REQ-BE-10)
-  const handleToggleNotification = async (targetState?: boolean) => {
-    const shouldEnable = typeof targetState === 'boolean' ? targetState : !isNotifSubscribed;
-
-    if (!shouldEnable) {
-      const res = await WebPushService.unsubscribe(settings.backendUrl, session?.token);
-      setIsNotifSubscribed(false);
-      Notifications.addToast({
-        id: 'notif-perm-' + Date.now(),
-        type: 'info',
-        title: 'Notifikasi Dinonaktifkan',
-        message: res.message || 'Pemberitahuan push di peramban ini telah dinonaktifkan.',
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    if (settings.backendUrl) {
-      const res = await WebPushService.subscribe(
-        settings.backendUrl,
-        activeDevice.deviceId,
-        session?.token
-      );
-      setNotifPermission(Notifications.getPermission());
-      setIsNotifSubscribed(res.success);
-      Notifications.addToast({
-        id: 'notif-perm-' + Date.now(),
-        type: res.success ? 'success' : 'warning',
-        title: res.success ? 'Notifikasi Push Aktif' : 'Status Notifikasi',
-        message: res.message,
-        timestamp: Date.now(),
-      });
-    } else {
-      const perm = await Notifications.requestPermission();
-      setNotifPermission(perm);
-      const isGranted = perm === 'granted';
-      setIsNotifSubscribed(isGranted);
-      if (isGranted) {
-        Notifications.addToast({
-          id: 'notif-perm-' + Date.now(),
-          type: 'success',
-          title: 'Notifikasi Aktif',
-          message: 'Anda akan diberi tahu ketika hujan terdeteksi di jemuran.',
-          timestamp: Date.now(),
-        });
-      }
-    }
-  };
-
-  const handleTestNotification = async () => {
-    if (!settings.backendUrl) {
-      Notifications.addToast({
-        id: 'notif-test-' + Date.now(),
-        type: 'info',
-        title: 'Uji Notifikasi',
-        message: 'Backend URL belum disetel.',
-        timestamp: Date.now(),
-      });
-      return;
-    }
-    const res = await WebPushService.testPush(settings.backendUrl, activeDevice.deviceId);
-    Notifications.addToast({
-      id: 'notif-test-' + Date.now(),
-      type: res.success ? 'success' : 'warning',
-      title: res.success ? 'Uji Notifikasi Terkirim' : 'Gagal Mengirim Uji',
-      message: res.message,
-      timestamp: Date.now(),
-    });
-  };
 
   // Switch Device
   const handleSelectDevice = (deviceId: string) => {
@@ -1336,12 +1249,6 @@ export const App: React.FC = () => {
                   onChangeTheme={handleChangeTheme}
                   onClose={() => navigate('/dashboard')}
                   backendUrl={settings.backendUrl}
-                  notifPermission={notifPermission}
-                  isNotifEnabled={isNotifSubscribed}
-                  onRequestNotif={() => handleToggleNotification(true)}
-                  onDisableNotif={() => handleToggleNotification(false)}
-                  onToggleNotif={handleToggleNotification}
-                  onTestNotif={handleTestNotification}
                   onLogout={handleLogout}
                 />
               </div>

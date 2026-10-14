@@ -43,12 +43,6 @@ interface SettingsViewProps {
   onClose?: () => void;
   initialTab?: 'profile' | 'password' | 'telegram' | 'preferences';
   backendUrl?: string;
-  notifPermission?: NotificationPermission;
-  isNotifEnabled?: boolean;
-  onRequestNotif?: () => void;
-  onDisableNotif?: () => void;
-  onToggleNotif?: (enable?: boolean) => void;
-  onTestNotif?: () => void;
   onLogout?: () => void;
 }
 
@@ -63,12 +57,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onClose,
   initialTab = 'profile',
   backendUrl,
-  notifPermission = 'default',
-  isNotifEnabled = false,
-  onRequestNotif,
-  onDisableNotif,
-  onToggleNotif,
-  onTestNotif,
   onLogout,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
@@ -605,86 +593,59 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* 2. Status Notifikasi Browser & PWA */}
+        {/* 2. Status Notifikasi Telegram Bot (100% Saluran Notifikasi Utama) */}
         <div className="flex flex-col justify-between gap-2 p-3 sm:p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
             <span className="flex items-center gap-1.5">
-              {isNotifEnabled ? (
-                <BellRing className="w-4 h-4 text-emerald-400" />
-              ) : notifPermission === 'denied' ? (
-                <BellOff className="w-4 h-4 text-red-400" />
-              ) : (
-                <Bell className="w-4 h-4 text-slate-400" />
-              )}
-              Notifikasi Hujan
+              <Send className="w-4 h-4 text-cyan-400" />
+              Notifikasi Telegram
             </span>
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                isNotifEnabled
+                telegramChatId.trim()
                   ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                  : notifPermission === 'denied'
-                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                  : 'bg-slate-700/60 text-slate-400 border-slate-600/40'
+                  : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
               }`}
             >
-              {isNotifEnabled
-                ? 'Aktif'
-                : notifPermission === 'denied'
-                ? 'Diblokir'
-                : 'Nonaktif'}
+              {telegramChatId.trim() ? 'Terhubung' : 'Belum Konek'}
             </span>
           </div>
 
-          {isNotifEnabled ? (
+          {telegramChatId.trim() ? (
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => (onDisableNotif ? onDisableNotif() : onToggleNotif?.(false))}
-                className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                title="Matikan notifikasi push di peramban ini"
+                onClick={handleOpenTelegramBot}
+                className="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600/60 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                title="Buka percakapan Bot Telegram"
               >
-                <BellOff className="w-3.5 h-3.5 text-red-400" />
-                <span>Nonaktifkan</span>
+                <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Buka Bot</span>
               </button>
-              {onTestNotif && (
-                <button
-                  type="button"
-                  onClick={onTestNotif}
-                  className="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-cyan-300 border border-slate-600/60 flex items-center justify-center gap-1 transition-all cursor-pointer"
-                  title="Kirim pesan uji coba notifikasi"
-                >
+              <button
+                type="button"
+                disabled={isTestingTelegram}
+                onClick={handleTestTelegram}
+                className="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                title="Kirim pesan uji coba peringatan ke Telegram"
+              >
+                {isTestingTelegram ? (
+                  <RefreshCw className="w-3 h-3 animate-spin text-cyan-400" />
+                ) : (
                   <Send className="w-3 h-3 text-cyan-400" />
-                  <span>Uji</span>
-                </button>
-              )}
+                )}
+                <span>Uji</span>
+              </button>
             </div>
           ) : (
             <button
               type="button"
-              disabled={notifPermission === 'denied'}
-              onClick={() => (onRequestNotif ? onRequestNotif() : onToggleNotif?.(true))}
-              className={`w-full py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                notifPermission === 'denied'
-                  ? 'bg-slate-700 text-slate-400 border border-transparent cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xs hover:opacity-95'
-              }`}
-              title={
-                notifPermission === 'denied'
-                  ? 'Izin notifikasi diblokir di browser'
-                  : 'Aktifkan notifikasi push browser saat terdeteksi hujan'
-              }
+              onClick={() => setActiveTab('telegram')}
+              className="w-full py-1.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-xs hover:opacity-95"
+              title="Hubungkan akun dengan bot Telegram untuk menerima notifikasi hujan instan"
             >
-              {notifPermission === 'denied' ? (
-                <>
-                  <BellOff className="w-3.5 h-3.5 text-red-400" />
-                  <span>Izin Diblokir di Browser</span>
-                </>
-              ) : (
-                <>
-                  <BellRing className="w-3.5 h-3.5" />
-                  <span>Aktifkan Notifikasi</span>
-                </>
-              )}
+              <Send className="w-3.5 h-3.5" />
+              <span>Hubungkan Bot Telegram</span>
             </button>
           )}
         </div>
@@ -1275,73 +1236,57 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 />
               </div>
 
-              {/* Web Push Notification Toggle Card */}
+              {/* Telegram Bot Notification Guidance Card */}
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-800/60 border border-slate-700/80 space-y-3">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">
+                      <Send className="w-4 h-4 text-cyan-400" />
                       <span className="font-bold text-sm text-white block">
-                        Notifikasi Push Hujan (Web Push)
+                        Peringatan Hujan Otomatis via Telegram
                       </span>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          isNotifEnabled
+                          telegramChatId.trim()
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                            : notifPermission === 'denied'
-                            ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                            : 'bg-slate-700 text-slate-400 border-slate-600'
+                            : 'bg-amber-500/15 text-amber-400 border-amber-500/30'
                         }`}
                       >
-                        {isNotifEnabled ? 'Aktif' : notifPermission === 'denied' ? 'Diblokir' : 'Nonaktif'}
+                        {telegramChatId.trim() ? 'Bot Terhubung' : 'Belum Terhubung'}
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 block leading-relaxed">
-                      Kirimkan notifikasi darurat ke layar peramban atau ponsel saat sensor mendeteksi hujan pertama.
+                      Peringatan hujan dikirimkan secara instan ke Telegram Anda tanpa kendala izin peramban atau mode hemat daya ponsel.
                     </span>
                   </div>
 
                   <button
                     type="button"
-                    disabled={notifPermission === 'denied'}
-                    onClick={() => {
-                      if (isNotifEnabled) {
-                        onDisableNotif ? onDisableNotif() : onToggleNotif?.(false);
-                      } else {
-                        onRequestNotif ? onRequestNotif() : onToggleNotif?.(true);
-                      }
-                    }}
-                    className={`w-12 h-6 rounded-full p-1 transition-colors relative shrink-0 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
-                      isNotifEnabled ? 'bg-cyan-500' : 'bg-slate-700'
-                    }`}
-                    aria-label={isNotifEnabled ? 'Nonaktifkan notifikasi' : 'Aktifkan notifikasi'}
-                    title={
-                      notifPermission === 'denied'
-                        ? 'Izin notifikasi diblokir di browser'
-                        : isNotifEnabled
-                        ? 'Klik untuk menonaktifkan notifikasi push'
-                        : 'Klik untuk mengaktifkan notifikasi push'
-                    }
+                    onClick={() => setActiveTab('telegram')}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
                   >
-                    <div
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        isNotifEnabled ? 'translate-x-6' : 'translate-x-0'
-                      }`}
-                    />
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{telegramChatId.trim() ? 'Kelola Bot' : 'Hubungkan'}</span>
                   </button>
                 </div>
 
-                {isNotifEnabled && onTestNotif && (
+                {telegramChatId.trim() && (
                   <div className="pt-2.5 border-t border-slate-700/60 flex items-center justify-between gap-3">
                     <span className="text-[11px] text-slate-400">
-                      Uji coba penerimaan pesan di sistem operasi peramban:
+                      Chat ID terhubung: <code className="font-mono text-cyan-300">{telegramChatId}</code>
                     </span>
                     <button
                       type="button"
-                      onClick={onTestNotif}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600 text-cyan-300 inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                      disabled={isTestingTelegram}
+                      onClick={handleTestTelegram}
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600 text-cyan-300 inline-flex items-center gap-1.5 transition-all cursor-pointer shrink-0 disabled:opacity-50"
                     >
-                      <BellRing className="w-3.5 h-3.5" />
-                      <span>Uji Notifikasi Sekarang</span>
+                      {isTestingTelegram ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5" />
+                      )}
+                      <span>Uji Kirim Pesan Telegram</span>
                     </button>
                   </div>
                 )}
