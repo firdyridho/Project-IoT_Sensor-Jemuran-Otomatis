@@ -172,6 +172,25 @@ func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 	// 4. Cache latest telemetry in Redis (microsecond memory lookup & list history BE-09)
 	database.CacheLatestTelemetry(p.DeviceID, p)
 	database.PushTelemetryList(p.DeviceID, p)
+
+	// 5. Notifikasi Telegram instan saat transisi dari kering ke basah (state change)
+	s.lastAlertMu.Lock()
+	if s.deviceLastWet == nil {
+		s.deviceLastWet = make(map[string]bool)
+	}
+	wasWet := s.deviceLastWet[p.DeviceID]
+	s.deviceLastWet[p.DeviceID] = p.Wet
+	s.lastAlertMu.Unlock()
+
+	if p.Wet && !wasWet {
+		ev := models.EventPayload{
+			DeviceID: p.DeviceID,
+			Type:     "rain_start",
+			TS:       reading.Timestamp,
+			Data:     map[string]interface{}{"pct": p.Pct, "raw": p.Raw},
+		}
+		s.triggerTelegramAlert(ev)
+	}
 }
 
 func (s *MqttSubscriber) handleState(topic string, raw []byte) {
@@ -293,13 +312,7 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 	if s.deviceLastAlert == nil {
 		s.deviceLastAlert = make(map[string]time.Time)
 	}
-	lastTime := s.deviceLastAlert[ev.DeviceID]
 	now := time.Now()
-	// Cooldown 1 menit per perangkat (cukup untuk mencegah spam saat hujan lebat, namun responsif untuk testing)
-	if now.Sub(lastTime) < 1*time.Minute {
-		s.lastAlertMu.Unlock()
-		return
-	}
 	s.deviceLastAlert[ev.DeviceID] = now
 	s.lastAlertMu.Unlock()
 
