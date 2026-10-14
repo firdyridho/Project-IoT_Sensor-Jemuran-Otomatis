@@ -171,6 +171,12 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Pembuatan modal HUD darurat `PersistentRainAlarmModal.tsx` dengan visual berdenyut dan tombol *"MATIKAN ALARM"* raksasa dengan sinkronisasi penutupan multi-tab via `BroadcastChannel` dan storage event.
   * Pembaruan listener service worker `sw.js` dengan aksi notifikasi `dismiss` (Matikan Alarm) dan `open` (Buka Aplikasi).
   * Pembersihan input Telegram dan nada dering dari kartu perangkat (`DeviceView.tsx`) agar perangkat ESP32 khusus untuk telemetri hardware.
+* [x] **FE-20: Unggah Audio Alarm Kustom & Caching Audio Offline (REQ-FE-13)**:
+  * Penambahan opsi nada dering `custom` (*"Nada Dering Kustom (Unggah Sendiri)"*) pada `audioAlarm.ts` dan antarmuka Pengaturan Preferensi `SettingsView.tsx`.
+  * Pembuatan Dropzone interaktif dan tombol unggah berkas audio (`.mp3`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.webm`) dengan validasi batas ukuran sisi klien maksimal 5MB dan progress bar animasi.
+  * Integrasi endpoint multipart form `POST /api/user/custom-alarm` dan penyimpanan preferensi URL ke `PUT /api/user/profile`.
+  * Implementasi caching offline menggunakan Web Cache Storage API (`rintik-custom-tones-v1`) melalui helper `cacheCustomAudio`, menjamin alarm kustom tetap berbunyi saat perangkat offline di tengah cuaca ekstrem.
+  * Integrasi pemutaran looping persisten pada `App.tsx` & `audioAlarm.ts` dengan fallback otomatis ke `emergency_siren` bila pemutaran berkas audio kustom mengalami kegagalan.
 
 ---
 

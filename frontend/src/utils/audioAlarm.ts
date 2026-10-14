@@ -1,9 +1,10 @@
 /**
  * Audio Alarm Synthesizer & Cross-Tab Controller for Rintik IoT Jemuran Otomatis
  * Implements REQ-FE-12: Persistent Looping Rain Alarms & Cross-Tab Sync
+ * Implements REQ-FE-13: Custom Audio File Playback & Offline Cache Resilience
  */
 
-export type AlarmToneType = 'emergency_siren' | 'phone_ring' | 'radar_alert' | 'chime';
+export type AlarmToneType = 'emergency_siren' | 'phone_ring' | 'radar_alert' | 'chime' | 'custom';
 
 export interface ToneOption {
   id: AlarmToneType;
@@ -32,7 +33,46 @@ export const ALARM_TONE_OPTIONS: ToneOption[] = [
     label: 'High Pitch Chime',
     description: 'Kombinasi melodi arpeggio kristal yang jernih dan elegan',
   },
+  {
+    id: 'custom',
+    label: 'Nada Dering Kustom (Unggah Sendiri)',
+    description: 'Berkas audio rekaman atau musik pilihan Anda (.mp3, .wav, .ogg, .m4a)',
+  },
 ];
+
+const CACHE_NAME = 'rintik-custom-tones-v1';
+
+/**
+ * Cache custom audio to Cache Storage for offline resilience during storms (REQ-FE-13)
+ */
+export async function cacheCustomAudio(url: string): Promise<string> {
+  if (typeof window === 'undefined' || !url) return url;
+  try {
+    if ('caches' in window) {
+      const cache = await caches.open(CACHE_NAME);
+      const existing = await cache.match(url);
+      if (!existing) {
+        try {
+          await cache.add(url);
+        } catch {
+          // If direct cache.add fails (e.g. CORS), fetch and put
+          const resp = await fetch(url, { mode: 'cors' });
+          if (resp.ok) {
+            await cache.put(url, resp.clone());
+          }
+        }
+      }
+      const cachedResponse = await cache.match(url);
+      if (cachedResponse) {
+        const blob = await cachedResponse.blob();
+        return URL.createObjectURL(blob);
+      }
+    }
+  } catch (err) {
+    console.warn('Cache Storage fallback to direct URL:', err);
+  }
+  return url;
+}
 
 class AudioAlarmController {
   private ctx: AudioContext | null = null;
@@ -43,6 +83,7 @@ class AudioAlarmController {
   private activeTone: AlarmToneType = 'emergency_siren';
   private activeVolume: number = 80;
   private previewTimeoutId: number | null = null;
+  private customAudioElement: HTMLAudioElement | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -85,7 +126,7 @@ class AudioAlarmController {
   /**
    * Synthesize a single burst of the chosen tone
    */
-  private playToneBurst(tone: AlarmToneType, volumePct: number = 80, durationMs: number = 1200) {
+  private playToneBurst(tone: AlarmToneType, volumePct: number = 80) {
     const ctx = this.initContext();
     if (!ctx) return;
 
@@ -96,8 +137,8 @@ class AudioAlarmController {
     masterGain.connect(ctx.destination);
     this.currentGainNode = masterGain;
 
-    if (tone === 'emergency_siren') {
-      // Rapid dual sweep sawtooth siren
+    if (tone === 'emergency_siren' || tone === 'custom') {
+      // Rapid dual sweep sawtooth siren (default or fallback)
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.setValueAtTime(650, now);
@@ -174,17 +215,45 @@ class AudioAlarmController {
   }
 
   /**
-   * Preview a tone sample for 1.5 seconds and stop
+   * Preview a tone sample for 1.5 - 4 seconds and stop
    */
-  public previewTone(tone: AlarmToneType, volumePct: number = 80) {
+  public async previewTone(tone: AlarmToneType, volumePct: number = 80, customUrl?: string) {
     this.stopPreview();
-    this.playToneBurst(tone, volumePct);
+
+    if (tone === 'custom' && customUrl) {
+      try {
+        const resolvedSrc = await cacheCustomAudio(customUrl);
+        const audio = new Audio(resolvedSrc);
+        audio.volume = Math.max(0.05, Math.min(1, volumePct / 100));
+        this.customAudioElement = audio;
+        await audio.play();
+
+        this.previewTimeoutId = window.setTimeout(() => {
+          this.stopPreview();
+        }, 4000);
+      } catch (err) {
+        console.warn('Custom audio preview failed, playing siren fallback:', err);
+        this.playToneBurst('emergency_siren', volumePct);
+      }
+    } else {
+      this.playToneBurst(tone, volumePct);
+      this.previewTimeoutId = window.setTimeout(() => {
+        this.stopPreview();
+      }, 1500);
+    }
   }
 
   public stopPreview() {
     if (this.previewTimeoutId) {
       window.clearTimeout(this.previewTimeoutId);
       this.previewTimeoutId = null;
+    }
+    if (this.customAudioElement) {
+      try {
+        this.customAudioElement.pause();
+        this.customAudioElement.currentTime = 0;
+      } catch {}
+      this.customAudioElement = null;
     }
     if (this.currentGainNode && this.ctx) {
       try {
@@ -197,13 +266,31 @@ class AudioAlarmController {
   /**
    * Start indefinite continuous looping alarm until manually dismissed
    */
-  public startPersistentAlarm(tone: AlarmToneType = 'emergency_siren', volumePct: number = 80) {
+  public async startPersistentAlarm(
+    tone: AlarmToneType = 'emergency_siren',
+    volumePct: number = 80,
+    customUrl?: string
+  ) {
     if (this.isLooping) return;
     this.isLooping = true;
     this.activeTone = tone;
     this.activeVolume = volumePct;
 
-    // Immediately play first burst
+    if (tone === 'custom' && customUrl) {
+      try {
+        const resolvedSrc = await cacheCustomAudio(customUrl);
+        const audio = new Audio(resolvedSrc);
+        audio.loop = true;
+        audio.volume = Math.max(0.05, Math.min(1, volumePct / 100));
+        this.customAudioElement = audio;
+        await audio.play();
+        return;
+      } catch (err) {
+        console.warn('Playing custom audio failed, falling back to emergency siren loop:', err);
+      }
+    }
+
+    // Immediately play first burst of synthesizer
     this.playToneBurst(this.activeTone, this.activeVolume);
 
     // Interval repeat based on tone cadence
@@ -238,6 +325,13 @@ class AudioAlarmController {
     if (this.loopIntervalId) {
       window.clearInterval(this.loopIntervalId);
       this.loopIntervalId = null;
+    }
+    if (this.customAudioElement) {
+      try {
+        this.customAudioElement.pause();
+        this.customAudioElement.currentTime = 0;
+      } catch {}
+      this.customAudioElement = null;
     }
     if (this.currentGainNode && this.ctx) {
       try {

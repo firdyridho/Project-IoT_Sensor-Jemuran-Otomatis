@@ -20,12 +20,16 @@ import {
   Sun,
   Laptop,
   Check,
+  UploadCloud,
+  Music,
+  FileAudio,
+  RefreshCw,
 } from 'lucide-react';
 import { User, AuthSession } from '../../types/auth';
 import { AuthService } from '../../services/auth';
 import { getDefaultBackendUrl } from '../../services/storage';
 import { PasswordStrengthMeter, evaluatePassword } from './PasswordStrengthMeter';
-import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType } from '../../utils/audioAlarm';
+import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType, cacheCustomAudio } from '../../utils/audioAlarm';
 
 interface SettingsViewProps {
   user?: User;
@@ -85,6 +89,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const saved = localStorage.getItem('rintik.alarm.continuous');
     return saved !== null ? saved === 'true' : true;
   });
+  const [customAlarmUrl, setCustomAlarmUrl] = useState<string>(() => {
+    return user?.customAlarmUrl || localStorage.getItem('rintik.alarm.custom_url') || '';
+  });
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
   const [prefMsg, setPrefMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -116,8 +126,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setUsername(user.username);
       if (user.telegramChatId) setTelegramChatId(user.telegramChatId);
       if (user.alarmTone) setAlarmTone(user.alarmTone as AlarmToneType);
+      if (user.customAlarmUrl) {
+        const fullUrl = user.customAlarmUrl.startsWith('http')
+          ? user.customAlarmUrl
+          : `${backendBase}${user.customAlarmUrl}`;
+        setCustomAlarmUrl(fullUrl);
+        cacheCustomAudio(fullUrl).catch(() => {});
+      }
     }
-  }, [user]);
+  }, [user, backendBase]);
 
   // ---------------------------------------------------------------------------
   // 1. Profile Update Handler (PUT /api/user/profile)
@@ -330,18 +347,100 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   };
 
   // ---------------------------------------------------------------------------
-  // 4. Alarm Preferences Handler
+  // 4. Alarm Preferences & Custom Audio Upload Handler (REQ-FE-13)
   // ---------------------------------------------------------------------------
+  const handleUploadCustomAudio = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+    setPrefMsg(null);
+
+    // 1. Client-side Size Validation (Max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      setUploadError('Ukuran berkas audio melebihi batas maksimal 5 MB.');
+      return;
+    }
+
+    // 2. Client-side Format Validation
+    const allowedExts = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.webm'];
+    const hasValidExt = allowedExts.some((ext) => file.name.toLowerCase().endsWith(ext));
+    if (!hasValidExt) {
+      setUploadError('Format tidak didukung. Harap gunakan format: .mp3, .wav, .ogg, .m4a, .aac, atau .webm');
+      return;
+    }
+
+    setIsUploadingAudio(true);
+    setUploadProgress(25);
+
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      setUploadProgress(60);
+      const res = await fetch(`${backendBase}/api/user/custom-alarm`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mengunggah berkas audio');
+      }
+
+      setUploadProgress(85);
+      const webPath = data.customAlarmUrl || '';
+      const fullUrl = webPath.startsWith('http') ? webPath : `${backendBase}${webPath}`;
+
+      setCustomAlarmUrl(fullUrl);
+      setAlarmTone('custom');
+      localStorage.setItem('rintik.alarm.tone', 'custom');
+      localStorage.setItem('rintik.alarm.custom_url', fullUrl);
+
+      // Pre-cache to Cache Storage for offline resilience during storms (REQ-FE-13)
+      await cacheCustomAudio(fullUrl);
+
+      if (user && onUpdateUser) {
+        onUpdateUser({
+          ...user,
+          alarmTone: 'custom',
+          customAlarmUrl: webPath,
+        });
+      }
+
+      setUploadProgress(100);
+      setPrefMsg({
+        type: 'success',
+        text: `Berkas audio "${file.name}" berhasil diunggah dan disimpan offline sebagai nada dering aktif!`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal mengunggah berkas audio';
+      setUploadError(msg);
+    } finally {
+      setIsUploadingAudio(false);
+      setTimeout(() => setUploadProgress(null), 1200);
+      if (e.target) e.target.value = '';
+    }
+  };
+
   const handleTogglePreview = (tone: AlarmToneType) => {
     if (isPreviewPlaying) {
       AudioAlarmService.stopPreview();
       setIsPreviewPlaying(false);
     } else {
       setIsPreviewPlaying(true);
-      AudioAlarmService.previewTone(tone, alarmVolume);
-      window.setTimeout(() => {
-        setIsPreviewPlaying(false);
-      }, 1500);
+      const targetUrl = tone === 'custom' ? customAlarmUrl : undefined;
+      AudioAlarmService.previewTone(tone, alarmVolume, targetUrl);
+      window.setTimeout(
+        () => {
+          setIsPreviewPlaying(false);
+        },
+        tone === 'custom' ? 4000 : 1500
+      );
     }
   };
 
@@ -375,11 +474,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         body: JSON.stringify({
           alarmTone: alarmTone,
           theme: theme,
+          customAlarmUrl: customAlarmUrl,
         }),
       });
 
       if (user && onUpdateUser) {
-        onUpdateUser({ ...user, alarmTone: alarmTone, theme: theme });
+        onUpdateUser({
+          ...user,
+          alarmTone: alarmTone,
+          theme: theme,
+          customAlarmUrl: customAlarmUrl,
+        });
       }
 
       setPrefMsg({ type: 'success', text: 'Preferensi alarm & tampilan berhasil disimpan!' });
@@ -850,26 +955,106 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <p className="text-xs text-slate-400 leading-relaxed mb-3">
                           {tone.description}
                         </p>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTogglePreview(tone.id);
-                          }}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700/80 hover:bg-slate-600 text-slate-200 inline-flex items-center gap-1.5 transition-all"
-                        >
-                          {isPreviewPlaying && alarmTone === tone.id ? (
-                            <>
-                              <Square className="w-3 h-3 text-red-400 fill-red-400" />
-                              <span>Hentikan</span>
-                            </>
-                          ) : (
-                            <>
-                              <Play className="w-3 h-3 text-cyan-400 fill-cyan-400" />
-                              <span>Dengarkan Bunyi</span>
-                            </>
+
+                        {/* Tone Preview Button */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={tone.id === 'custom' && !customAlarmUrl}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePreview(tone.id);
+                            }}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700/80 hover:bg-slate-600 text-slate-200 inline-flex items-center gap-1.5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            {isPreviewPlaying && alarmTone === tone.id ? (
+                              <>
+                                <Square className="w-3 h-3 text-red-400 fill-red-400" />
+                                <span>Hentikan</span>
+                              </>
+                            ) : (
+                              <>
+                                <Play className="w-3 h-3 text-cyan-400 fill-cyan-400" />
+                                <span>Dengarkan Bunyi</span>
+                              </>
+                            )}
+                          </button>
+
+                          {tone.id === 'custom' && customAlarmUrl && (
+                            <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 shrink-0" />
+                              <span>Tersimpan</span>
+                            </span>
                           )}
-                        </button>
+                        </div>
+
+                        {/* Dedicated Upload Area for Custom Tone (REQ-FE-13) */}
+                        {tone.id === 'custom' && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="mt-3.5 pt-3 border-t border-slate-700/80 space-y-2.5"
+                          >
+                            {uploadError && (
+                              <div className="p-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{uploadError}</span>
+                              </div>
+                            )}
+
+                            {customAlarmUrl && (
+                              <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-700 flex items-center justify-between text-xs">
+                                <div className="flex items-center gap-2 truncate pr-2">
+                                  <Music className="w-4 h-4 text-cyan-400 shrink-0" />
+                                  <span className="text-slate-300 font-mono truncate text-[11px]">
+                                    {customAlarmUrl.split('/').pop() || 'custom_alarm_audio'}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-bold shrink-0">
+                                  Offline Ready
+                                </span>
+                              </div>
+                            )}
+
+                            <label className="block cursor-pointer">
+                              <input
+                                type="file"
+                                accept=".mp3,.wav,.ogg,.m4a,.aac,.webm,audio/*"
+                                onChange={handleUploadCustomAudio}
+                                disabled={isUploadingAudio}
+                                className="hidden"
+                              />
+                              <div className="px-3.5 py-2.5 rounded-xl border border-dashed border-cyan-500/50 hover:border-cyan-400 bg-cyan-950/20 hover:bg-cyan-950/30 text-center transition-all flex items-center justify-center gap-2 text-xs font-semibold text-cyan-300">
+                                {isUploadingAudio ? (
+                                  <>
+                                    <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
+                                    <span>Mengunggah ({uploadProgress ?? 0}%)...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UploadCloud className="w-4 h-4 text-cyan-400" />
+                                    <span>
+                                      {customAlarmUrl ? 'Ganti Berkas Audio' : 'Unggah Audio Kustom (Maks. 5MB)'}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </label>
+
+                            {uploadProgress !== null && (
+                              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                                <div
+                                  className="bg-gradient-to-r from-cyan-500 to-indigo-500 h-1.5 transition-all duration-300"
+                                  style={{ width: `${uploadProgress}%` }}
+                                />
+                              </div>
+                            )}
+
+                            <span className="text-[10px] text-slate-400 leading-tight block">
+                              Mendukung .mp3, .wav, .ogg, .m4a. Disimpan di VPS &amp; dicache otomatis ke
+                              peramban agar siap berbunyi meski offline saat badai.
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

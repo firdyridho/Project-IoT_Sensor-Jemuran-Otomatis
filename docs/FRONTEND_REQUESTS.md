@@ -40,124 +40,34 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-13: Antarmuka Unggah Nada Dering Alarm Kustom (Custom Audio Upload) & Caching Audio Offline**
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
+
+---
+
+## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-13: Antarmuka Unggah Nada Dering Alarm Kustom (Custom Audio Upload) & Caching Audio Offline**
   * Tanggal Diminta: 2026-10-14
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Endpoint Backend yang Tersedia:
-    * `POST /api/user/custom-alarm` (Multipart `audio`, max 5MB, format `.mp3`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.webm`)
-    * `PUT /api/user/profile` (Mendukung `customAlarmUrl: string` dan `alarmTone: "custom"`)
-    * `GET /uploads/tones/:filename` (Static file serving dari filesystem VPS dengan HTTP cache & byte-range streaming)
-  * Alasan Arsitektur Penyimpanan:
-    * **Disimpan di Filesystem VPS (`uploads/tones/`)**, BUKAN di database BLOB. Hal ini sesuai standar clean code & high performance untuk mencegah bloat database, fragmentasi tabel, lonjakan RAM server, dan kelambatan backup. Database hanya menyimpan URL ringkas (`user.customAlarmUrl`).
-  * Spesifikasi Tampilan & UX yang Diinginkan:
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/src/utils/audioAlarm.ts` (opsi tone 'custom', utility `cacheCustomAudio` dengan Web Cache Storage API `rintik-custom-tones-v1`, pemutaran looping via `HTMLAudioElement`, dan graceful fallback ke `emergency_siren`)
+    * `frontend/src/components/Settings/SettingsView.tsx` (dropzone upload audio interaktif, validasi client-side file audio max 5MB, upload progress indicator, preview playback tombol play/stop, dan integrasi dengan `POST /api/user/custom-alarm` serta `PUT /api/user/profile`)
+    * `frontend/src/App.tsx` (resolusi `customUrl` dari `localStorage` atau `session.user.customAlarmUrl` untuk pemutaran audio alarm persisten saat sensor hujan mendeteksi kebasahan)
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
     1. **Tab Preferensi Pengaturan (`SettingsView.tsx`)**:
-       * Tambahkan pilihan nada dering baru: *"Nada Dering Kustom (Unggah Sendiri)"* (`value: "custom"`).
-       * Tombol / Area Dropzone *"Unggah Audio (.mp3, .wav, .ogg, max 5MB)"*.
-       * Validasi ukuran file di sisi client (maksimal 5MB) sebelum request dikirim.
-       * Indikator progress/loading unggah yang estetik.
-       * Pemutar audio preview instan (Play/Pause) untuk menguji nada dering kustom yang telah diunggah.
-    2. **Pemutaran Alarm Persisten (`audioAlarm.ts` & `PersistentRainAlarmModal.tsx`)**:
-       * Jika user memilih nada kustom, putar file audio dari `customAlarmUrl` secara berulang (*looping = true*) saat alarm hujan terpicu.
-       * **Offline Resilience**: Simpan buffer audio kustom ke IndexedDB / Cache Storage agar alarm tetap berbunyi keras meski koneksi internet terputus saat badai hujan deras.
+       * Menambahkan opsi nada dering kustom: *"Nada Dering Kustom (Unggah Sendiri)"* (`id: "custom"`).
+       * Menyediakan area Dropzone dan tombol interaktif *"Pilih Berkas Audio"* yang mendukung format audio `.mp3`, `.wav`, `.ogg`, `.m4a`, `.aac`, `.webm`.
+       * Validasi ketat di sisi klien: membatasi ukuran file maksimal 5MB dan memverifikasi MIME type audio sebelum mengirim ke server.
+       * Indikator progres upload animasi yang halus dengan feedback visual saat berhasil/gagal.
+       * Kontrol audio preview interaktif (Play/Pause) untuk menguji file audio kustom yang sedang aktif.
+       * Kartu status audio kustom aktif dengan badge "Offline Ready" untuk menegaskan ketersediaan berkas saat offline.
+    2. **Resiliensi Audio Offline (Offline Resilience)**:
+       * Menyimpan file audio kustom ke dalam Browser Cache Storage (`caches.open('rintik-custom-tones-v1')`). Jika pengguna kehilangan koneksi internet saat badai petir atau hujan deras, alarm tetap dapat berbunyi berulang kali menggunakan blob audio yang tercache.
+    3. **Integrasi Loop Alarm Persisten (`App.tsx` & `audioAlarm.ts`)**:
+       * Saat sensor mendeteksi hujan atau tombol darurat diaktifkan, loop audio persisten secara otomatis memutar audio kustom yang tersimpan di server/cache lokal. Jika terjadi galat pemutaran (misal berkas rusak), sistem otomatis fallback ke synth alarm darurat (`emergency_siren`).
   * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md)
-  * Status: Siap Dikerjakan oleh Frontend
-
----
-
-* [x] **REQ-FE-07: Peningkatan Responsivitas Mobile (Mobile-First Layout) pada Header Dashboard, Navigasi Tab, dan Komponen Fitur**
-  * Tanggal Diminta: 2026-10-13
-  * Tanggal Selesai: 2026-10-14
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Diselesaikan Oleh: Frontend Developer
-  * Komponen & Berkas Terkait:
-    * `frontend/src/components/Layout/Header.tsx`
-    * `frontend/src/components/Dashboard/TelemetryGrid.tsx`
-    * `frontend/src/components/Layout/BottomNav.tsx`
-    * `frontend/src/App.tsx`
-  * Spesifikasi Desain & Tampilan yang Terpenuhi:
-    1. **Responsive Header Layout**: Header mobile (< 640px) beralih ke 2 baris (Baris 1 untuk Logo, nama perangkat truncate `max-w-[140px] sm:max-w-none`, tema & aksi; Baris 2 untuk chip status broker online/offline & ID perangkat).
-    2. **Mobile-First Dashboard Cards**: Kartu telemetri utama beralih ke layout `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Padding kontainer utama disesuaikan: `px-3 py-3` di mobile, `px-6 py-6` di tablet/desktop.
-    3. **Navigasi Tab Mobile yang Halus**: Dock bottom navigation dengan safe area inset, target sentuh min-h-11, dan responsif.
-  * Dokumen Rujukan: [PRD.md](PRD.md) Bagian 3 (User Interface), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: [x] SELESAI
-
----
-
-* [x] **REQ-FE-08: Redesain Splash Screen agar Lebih Clean, Elegan, dan Minimalis Modern**
-  * Tanggal Diminta: 2026-10-13
-  * Tanggal Selesai: 2026-10-14
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Diselesaikan Oleh: Frontend Developer
-  * Komponen & Berkas Terkait:
-    * `frontend/src/components/Common/SplashScreen.tsx`
-  * Spesifikasi Desain & Tampilan yang Terpenuhi:
-    1. **Visual Simpel & Elegan**: Menggunakan logo resmi `/favicon.svg?v=2` dengan animasi bernapas lembut (subtle breathing pulse). Tipografi `R I N T I K` dengan font-heading dan tracking proporsional serta sub-label *"IoT Jemuran Otomatis & Presisi Cuaca"*.
-    2. **Minimalist Loading Bar**: Garis progres 2px dengan gradien cyan ke indigo (`from-cyan-400 to-indigo-500`) berjalan mulus 0% -> 100%.
-    3. **Transisi Halus**: Efek transisi *fade-out* + *scale-up* (`opacity-0 scale-105 duration-700 ease-out`).
-    4. **Dukungan Tema**: Mendukung tema Dark (`#070b14`) dan Light (`#f8fafc`) secara adaptif.
-  * Dokumen Rujukan: [PRD.md](PRD.md)
-  * Status: [x] SELESAI
-
----
-
-* [x] **REQ-FE-09: Integrasi Notifikasi Realtime PWA & Browser Push Notification (Web Push API + VAPID)**
-  * Tanggal Diminta: 2026-10-13
-  * Tanggal Selesai: 2026-10-14
-  * Diminta Oleh: Backend Engineer
-  * Diselesaikan Oleh: Frontend Developer
-  * Komponen & Berkas Terkait:
-    * `frontend/public/sw.js` (event listener `push` dan `notificationclick`)
-    * `frontend/src/services/webpush.ts` (layanan `WebPushService` pendaftaran PushManager & API backend)
-    * `frontend/src/components/Perangkat/DeviceView.tsx` (kartu saklar izin & trigger push uji coba)
-    * `frontend/src/components/Layout/Header.tsx` & `frontend/src/App.tsx` (lonceng notifikasi & aktivasi langsung)
-  * Spesifikasi Implementasi yang Terpenuhi:
-    1. **Tombol Aktivasi Notifikasi (User Gesture Trigger)**: Ikon lonceng di Header dan panel kendali notifikasi di tab Perangkat menyediakan pemicu eksplisit tanpa memicu popup browser secara agresif saat initial load.
-    2. **Permintaan Izin & Registrasi Service Worker**: Integrasi penuh Web Push API via `WebPushService.subscribe()`, mengambil VAPID Public Key dari backend (`/api/notifications/vapid-public-key`), mengonversi ke `Uint8Array`, dan mendaftarkan push subscription ke endpoint `/api/notifications/subscribe`.
-    3. **File Service Worker (`frontend/public/sw.js`)**: Dilengkapi listener event `push` dengan judul, isi pesan, badge, ikon `/favicon.svg?v=2`, getaran `[200, 100, 200]`, dan listener `notificationclick` yang memfokuskan atau membuka tab aplikasi.
-    4. **In-App Toast Fallback**: Tetap aktif menampilkan toast WebSocket saat tab terbuka aktif di latar depan.
-  * Dokumen Rujukan: [BACKEND_REQUESTS.md](BACKEND_REQUESTS.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-  * Status: [x] SELESAI
-
----
-
-* [x] **REQ-FE-10: Pembuatan Halaman / Modal Ketentuan Layanan (Terms of Service) dan Kebijakan Privasi (Privacy Policy)**
-  * Tanggal Diminta: 2026-10-13
-  * Tanggal Selesai: 2026-10-14
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Diselesaikan Oleh: Frontend Developer
-  * Komponen & Berkas Terkait:
-    * `frontend/src/components/Common/LegalModal.tsx` (modal dialog interaktif dengan tab switcher)
-    * `frontend/src/components/Legal/LegalView.tsx` (halaman mandiri untuk `/terms` dan `/privacy`)
-    * `frontend/src/components/Landing/LandingPage.tsx` (tautan footer legal & modal trigger)
-    * `frontend/src/components/Auth/AuthPage.tsx` (klausul persetujuan pendaftaran & modal trigger)
-    * `frontend/src/App.tsx` (rute `/terms`, `/privacy`, dan pendaftaran ke `isValidAppRoute`)
-  * Spesifikasi Desain & Tampilan yang Terpenuhi:
-    1. **Format Akses & Navigasi**: Dapat diakses sebagai rute mandiri (`/terms` dan `/privacy`) serta modal dialog dengan tab switcher antara *"Ketentuan Layanan"* dan *"Kebijakan Privasi"*. Didukung tombol kembali ke landing/dashboard dan cetak dokumen.
-    2. **Konten Ketentuan Layanan (Terms of Service)**: Meliputi ruang lingkup telemetri ESP32 & kanopi otomatis, batasan tanggung jawab (disclaimer cuaca ekstrem), keamanan akun & ID ESP32, serta pedoman penggunaan wajar (fair use).
-    3. **Konten Kebijakan Privasi (Privacy Policy)**: Menjelaskan jenis data yang dikumpulkan (kredensial, analog sensor, RSSI, push token), tujuan pengolahan data, arsitektur multi-tenancy yang aman, dan hak pengguna (ekspor CSV & penghapusan riwayat/akun).
-    4. **Estetika Dual-Mode**: Tipografi rapi bernuansa artikel/prose dengan hierarki jelas, badge versi dokumen v1.2, serta adaptasi tema gelap/terang konsisten.
-  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: [x] SELESAI
-
----
-
-* [x] **REQ-FE-11: Implementasi Skeleton Loading (Shimmer Animation) untuk Status Loading Data (Cuaca, Telemetri, Grafik, & Riwayat)**
-  * Tanggal Diminta: 2026-10-13
-  * Tanggal Selesai: 2026-10-14
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Diselesaikan Oleh: Frontend Developer
-  * Komponen & Berkas Terkait:
-    * `frontend/src/components/Common/Skeleton.tsx` (utilitas Skeleton, SkeletonQuickWeatherCard, SkeletonWeatherView, SkeletonTable, SkeletonChart, SkeletonDeviceCard)
-    * `frontend/src/index.css` (animasi `@keyframes shimmer` dan utilitas `.animate-shimmer`)
-    * `frontend/src/components/Dashboard/QuickWeatherCard.tsx`
-    * `frontend/src/components/Cuaca/WeatherView.tsx`
-    * `frontend/src/components/Grafik/RealtimeChart.tsx`
-    * `frontend/src/components/Riwayat/AIAccuracyView.tsx`
-  * Spesifikasi Desain & Tampilan yang Terpenuhi:
-    1. **Komponen Reusable Skeleton**: Menyediakan efek kilau animasi shimmer halus (`animate-shimmer`) berbasis gradien linier CSS, mendukung tema Dark (`bg-slate-800/80` ke `bg-slate-700/50`) dan Light (`bg-slate-200/80` ke `bg-white/60`) dengan sudut membulat elegan (`rounded-xl` / `rounded-lg`).
-    2. **Pencegahan Cumulative Layout Shift (Zero CLS)**: Struktur dan rasio tinggi/lebar skeleton identik dengan komponen aslinya (kartu cuaca, grafik kurva, baris tabel, dan analitik metrik), menjaga stabilitas visual tanpa lonjakan layout.
-    3. **Transisi Konten Halus**: Penggantian skeleton ke konten nyata berjalan mulus dengan animasi fade-in opasitas.
-  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
   * Status: [x] SELESAI
 
 ---
@@ -191,7 +101,103 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ---
 
-## Riwayat Permintaan Selesai (Archive)
+* [x] **REQ-FE-11: Implementasi Skeleton Loading (Shimmer Animation) untuk Status Loading Data (Cuaca, Telemetri, Grafik, & Riwayat)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Common/Skeleton.tsx` (utilitas Skeleton, SkeletonQuickWeatherCard, SkeletonWeatherView, SkeletonTable, SkeletonChart, SkeletonDeviceCard)
+    * `frontend/src/index.css` (animasi `@keyframes shimmer` dan utilitas `.animate-shimmer`)
+    * `frontend/src/components/Dashboard/QuickWeatherCard.tsx`
+    * `frontend/src/components/Cuaca/WeatherView.tsx`
+    * `frontend/src/components/Grafik/RealtimeChart.tsx`
+    * `frontend/src/components/Riwayat/AIAccuracyView.tsx`
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Komponen Reusable Skeleton**: Menyediakan efek kilau animasi shimmer halus (`animate-shimmer`) berbasis gradien linier CSS, mendukung tema Dark (`bg-slate-800/80` ke `bg-slate-700/50`) dan Light (`bg-slate-200/80` ke `bg-white/60`) dengan sudut membulat elegan (`rounded-xl` / `rounded-lg`).
+    2. **Pencegahan Cumulative Layout Shift (Zero CLS)**: Struktur dan rasio tinggi/lebar skeleton identik dengan komponen aslinya (kartu cuaca, grafik kurva, baris tabel, dan analitik metrik), menjaga stabilitas visual tanpa lonjakan layout.
+    3. **Transisi Konten Halus**: Penggantian skeleton ke konten nyata berjalan mulus dengan animasi fade-in opasitas.
+  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: [x] SELESAI
+
+---
+
+* [x] **REQ-FE-10: Pembuatan Halaman / Modal Ketentuan Layanan (Terms of Service) dan Kebijakan Privasi (Privacy Policy)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Common/LegalModal.tsx` (modal dialog interaktif dengan tab switcher)
+    * `frontend/src/components/Legal/LegalView.tsx` (halaman mandiri untuk `/terms` dan `/privacy`)
+    * `frontend/src/components/Landing/LandingPage.tsx` (tautan footer legal & modal trigger)
+    * `frontend/src/components/Auth/AuthPage.tsx` (klausul persetujuan pendaftaran & modal trigger)
+    * `frontend/src/App.tsx` (rute `/terms`, `/privacy`, dan pendaftaran ke `isValidAppRoute`)
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Format Akses & Navigasi**: Dapat diakses sebagai rute mandiri (`/terms` dan `/privacy`) serta modal dialog dengan tab switcher antara *"Ketentuan Layanan"* dan *"Kebijakan Privasi"*. Didukung tombol kembali ke landing/dashboard dan cetak dokumen.
+    2. **Konten Ketentuan Layanan (Terms of Service)**: Meliputi ruang lingkup telemetri ESP32 & kanopi otomatis, batasan tanggung jawab (disclaimer cuaca ekstrem), keamanan akun & ID ESP32, serta pedoman penggunaan wajar (fair use).
+    3. **Konten Kebijakan Privasi (Privacy Policy)**: Menjelaskan jenis data yang dikumpulkan (kredensial, analog sensor, RSSI, push token), tujuan pengolahan data, arsitektur multi-tenancy yang aman, dan hak pengguna (ekspor CSV & penghapusan riwayat/akun).
+    4. **Estetika Dual-Mode**: Tipografi rapi bernuansa artikel/prose dengan hierarki jelas, badge versi dokumen v1.2, serta adaptasi tema gelap/terang konsisten.
+  * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: [x] SELESAI
+
+---
+
+* [x] **REQ-FE-09: Integrasi Notifikasi Realtime PWA & Browser Push Notification (Web Push API + VAPID)**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/public/sw.js` (event listener `push` dan `notificationclick`)
+    * `frontend/src/services/webpush.ts` (layanan `WebPushService` pendaftaran PushManager & API backend)
+    * `frontend/src/components/Perangkat/DeviceView.tsx` (kartu saklar izin & trigger push uji coba)
+    * `frontend/src/components/Layout/Header.tsx` & `frontend/src/App.tsx` (lonceng notifikasi & aktivasi langsung)
+  * Spesifikasi Implementasi yang Terpenuhi:
+    1. **Tombol Aktivasi Notifikasi (User Gesture Trigger)**: Ikon lonceng di Header dan panel kendali notifikasi di tab Perangkat menyediakan pemicu eksplisit tanpa memicu popup browser secara agresif saat initial load.
+    2. **Permintaan Izin & Registrasi Service Worker**: Integrasi penuh Web Push API via `WebPushService.subscribe()`, mengambil VAPID Public Key dari backend (`/api/notifications/vapid-public-key`), mengonversi ke `Uint8Array`, dan mendaftarkan push subscription ke endpoint `/api/notifications/subscribe`.
+    3. **File Service Worker (`frontend/public/sw.js`)**: Dilengkapi listener event `push` dengan judul, isi pesan, badge, ikon `/favicon.svg?v=2`, getaran `[200, 100, 200]`, dan listener `notificationclick` yang memfokuskan atau membuka tab aplikasi.
+    4. **In-App Toast Fallback**: Tetap aktif menampilkan toast WebSocket saat tab terbuka aktif di latar depan.
+  * Dokumen Rujukan: [BACKEND_REQUESTS.md](BACKEND_REQUESTS.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+  * Status: [x] SELESAI
+
+---
+
+* [x] **REQ-FE-08: Redesain Splash Screen agar Lebih Clean, Elegan, dan Minimalis Modern**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Common/SplashScreen.tsx`
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Visual Simpel & Elegan**: Menggunakan logo resmi `/favicon.svg?v=2` dengan animasi bernapas lembut (subtle breathing pulse). Tipografi `R I N T I K` dengan font-heading dan tracking proporsional serta sub-label *"IoT Jemuran Otomatis & Presisi Cuaca"*.
+    2. **Minimalist Loading Bar**: Garis progres 2px dengan gradien cyan ke indigo (`from-cyan-400 to-indigo-500`) berjalan mulus 0% -> 100%.
+    3. **Transisi Halus**: Efek transisi *fade-out* + *scale-up* (`opacity-0 scale-105 duration-700 ease-out`).
+    4. **Dukungan Tema**: Mendukung tema Dark (`#070b14`) dan Light (`#f8fafc`) secara adaptif.
+  * Dokumen Rujukan: [PRD.md](PRD.md)
+  * Status: [x] SELESAI
+
+---
+
+* [x] **REQ-FE-07: Peningkatan Responsivitas Mobile (Mobile-First Layout) pada Header Dashboard, Navigasi Tab, dan Komponen Fitur**
+  * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Layout/Header.tsx`
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx`
+    * `frontend/src/components/Layout/BottomNav.tsx`
+    * `frontend/src/App.tsx`
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Responsive Header Layout**: Header mobile (< 640px) beralih ke 2 baris (Baris 1 untuk Logo, nama perangkat truncate `max-w-[140px] sm:max-w-none`, tema & aksi; Baris 2 untuk chip status broker online/offline & ID perangkat).
+    2. **Mobile-First Dashboard Cards**: Kartu telemetri utama beralih ke layout `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Padding kontainer utama disesuaikan: `px-3 py-3` di mobile, `px-6 py-6` di tablet/desktop.
+    3. **Navigasi Tab Mobile yang Halus**: Dock bottom navigation dengan safe area inset, target sentuh min-h-11, dan responsif.
+  * Dokumen Rujukan: [PRD.md](PRD.md) Bagian 3 (User Interface), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: [x] SELESAI
+
+---
 
 * [x] **REQ-FE-06: Perbaikan Logika Status Potensi Hujan BMKG (Sinkronisasi Badge Hujan vs Ilustrasi & Deskripsi Cuaca)**
   * Tanggal Diminta: 2026-10-13

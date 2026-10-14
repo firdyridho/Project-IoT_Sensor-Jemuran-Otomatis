@@ -397,7 +397,12 @@ export const App: React.FC = () => {
       if (isContinuous) {
         const tone = (localStorage.getItem('rintik.alarm.tone') as AlarmToneType) || 'emergency_siren';
         const vol = parseInt(localStorage.getItem('rintik.alarm.volume') || '80', 10);
-        AudioAlarmService.startPersistentAlarm(tone, vol);
+        const customUrl =
+          localStorage.getItem('rintik.alarm.custom_url') ||
+          (session?.user?.customAlarmUrl
+            ? `${settings.backendUrl || ''}${session.user.customAlarmUrl}`
+            : undefined);
+        AudioAlarmService.startPersistentAlarm(tone, vol, customUrl);
         setIsPersistentAlarmActive(true);
       }
     }
@@ -444,7 +449,12 @@ export const App: React.FC = () => {
       if (isContinuous) {
         const tone = (localStorage.getItem('rintik.alarm.tone') as AlarmToneType) || 'emergency_siren';
         const vol = parseInt(localStorage.getItem('rintik.alarm.volume') || '80', 10);
-        AudioAlarmService.startPersistentAlarm(tone, vol);
+        const customUrl =
+          localStorage.getItem('rintik.alarm.custom_url') ||
+          (session?.user?.customAlarmUrl
+            ? `${settings.backendUrl || ''}${session.user.customAlarmUrl}`
+            : undefined);
+        AudioAlarmService.startPersistentAlarm(tone, vol, customUrl);
         setIsPersistentAlarmActive(true);
       }
       Notifications.addToast({
