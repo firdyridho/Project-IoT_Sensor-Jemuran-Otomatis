@@ -6,29 +6,29 @@
 
 // ================= 1. KONFIGURASI WIFI & MQTT =================
 // Kredensial WiFi
-const char* ssid = "UNTIRTA";
+const char* ssid     = "UNTIRTA";
 const char* password = "untirtajawara";
 
-// Broker MQTT Private VPS (Tencent Cloud Singapore - Sangat Stabil & Rendah Latensi)
+// Broker MQTT Private VPS (Tencent Cloud Singapore)
 const char* mqtt_server = "43.133.136.149";
-const int mqtt_port = 1883;
+const int mqtt_port     = 1883;
 
-// Device ID sesuai dengan yang didaftarkan di form Web
+// Device ID
 const char* device_id = "hs-24e1796dc9a1"; 
 
 // Topik MQTT Komunikasi Realtime
-String topic_publish       = String(device_id) + "/data";              // Format data custom ESP32
-String topic_telemetry_std = "hujansensor/" + String(device_id) + "/telemetry"; // Format standar sistem
-String topic_state_std     = "hujansensor/" + String(device_id) + "/state";     // Status online / offline (LWT)
-String topic_subscribe     = String(device_id) + "/control";           // Terima perintah dari tombol Web
-String topic_cmd_std       = "hujansensor/" + String(device_id) + "/cmd";       // Perintah standar motor
+String topic_publish       = String(device_id) + "/data";    
+String topic_telemetry_std = "hujansensor/" + String(device_id) + "/telemetry"; 
+String topic_state_std     = "hujansensor/" + String(device_id) + "/state";     
+String topic_subscribe     = String(device_id) + "/control";   
+String topic_cmd_std       = "hujansensor/" + String(device_id) + "/cmd";       
 
 // ================= 2. KONFIGURASI HARDWARE =================
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
-// Pin Sensor Analog (ESP32 ADC1: aman digunakan bersama WiFi)
+// Pin Sensor Analog (ESP32 ADC1)
 #define PIN_HUJAN 33
 #define PIN_LDR   34
 
@@ -36,11 +36,23 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 const int stepPin = 18;
 const int dirPin  = 19;
 
+// Pin Limit Switch Luar (COM ke GND, NO ke GPIO 25)
+#define PIN_LIMIT_LUAR 25
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 // Status Posisi Jemuran (false = Di Luar/Jemur, true = Di Dalam/Teduh)
 bool jemuranDiDalam = false;
+
+// Batas Ambang ADC dengan Hysteresis (Mencegah motor bolak-balik karena fluktuasi air)
+#define AMBANG_HUJAN_MASUK    2300 // Jika ADC < 2300, terdeteksi air hujan -> tarik jemuran masuk
+#define AMBANG_KERING_KELUAR  3000 // Jika ADC > 3000, sensor benar-benar kering
+
+// Timer Debounce Kestabilan Kering (dalam milidetik)
+// Sensor harus kering terus-menerus selama 20 detik sebelum motor boleh mendorong jemuran keluar
+const unsigned long WAKTU_TUNGGU_KERING_MS = 20000;
+unsigned long waktuMulaiKering = 0;
 
 // ================= 3. FUNGSI KONTROL MOTOR & OLED =================
 void updateOLED(String hujan, String cahaya, String posisi, bool warningMendung) {
@@ -76,11 +88,19 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     // Putar ke arah jemuran masuk (LOW)
     digitalWrite(dirPin, LOW);
-    for (int i = 0; i < 800; i++) {
+    
+    // Bergerak dengan hitungan langkah sampai mentok ke pembatas dalam
+    for (int i = 0; i < 3000; i++) {
       digitalWrite(stepPin, HIGH);
       delayMicroseconds(1000);
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
+
+      // PENTING: Panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      if (i % 50 == 0) {
+        client.loop();
+      }
+      yield();
     }
 
     jemuranDiDalam = true;
@@ -92,11 +112,25 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     // Putar ke arah jemuran keluar (HIGH)
     digitalWrite(dirPin, HIGH);
-    for (int i = 0; i < 800; i++) {
+    
+    // Beri batas langkah maksimal (akan berhenti otomatis saat menyentuh limit switch)
+    for (int i = 0; i < 6000; i++) {
+      // Cek limit switch di ujung luar: jika tersentuh tuasnya, langsung rem
+      if (digitalRead(PIN_LIMIT_LUAR) == LOW) {
+        Serial.println("Limit switch luar tersentuh! Posisi jemur tercapai.");
+        break;
+      }
+
       digitalWrite(stepPin, HIGH);
       delayMicroseconds(1000);
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
+
+      // PENTING: Panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      if (i % 50 == 0) {
+        client.loop();
+      }
+      yield();
     }
 
     jemuranDiDalam = false;
@@ -136,8 +170,6 @@ void reconnectMQTT() {
     Serial.print("Menghubungkan ke MQTT Broker VPS (" + String(mqtt_server) + ")...");
     String clientId = "ESP32Client-" + String(device_id) + "-" + String(random(1000, 9999));
     
-    // Konfigurasi LWT (Last Will and Testament)
-    // Jika ESP32 mati/terputus, broker otomatis mengabari Web bahwa status 'offline' secara instan
     String willPayload = "{\"v\":1,\"deviceId\":\"" + String(device_id) + "\",\"status\":\"offline\"}";
     const char* willTopic = topic_state_std.c_str();
     int willQos = 1;
@@ -146,11 +178,11 @@ void reconnectMQTT() {
     if (client.connect(clientId.c_str(), willTopic, willQos, willRetain, willPayload.c_str())) {
       Serial.println(" Terhubung!");
 
-      // 1. Publikasikan status bahwa perangkat sekarang resmi ONLINE (Retained)
+      // 1. Publikasikan status ONLINE (Retained)
       String onlinePayload = "{\"v\":1,\"deviceId\":\"" + String(device_id) + "\",\"status\":\"online\"}";
       client.publish(topic_state_std.c_str(), onlinePayload.c_str(), true);
 
-      // 2. Berlangganan topik perintah kontrol dari Web
+      // 2. Berlangganan topik kontrol Web
       client.subscribe(topic_subscribe.c_str());
       client.subscribe(topic_cmd_std.c_str());
       Serial.println("Subscribe ke: " + topic_subscribe + " & " + topic_cmd_std);
@@ -170,7 +202,10 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
-  // Inisialisasi Layar OLED (I2C SDA=21, SCL=22)
+  // Setup Pin Limit Switch
+  pinMode(PIN_LIMIT_LUAR, INPUT_PULLUP);
+
+  // Inisialisasi Layar OLED
   Wire.begin(21, 22);
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
     Serial.println("OLED SSD1306 gagal diinisialisasi");
@@ -198,7 +233,7 @@ void setup() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(mqttCallback);
   client.setBufferSize(512);
-  client.setKeepAlive(5); // Keepalive 5 detik agar deteksi LWT offline cepat responsif
+  client.setKeepAlive(15);
 }
 
 void loop() {
@@ -219,21 +254,40 @@ void loop() {
     lastMsg = millis();
 
     int adcHujan = analogRead(PIN_HUJAN);
-    int adcLdr = analogRead(PIN_LDR);
+    int adcLdr   = analogRead(PIN_LDR);
 
-    // Kalibrasi logika deteksi hujan dan mendung
-    bool isHujan = (adcHujan < 2500);
+    // Evaluasi logika dengan Hysteresis (mencegah osilasi bolak-balik motor)
+    bool isHujan   = (adcHujan < AMBANG_HUJAN_MASUK);
+    bool isKering  = (adcHujan > AMBANG_KERING_KELUAR);
     bool isMendung = (adcLdr > 2500);
 
-    // 1. LOGIKA OTOMATIS: Tarik jemuran masuk saat hujan mulai turun
-    if (isHujan && !jemuranDiDalam) {
-      gerakkanJemuran(true, "Auto Hujan");
+    // 1. LOGIKA OTOMATIS CERDAS DENGAN TIMER DEBOUNCE
+    if (isHujan) {
+      waktuMulaiKering = 0; // Reset timer kering jika masih terdeteksi air hujan
+      if (!jemuranDiDalam) {
+        gerakkanJemuran(true, "Auto Hujan");
+      }
+    } 
+    else if (isKering && jemuranDiDalam) {
+      // Sensor kering: hitung kestabilan cuaca 20 detik sebelum didorong keluar
+      if (waktuMulaiKering == 0) {
+        waktuMulaiKering = millis();
+        Serial.println("Sensor kering terdeteksi. Menunggu 20 detik kestabilan cuaca sebelum keluar...");
+      } else if (millis() - waktuMulaiKering >= WAKTU_TUNGGU_KERING_MS) {
+        Serial.println("Cuaca terbukti stabil kering selama 20 detik! Mendorong jemuran keluar...");
+        gerakkanJemuran(false, "Auto Kering");
+        waktuMulaiKering = 0;
+      }
+    } 
+    else {
+      // Di zona buffer hysteresis (2300 - 3000): pertahankan posisi
+      waktuMulaiKering = 0;
     }
 
     // 2. UPDATE TAMPILAN LAYAR OLED
-    String txtHujan = isHujan ? "HUJAN!" : "Kering";
-    String txtLangit = isMendung ? "Mendung" : "Cerah";
-    String txtPosisi = jemuranDiDalam ? "Di Dalam" : "Di Luar";
+    String txtHujan   = isHujan ? "HUJAN!" : "Kering";
+    String txtLangit  = isMendung ? "Mendung" : "Cerah";
+    String txtPosisi  = jemuranDiDalam ? "Di Dalam" : "Di Luar";
     bool warningMendung = (isMendung && !jemuranDiDalam);
 
     updateOLED(txtHujan, txtLangit, txtPosisi, warningMendung);
@@ -249,7 +303,6 @@ void loop() {
     payload += "\"posisi\":\"" + String(jemuranDiDalam ? "didalam" : "diluar") + "\"";
     payload += "}";
 
-    // Publikasikan ke topik custom ESP32
     client.publish(topic_publish.c_str(), payload.c_str());
 
     // Konversi ADC hujan ke persentase basah (0-100%)
@@ -257,7 +310,7 @@ void loop() {
     if (rainPct < 0) rainPct = 0;
     if (rainPct > 100) rainPct = 100;
 
-    // Publikasikan juga ke topik standar format sistem
+    // Publikasikan ke topik standar format sistem
     String stdPayload = "{";
     stdPayload += "\"v\":1,";
     stdPayload += "\"deviceId\":\"" + String(device_id) + "\",";

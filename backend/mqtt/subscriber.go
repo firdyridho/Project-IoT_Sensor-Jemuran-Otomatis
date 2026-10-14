@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -30,18 +31,22 @@ func PublishCommand(topic string, payload string) error {
 }
 
 type MqttSubscriber struct {
-	client       mqtt.Client
-	brokerURL    string
-	telegramBot  string
-	telegramChat string
-	lastAlert    time.Time
+	client          mqtt.Client
+	brokerURL       string
+	telegramBot     string
+	telegramChat    string
+	lastAlertMu     sync.Mutex
+	deviceLastAlert map[string]time.Time
+	deviceLastWet   map[string]bool
 }
 
 func NewSubscriber(brokerURL, tgBot, tgChat string) *MqttSubscriber {
 	return &MqttSubscriber{
-		brokerURL:    brokerURL,
-		telegramBot:  tgBot,
-		telegramChat: tgChat,
+		brokerURL:       brokerURL,
+		telegramBot:     tgBot,
+		telegramChat:    tgChat,
+		deviceLastAlert: make(map[string]time.Time),
+		deviceLastWet:   make(map[string]bool),
 	}
 }
 
@@ -284,11 +289,19 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 		return
 	}
 
-	now := time.Now()
-	if now.Sub(s.lastAlert) < 10*time.Minute {
-		return // Cooldown 10 minutes
+	s.lastAlertMu.Lock()
+	if s.deviceLastAlert == nil {
+		s.deviceLastAlert = make(map[string]time.Time)
 	}
-	s.lastAlert = now
+	lastTime := s.deviceLastAlert[ev.DeviceID]
+	now := time.Now()
+	// Cooldown 1 menit per perangkat (cukup untuk mencegah spam saat hujan lebat, namun responsif untuk testing)
+	if now.Sub(lastTime) < 1*time.Minute {
+		s.lastAlertMu.Unlock()
+		return
+	}
+	s.deviceLastAlert[ev.DeviceID] = now
+	s.lastAlertMu.Unlock()
 
 	text := fmt.Sprintf("<b>[Rintik] Peringatan Hujan!</b>\nPerangkat: <code>%s</code>\nWaktu: %s WIB\n\nSensor mendeteksi air hujan. Rel motor telah mengamankan jemuran ke tempat teduh!",
 		ev.DeviceID, now.Format("15:04:05"))
@@ -424,8 +437,16 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	database.CacheLatestTelemetry(devID, ingestPayload)
 	database.PushTelemetryList(devID, ingestPayload)
 
-	// 7. Notifikasi Darurat Telegram jika hujan
-	if data.Hujan {
+	// 7. Notifikasi Darurat Telegram HANYA saat transisi dari kering ke basah (state change)
+	s.lastAlertMu.Lock()
+	if s.deviceLastWet == nil {
+		s.deviceLastWet = make(map[string]bool)
+	}
+	wasWet := s.deviceLastWet[devID]
+	s.deviceLastWet[devID] = data.Hujan
+	s.lastAlertMu.Unlock()
+
+	if data.Hujan && !wasWet {
 		ev := models.EventPayload{
 			DeviceID: devID,
 			Type:     "rain_start",

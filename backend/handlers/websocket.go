@@ -70,8 +70,8 @@ func (h *WsHub) Broadcast(msgType string, payload interface{}) {
 		return
 	}
 
-	h.mu.RLock()
-	defer h.mu.RUnlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	for conn := range h.clients {
 		err := conn.WriteMessage(websocket.TextMessage, data)
