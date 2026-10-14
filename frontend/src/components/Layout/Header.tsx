@@ -12,6 +12,7 @@ import {
   VolumeX,
   LogOut,
   Menu,
+  Settings,
 } from 'lucide-react';
 import { Perangkat } from '../../types/iot';
 import { User } from '../../types/auth';
@@ -35,6 +36,7 @@ interface HeaderProps {
   weatherCondition?: 'cerah' | 'mendung' | 'hujan' | 'badai' | 'gerimis';
   isAudioMuted?: boolean;
   onToggleAudio?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -55,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   weatherCondition = 'cerah',
   isAudioMuted = true,
   onToggleAudio,
+  onOpenSettings,
 }) => {
   // Freezed (sticky) header colors matching theme and weather
   let headerBgClass = '';
@@ -107,25 +110,25 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className={`sticky top-0 z-50 w-full border-b transition-colors duration-300 ${headerBgClass} ${borderClass}`}>
-      <div className="mx-auto max-w-6xl px-3.5 sm:px-6 h-16 flex items-center justify-between gap-2.5">
+      <div className="mx-auto max-w-6xl px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
         {/* Left: Mobile Hamburger Trigger & Brand */}
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Mobile Logo Favicon */}
           <div className="lg:hidden flex items-center gap-2 shrink-0">
             <img
               src="/favicon.svg?v=2"
               alt="Rintik Logo"
-              className="w-8 h-8 rounded-xl shadow-xs"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl shadow-xs"
             />
           </div>
 
           {/* Device Selector */}
-          <div className="relative">
+          <div className="relative min-w-0">
             {devices.length > 1 ? (
               <select
                 value={activeDevice.deviceId}
                 onChange={(e) => onSelectDevice(e.target.value)}
-                className={`border rounded-xl text-xs font-semibold px-3 py-2 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400 truncate max-w-[140px] sm:max-w-[200px] ${selectBgClass}`}
+                className={`border rounded-xl text-xs font-semibold px-2.5 sm:px-3 py-2 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-400 truncate max-w-[140px] sm:max-w-[200px] ${selectBgClass}`}
                 aria-label="Pilih perangkat"
               >
                 {devices.map((d) => (
@@ -135,8 +138,8 @@ export const Header: React.FC<HeaderProps> = ({
                 ))}
               </select>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="font-heading font-bold text-sm sm:text-base truncate max-w-[130px] sm:max-w-none">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-heading font-bold text-sm sm:text-base truncate max-w-[140px] sm:max-w-none">
                   {activeDevice.nama}
                 </span>
                 <span className="hidden sm:inline-block text-[11px] font-mono opacity-80 px-1.5 py-0.5 rounded bg-black/15 border border-white/10">
@@ -146,8 +149,8 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Status Badge */}
-          <div className="flex items-center">
+          {/* Status Badge (Desktop only, mobile moves to 2nd row bar) */}
+          <div className="hidden sm:flex items-center">
             {brokerStatus !== 'connected' ? (
               <Badge variant="bahaya" dot className="bg-red-500/15 text-red-500 border-red-500/40 font-bold">
                 <span className="hidden xs:inline">Broker </span>Terputus
@@ -285,18 +288,32 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
+          {/* Settings Button (REQ-FE-12) */}
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className={`min-h-11 min-w-11 p-2 rounded-xl border flex items-center justify-center transition-all ${buttonBgClass}`}
+              aria-label="Buka Pengaturan Akun & Sistem"
+              title="Pengaturan Akun, Kata Sandi, Telegram & Alarm"
+            >
+              <Settings className="w-4 h-4 text-cyan-300 hover:rotate-45 transition-transform" />
+            </button>
+          )}
+
           {/* User profile & Logout */}
           {user && (
             <div className="flex items-center gap-1.5 pl-1.5 border-l border-white/15">
-              <div
-                className={`hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs ${buttonBgClass}`}
-                title={`Masuk sebagai: @${user.username}`}
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className={`hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-xl border text-xs cursor-pointer hover:border-cyan-400/50 transition-all ${buttonBgClass}`}
+                title={`Masuk sebagai: @${user.username} (Klik untuk buka Pengaturan)`}
               >
                 <div className="w-5 h-5 rounded-lg bg-blue-500/30 text-cyan-300 font-bold flex items-center justify-center text-[10px] border border-blue-400/30">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <span className="font-semibold truncate max-w-[110px]">{user.name}</span>
-              </div>
+              </button>
               <button
                 onClick={onLogout}
                 className="min-h-11 min-w-11 p-2 rounded-xl text-slate-300 hover:text-red-300 hover:bg-red-500/20 border border-transparent hover:border-red-500/30 flex items-center justify-center transition-all"
@@ -308,6 +325,41 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Mobile-Only Row 2: Broker Connection Chip & Quick Action/Device Status (REQ-FE-07) */}
+      <div className="flex sm:hidden items-center justify-between px-3.5 py-1.5 border-t border-white/10 text-xs">
+        {/* Status Koneksi Broker (chip mini: ikon titik berdenyut hijau/merah + "Online/Offline") */}
+        <div className="flex items-center gap-1.5">
+          {brokerStatus !== 'connected' ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500/15 text-red-500 border border-red-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span>Broker Terputus</span>
+            </span>
+          ) : !isOnline ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-500/15 text-red-500 border border-red-500/30 animate-pulse">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+              <span>Offline</span>
+            </span>
+          ) : isRaining ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span>Hujan Terdeteksi</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Perangkat Online</span>
+            </span>
+          )}
+        </div>
+
+        {/* Right Info: Device ID badge */}
+        {activeDevice.deviceId && (
+          <span className="text-[10px] font-mono opacity-65 truncate max-w-[120px] px-1.5 py-0.5 rounded bg-black/10 border border-white/5">
+            {activeDevice.deviceId}
+          </span>
+        )}
       </div>
     </header>
   );

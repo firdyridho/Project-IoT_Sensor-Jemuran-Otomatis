@@ -308,3 +308,11 @@ header.sticky {
   animation: toastProgress 3000ms linear forwards;
   will-change: transform;
 }
+
+/* Shimmer wave animation for Skeleton loading (REQ-FE-11) */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+

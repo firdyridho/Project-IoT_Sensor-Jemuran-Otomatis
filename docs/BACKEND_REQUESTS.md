@@ -42,7 +42,37 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
+* [ ] **REQ-BE-10: Endpoint Unsubscribe Web Push Notification (`POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`)**
+  * Tanggal Diminta: 2026-10-14
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI:
+    * Komponen pengaturan perangkat (`DeviceView.tsx`) dan header memiliki tombol untuk menonaktifkan notifikasi push. Saat pengguna mencabut izin atau menonaktifkan push di UI, browser melepaskan push token lokal, namun record di tabel PostgreSQL `web_push_subscriptions` masih tersimpan sehingga worker backend masih berupaya mengirim pesan push ke endpoint tersebut (dan menghasilkan error 410 Gone / 404 dari FCM).
+  * Usulan Endpoint:
+    * `POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`
+  * Format Request Payload yang Diharapkan:
+    ```json
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/..."
+    }
+    ```
+  * Respons yang Diharapkan:
+    ```json
+    {
+      "status": "success",
+      "message": "Langganan notifikasi push berhasil dihapus"
+    }
+    ```
+  * Status: Menunggu Dikerjakan oleh Backend Engineer
+
+* [ ] **REQ-BE-11: Kolom & Endpoint Pencatatan Audit Persetujuan Ketentuan Layanan & Privasi (`terms_accepted_at`)**
+  * Tanggal Diminta: 2026-10-14
+  * Diminta Oleh: Frontend Team
+  * Latar Belakang / Kebutuhan UI:
+    * Sesuai kepatuhan dokumen legal (REQ-FE-10), pengguna yang mendaftar diwajibkan menyetujui Ketentuan Layanan & Kebijakan Privasi. Frontend telah menyediakan checkbox dan pernyataan persetujuan. Diperlukan kolom audit `terms_accepted_at` (timestamp datetime) pada tabel `users` saat registrasi atau endpoint konfirmasi.
+  * Usulan Perubahan:
+    * Tambahkan kolom `terms_accepted_at` (nullable datetime) pada model `models.User`.
+    * Di handler `POST /api/auth/register`, otomatis set `terms_accepted_at = time.Now()`.
+  * Status: Menunggu Dikerjakan oleh Backend Engineer
 
 ---
 

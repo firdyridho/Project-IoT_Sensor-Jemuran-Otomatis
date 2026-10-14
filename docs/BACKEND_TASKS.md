@@ -191,6 +191,21 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 
 ---
 
+### Fase 7: Pembersihan Web Push & Audit Legal Konsen [BACKLOG]
+
+* [ ] **BE-23: Endpoint Unsubscribe Web Push Notification (REQ-BE-10)**:
+  * **Tujuan**: Memungkinkan peramban menghapus data langganan Web Push dari tabel `web_push_subscriptions` saat pengguna menonaktifkan notifikasi di antarmuka frontend.
+  * **Endpoint**: `POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`
+  * **Payload**: `{ "endpoint": "https://fcm.googleapis.com/..." }`
+  * **Status**: Menunggu Pengerjaan oleh Backend Engineer.
+
+* [ ] **BE-24: Kolom Audit Persetujuan Ketentuan Layanan & Privasi (REQ-BE-11)**:
+  * **Tujuan**: Menyimpan bukti waktu persetujuan pengguna terhadap Ketentuan Layanan & Kebijakan Privasi Rintik (REQ-FE-10).
+  * **Implementasi**: Menambahkan field `terms_accepted_at` (nullable time.Time) pada model `models.User` yang otomatis terisi `time.Now()` saat `POST /api/auth/register`.
+  * **Status**: Menunggu Pengerjaan oleh Backend Engineer.
+
+---
+
 ## 3. Alur Serah Terima ke Frontend (Handoff)
 
 Bila Anda telah selesai membuat salah satu endpoint backend:
@@ -198,3 +213,4 @@ Bila Anda telah selesai membuat salah satu endpoint backend:
 2. Centang task di atas dari `[ ]` menjadi `[x]`.
 3. Sampaikan kepada asisten AI atau developer frontend:
    > *"Endpoint BE-19 s/d BE-22 (/api/user/settings, /api/auth/profile, /api/auth/password, DELETE /api/devices/:id/telemetry, /api/notifications/vapid-key) sudah aktif di backend. Tolong buatkan tampilan antarmuka di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md."*
+

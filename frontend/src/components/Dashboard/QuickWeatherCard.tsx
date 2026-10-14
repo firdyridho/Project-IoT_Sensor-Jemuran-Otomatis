@@ -4,6 +4,8 @@ import { Card } from '../Common/Card';
 import { BmkgResponse, ikonAman, berpotensiHujan, getCurrentBmkgSlot } from '../../types/bmkg';
 import { BmkgWeatherIcon } from '../Cuaca/WeatherView';
 
+import { SkeletonQuickWeatherCard } from '../Common/Skeleton';
+
 interface QuickWeatherCardProps {
   weatherData: BmkgResponse | null;
   isLoading: boolean;
@@ -16,12 +18,7 @@ export const QuickWeatherCard: React.FC<QuickWeatherCardProps> = ({
   onOpenWeatherTab,
 }) => {
   if (isLoading) {
-    return (
-      <Card className="animate-pulse p-4">
-        <div className="h-4 bg-garis rounded w-1/3 mb-3" />
-        <div className="h-10 bg-garis rounded w-1/2" />
-      </Card>
-    );
+    return <SkeletonQuickWeatherCard />;
   }
 
   if (!weatherData) return null;

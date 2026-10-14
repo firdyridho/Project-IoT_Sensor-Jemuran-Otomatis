@@ -28,6 +28,11 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { LandingPage } from './components/Landing/LandingPage';
 import { NotFoundView } from './components/Common/NotFoundView';
 import { SplashScreen } from './components/Common/SplashScreen';
+import { LegalView } from './components/Legal/LegalView';
+import { SettingsView } from './components/Settings/SettingsView';
+import { PersistentRainAlarmModal } from './components/Alert/PersistentRainAlarmModal';
+import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType } from './utils/audioAlarm';
+import { WebPushService } from './services/webpush';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
@@ -77,6 +82,7 @@ export const App: React.FC = () => {
     if (clean === '/cuaca') return 'cuaca';
     if (clean === '/riwayat') return 'riwayat';
     if (clean === '/perangkat') return 'perangkat';
+    if (clean === '/settings' || clean === '/pengaturan') return 'settings';
     return 'dashboard';
   };
 
@@ -91,10 +97,14 @@ export const App: React.FC = () => {
     '/cuaca',
     '/riwayat',
     '/perangkat',
+    '/settings',
+    '/pengaturan',
     '/auth',
     '/login',
     '/register',
     '/landing',
+    '/terms',
+    '/privacy',
   ].includes(normalizedPath);
 
   const handleTabChange = (tab: NavTab) => {
@@ -105,6 +115,32 @@ export const App: React.FC = () => {
     StorageService.getDevices(session?.user?.id)
   );
   const [settings, setSettings] = useState(() => StorageService.getSettings());
+  const [isPersistentAlarmActive, setIsPersistentAlarmActive] = useState(false);
+
+  // Cross-tab & Service Worker alarm dismissal synchronization (REQ-FE-12)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'DISMISS_ALARM') {
+        setIsPersistentAlarmActive(false);
+        AudioAlarmService.dismissAlarm();
+      }
+    };
+    navigator.serviceWorker?.addEventListener('message', handleSwMessage);
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'rintik.alarm.dismiss_signal') {
+        setIsPersistentAlarmActive(false);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', handleSwMessage);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
 
   // Reload devices when user switches or logs in
   useEffect(() => {
@@ -357,6 +393,13 @@ export const App: React.FC = () => {
     // Rain transition trigger alert (Kering -> Hujan)
     if (!prevWetRef.current && telemetry.wet) {
       Notifications.showRainAlert(activeDevice.nama, telemetry.pct, telemetry.raw);
+      const isContinuous = localStorage.getItem('rintik.alarm.continuous') !== 'false';
+      if (isContinuous) {
+        const tone = (localStorage.getItem('rintik.alarm.tone') as AlarmToneType) || 'emergency_siren';
+        const vol = parseInt(localStorage.getItem('rintik.alarm.volume') || '80', 10);
+        AudioAlarmService.startPersistentAlarm(tone, vol);
+        setIsPersistentAlarmActive(true);
+      }
     }
     prevWetRef.current = telemetry.wet;
   };
@@ -397,6 +440,13 @@ export const App: React.FC = () => {
     });
 
     if (ev.type === 'rain_start') {
+      const isContinuous = localStorage.getItem('rintik.alarm.continuous') !== 'false';
+      if (isContinuous) {
+        const tone = (localStorage.getItem('rintik.alarm.tone') as AlarmToneType) || 'emergency_siren';
+        const vol = parseInt(localStorage.getItem('rintik.alarm.volume') || '80', 10);
+        AudioAlarmService.startPersistentAlarm(tone, vol);
+        setIsPersistentAlarmActive(true);
+      }
       Notifications.addToast({
         id: 'toast-' + Date.now(),
         type: 'rain',
@@ -577,18 +627,34 @@ export const App: React.FC = () => {
     };
   }, [activeDevice.deviceId, activeDevice.brokerUrl, settings.backendUrl]);
 
-  // Request browser notifications
+  // Request browser notifications with Web Push VAPID API (REQ-FE-09)
   const handleRequestNotification = async () => {
-    const perm = await Notifications.requestPermission();
-    setNotifPermission(perm);
-    if (perm === 'granted') {
+    if (settings.backendUrl) {
+      const res = await WebPushService.subscribe(
+        settings.backendUrl,
+        activeDevice.deviceId,
+        session?.token
+      );
+      setNotifPermission(Notifications.getPermission());
       Notifications.addToast({
         id: 'notif-perm-' + Date.now(),
-        type: 'success',
-        title: 'Notifikasi Aktif',
-        message: 'Anda akan diberi tahu ketika hujan terdeteksi di jemuran.',
+        type: res.success ? 'success' : 'warning',
+        title: res.success ? 'Notifikasi Push Aktif' : 'Status Notifikasi',
+        message: res.message,
         timestamp: Date.now(),
       });
+    } else {
+      const perm = await Notifications.requestPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        Notifications.addToast({
+          id: 'notif-perm-' + Date.now(),
+          type: 'success',
+          title: 'Notifikasi Aktif',
+          message: 'Anda akan diberi tahu ketika hujan terdeteksi di jemuran.',
+          timestamp: Date.now(),
+        });
+      }
     }
   };
 
@@ -868,6 +934,19 @@ export const App: React.FC = () => {
     );
   }
 
+  // 1b. Dedicated Legal Documents Page (/terms & /privacy) (REQ-FE-10)
+  if (normalizedPath === '/terms' || normalizedPath === '/privacy') {
+    return (
+      <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white">
+        <ToastContainer isDashboard={false} theme={settings.tema} />
+        <LegalView
+          initialTab={normalizedPath === '/privacy' ? 'privacy' : 'terms'}
+          onBack={() => navigate(session ? '/dashboard' : '/')}
+        />
+      </div>
+    );
+  }
+
   // 2. Initial Unauthenticated Splash Screen (Auto-bypassed when logged in)
   if (!session && showSplash) {
     return <SplashScreen onComplete={handleSplashComplete} />;
@@ -973,10 +1052,11 @@ export const App: React.FC = () => {
           weatherCondition={activeCondition}
           isAudioMuted={isAudioMuted}
           onToggleAudio={handleToggleAudio}
+          onOpenSettings={() => navigate('/settings')}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
-        <main className="flex-1 pb-24 lg:pb-12 pt-4 px-3.5 sm:px-6">
+        <main className="flex-1 pb-24 lg:pb-12 pt-3 px-3 py-3 sm:px-6 sm:py-6">
           <div className="mx-auto max-w-5xl space-y-5">
             {/* 1. Dashboard Tab */}
             {activeTab === 'dashboard' && (
@@ -1175,6 +1255,26 @@ export const App: React.FC = () => {
                   theme={settings.tema}
                   onChangeTheme={handleChangeTheme}
                   onClearStorage={handleClearStorage}
+                  onOpenSettings={(tab) => navigate('/settings')}
+                />
+              </div>
+            )}
+
+            {/* 6. Settings Tab (REQ-FE-12) */}
+            {isValidAppRoute && activeTab === 'settings' && (
+              <div className="space-y-4 animate-in fade-in duration-150">
+                <SettingsView
+                  user={session?.user}
+                  onUpdateUser={(updated) => {
+                    if (session) {
+                      const newSession = { ...session, user: { ...session.user, ...updated } };
+                      setSession(newSession);
+                      AuthService.saveSession(newSession);
+                    }
+                  }}
+                  theme={settings.tema}
+                  onToggleTheme={handleToggleTheme}
+                  onClose={() => navigate('/dashboard')}
                 />
               </div>
             )}
@@ -1189,6 +1289,26 @@ export const App: React.FC = () => {
         isRaining={effectiveWet}
         theme={settings.tema}
         weatherCondition={activeCondition}
+      />
+
+      {/* Persistent Rain Alarm Modal HUD (REQ-FE-12) */}
+      <PersistentRainAlarmModal
+        isOpen={isPersistentAlarmActive}
+        onDismiss={() => {
+          setIsPersistentAlarmActive(false);
+          AudioAlarmService.dismissAlarm();
+        }}
+        deviceName={activeDevice.nama}
+        rainPercentage={effectivePct}
+        rawAdc={effectiveRaw}
+        alarmToneLabel={
+          ALARM_TONE_OPTIONS.find(
+            (t) => t.id === (localStorage.getItem('rintik.alarm.tone') || 'emergency_siren')
+          )?.label || 'Emergency Siren'
+        }
+        onOpenDashboard={() => {
+          navigate('/dashboard');
+        }}
       />
 
       {/* Custom Confirmation Modals */}

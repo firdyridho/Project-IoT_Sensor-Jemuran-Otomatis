@@ -14,6 +14,7 @@ import {
 import { Card } from '../Common/Card';
 import { Badge } from '../Common/Badge';
 import { Button } from '../Common/Button';
+import { Skeleton } from '../Common/Skeleton';
 import { BackendService } from '../../services/api';
 
 export interface AIPredictionAccuracyLog {
@@ -305,7 +306,40 @@ export const AIAccuracyView: React.FC<AIAccuracyViewProps> = ({ deviceId, backen
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-slate-300">
-              {filteredLogs.map((log) => {
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`skel-row-${i}`} className="animate-in fade-in duration-300">
+                    <td className="py-3.5 px-4">
+                      <div className="space-y-1">
+                        <Skeleton className="w-16 h-4" />
+                        <Skeleton className="w-20 h-2.5" />
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="w-16 h-4" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="w-20 h-5 rounded-full" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="space-y-1">
+                        <Skeleton className="w-24 h-3.5" />
+                        <Skeleton className="w-20 h-3.5" />
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="w-20 h-5 rounded-full" />
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <Skeleton className="w-16 h-5 rounded-full mx-auto" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <Skeleton className="w-48 max-w-full h-3.5" />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                filteredLogs.map((log) => {
                 const dateObj = new Date(log.timestamp);
                 const timeStr = `${String(dateObj.getHours()).padStart(2, '0')}:${String(
                   dateObj.getMinutes()
@@ -389,7 +423,8 @@ export const AIAccuracyView: React.FC<AIAccuracyViewProps> = ({ deviceId, backen
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>

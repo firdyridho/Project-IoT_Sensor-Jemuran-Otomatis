@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
+import { LegalModal } from '../Common/LegalModal';
+import { LegalTab } from '../Legal/LegalView';
 
 interface LandingPageProps {
   onGoToAuth: (mode: 'login' | 'register') => void;
@@ -31,6 +33,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onToggleTheme,
 }) => {
   const [previewWet, setPreviewWet] = useState(false);
+  const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
@@ -346,13 +349,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 6. Footer */}
-      <footer className="py-6 border-t border-garis text-center text-xs text-teks-sekunder px-4 space-y-2">
+      {/* 6. Footer with Terms of Service & Privacy Policy (REQ-FE-10) */}
+      <footer className="py-8 border-t border-garis text-center text-xs text-teks-sekunder px-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={() => setLegalTab('terms')}
+            className="hover:text-blue-500 transition-colors cursor-pointer"
+          >
+            Ketentuan Layanan
+          </button>
+          <span className="opacity-40">•</span>
+          <button
+            type="button"
+            onClick={() => setLegalTab('privacy')}
+            className="hover:text-blue-500 transition-colors cursor-pointer"
+          >
+            Kebijakan Privasi
+          </button>
+          <span className="opacity-40">•</span>
+          <a
+            href="https://github.com/firdyridho/Project-IoT_Sensor-Jemuran-Otomatis"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-blue-500 transition-colors"
+          >
+            GitHub Repository
+          </a>
+        </div>
         <p>© 2026 Rintik • Platform IoT Sensor Jemuran Otomatis Realtime</p>
         <p className="text-[11px] opacity-75">
           Didukung oleh Server Cloud & Data Terpadu BMKG Indonesia
         </p>
       </footer>
+
+      {/* Legal Document Modal */}
+      <LegalModal
+        isOpen={legalTab !== null}
+        initialTab={legalTab || 'terms'}
+        onClose={() => setLegalTab(null)}
+      />
     </div>
   );
 };

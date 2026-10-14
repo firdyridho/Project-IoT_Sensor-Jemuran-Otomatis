@@ -3,6 +3,7 @@ import { PembacaanHujan } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Activity, Droplets, Thermometer, Gauge, Download, FileSpreadsheet } from 'lucide-react';
 import { Button } from '../Common/Button';
+import { Skeleton } from '../Common/Skeleton';
 import { BackendService } from '../../services/api';
 
 export type ChartSeries = 'pct' | 'raw' | 'tempC' | 'hum';
@@ -255,9 +256,24 @@ export const RealtimeChart: React.FC<RealtimeChartProps> = ({
       {/* SVG Interactive Chart Canvas */}
       <div className="relative w-full overflow-hidden bg-kartu-muted/40 rounded-xl border border-garis/80 pt-2">
         {points.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-teks-sekunder text-sm">
-            <Activity className="w-8 h-8 opacity-40 mb-2 animate-pulse" />
-            <span>Menunggu titik telemetry masuk...</span>
+          <div className="h-64 sm:h-80 flex flex-col items-center justify-center p-6 text-teks-sekunder text-sm relative overflow-hidden">
+            {/* Shimmer skeleton bar wave simulation */}
+            <div className="absolute inset-0 flex items-end gap-1 px-4 pb-8 opacity-25 pointer-events-none">
+              {Array.from({ length: 24 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="flex-1 rounded-t-sm"
+                  style={{ height: `${20 + (i % 6) * 14}%` }}
+                />
+              ))}
+            </div>
+            <div className="relative z-10 flex flex-col items-center justify-center text-center space-y-2 p-4 rounded-2xl bg-kartu/85 backdrop-blur-sm border border-garis shadow-xs">
+              <Activity className="w-6 h-6 text-cyan-500 animate-pulse" />
+              <span className="font-semibold text-xs text-teks-utama">Menunggu Titik Telemetri...</span>
+              <span className="text-[11px] text-teks-sekunder max-w-xs">
+                Grafik realtime akan langsung terbentuk otomatis saat data sensor ESP32 masuk.
+              </span>
+            </div>
           </div>
         ) : (
           <svg

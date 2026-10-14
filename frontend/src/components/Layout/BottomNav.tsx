@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, LineChart, CloudSun, History, Cpu } from 'lucide-react';
 
-export type NavTab = 'dashboard' | 'grafik' | 'cuaca' | 'riwayat' | 'perangkat';
+export type NavTab = 'dashboard' | 'grafik' | 'cuaca' | 'riwayat' | 'perangkat' | 'settings';
 
 interface BottomNavProps {
   activeTab: NavTab;

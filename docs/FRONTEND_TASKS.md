@@ -139,6 +139,39 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Pembuatan komponen `BmkgWeatherIcon` di `WeatherView.tsx` dan `QuickWeatherCard.tsx` dengan fallback ikon Lucide dinamis (`Sun`, `CloudSun`, `Cloud`, `CloudRain`, `CloudLightning`, `CloudDrizzle`) ketika gambar SVG BMKG tidak termuat.
   * Implementasi helper `getCurrentBmkgSlot` untuk menyelaraskan slot cuaca BMKG secara dinamis sesuai waktu jam lokal pengguna di `WeatherView.tsx`, `QuickWeatherCard.tsx`, dan `App.tsx`.
 
+### Fase 5: Mobile-First Polish, Push Notification, Legal Terms & Skeleton Loading [SELESAI]
+
+* [x] **FE-14: Peningkatan Responsivitas Mobile (Mobile-First Layout) (REQ-FE-07)**:
+  * Layout responsif 2 baris pada Header untuk layar kecil (< 640px) dan 1 baris pada layar besar, menghindari benturan ikon dengan judul perangkat yang di-truncate secara elegan.
+  * Target sentuh tombol minimal 44x44px (`min-h-11 min-w-11`) untuk kenyamanan jari pada perangkat smartphone.
+  * Grid telemetri adaptif `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4` pada `TelemetryGrid.tsx`.
+  * Padding kontainer utama mobile diperhalus menjadi `px-3 py-3 sm:px-6 sm:py-6` di `App.tsx` agar ruang layar sempit termanfaatkan optimal tanpa overflow horizontal.
+* [x] **FE-15: Redesain Splash Screen Minimalis Modern (REQ-FE-08)**:
+  * Redesain `SplashScreen.tsx` menggunakan logo resmi `/favicon.svg?v=2` dengan animasi *breathing pulse* lembut.
+  * Tipografi `R I N T I K` berkarakter modern dengan font Outfit 900 tracking proporsional.
+  * Garis indikator loading ultra-ramping 2px bergradien cyan-indigo (`from-cyan-400 to-indigo-500`) 0% -> 100%.
+  * Transisi keluar halus *fade-out* + *scale-up* (`opacity-0 scale-105 duration-700 ease-out`) dengan adaptasi tema gelap (`#070b14`) dan terang (`#f8fafc`).
+* [x] **FE-16: Integrasi Web Push Notification VAPID & PWA Service Worker (REQ-FE-09)**:
+  * Implementasi modul service `frontend/src/services/webpush.ts` untuk mengelola izin browser, fetching VAPID Public Key dari backend, konversi `Uint8Array`, dan registrasi push subscription ke `/api/notifications/subscribe`.
+  * Penambahan listener event `push` dan `notificationclick` pada `frontend/public/sw.js` dengan vibrasi `[200, 100, 200]`, badge, dan ikon Rintik.
+  * Penambahan kartu kendali izin notifikasi dan tombol pengujian langsung (Test Push) pada tab Kelola Perangkat (`DeviceView.tsx`), serta integrasi trigger cepat pada lonceng Header.
+* [x] **FE-17: Pembuatan Halaman & Modal Ketentuan Layanan serta Kebijakan Privasi (REQ-FE-10)**:
+  * Komponen modal interaktif `LegalModal.tsx` dengan tab switcher antara Ketentuan Layanan (*Terms of Service*) dan Kebijakan Privasi (*Privacy Policy*).
+  * Halaman mandiri `LegalView.tsx` yang dapat diakses langsung melalui deep link rute `/terms` dan `/privacy`.
+  * Pendaftaran rute `/terms` dan `/privacy` ke dalam `isValidAppRoute` di `App.tsx` untuk mencegah pemicuan halaman 404.
+  * Integrasi tautan legal pada footer `LandingPage.tsx` dan klausul persetujuan pendaftaran di `AuthPage.tsx`.
+* [x] **FE-18: Implementasi Skeleton Loading Shimmer Zero-CLS (REQ-FE-11)**:
+  * Utilitas reusable `Skeleton.tsx` dengan varian siap pakai: `SkeletonQuickWeatherCard`, `SkeletonWeatherView`, `SkeletonTable`, `SkeletonChart`, dan `SkeletonDeviceCard`.
+  * Definisi keyframe `@keyframes shimmer` dan utilitas `.animate-shimmer` di `frontend/src/index.css`.
+  * Penerapan skeleton pada `QuickWeatherCard.tsx`, `WeatherView.tsx`, `RealtimeChart.tsx`, dan `AIAccuracyView.tsx` untuk mengeliminasi lonjakan tata letak (Zero Cumulative Layout Shift).
+* [x] **FE-19: Halaman Pengaturan (Settings), Keamanan Akun & Password Strength Meter, Integrasi Telegram, & Looping Alarm Hujan (REQ-FE-12)**:
+  * Pembuatan komponen `SettingsView.tsx` dengan 4 tab terpadu: Profil & Akun, Keamanan Kata Sandi, Integrasi Telegram, dan Preferensi Alarm & Tampilan.
+  * Pembuatan komponen `PasswordStrengthMeter.tsx` dengan bar warna (Merah/Kuning/Hijau) dan checklist validasi aturan ketat (min 8 karakter, kombinasi huruf & angka).
+  * Pembuatan modul synthesizer Web Audio `audioAlarm.ts` dengan 4 nada dering unik (`Emergency Siren`, `Digital Phone Ring`, `Tactical Radar Alert`, `High Pitch Chime`), preview audio, dan mekanisme looping alarm darurat persisten.
+  * Pembuatan modal HUD darurat `PersistentRainAlarmModal.tsx` dengan visual berdenyut dan tombol *"MATIKAN ALARM"* raksasa dengan sinkronisasi penutupan multi-tab via `BroadcastChannel` dan storage event.
+  * Pembaruan listener service worker `sw.js` dengan aksi notifikasi `dismiss` (Matikan Alarm) dan `open` (Buka Aplikasi).
+  * Pembersihan input Telegram dan nada dering dari kartu perangkat (`DeviceView.tsx`) agar perangkat ESP32 khusus untuk telemetri hardware.
+
 ---
 
 ## 3. Mock Data untuk Pengembangan Frontend

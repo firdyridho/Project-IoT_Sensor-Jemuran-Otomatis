@@ -21,6 +21,7 @@ import { ADM4_PRESETS, findNearestAdm4 } from '../../services/bmkg';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
 import { Badge } from '../Common/Badge';
+import { SkeletonWeatherView } from '../Common/Skeleton';
 
 // Dynamic Fallback Weather Icon Component (REQ-FE-06)
 interface BmkgWeatherIconProps {
@@ -154,6 +155,10 @@ export const WeatherView: React.FC<WeatherViewProps> = ({
       month: 'long',
     });
   };
+
+  if (isLoading && !weatherData) {
+    return <SkeletonWeatherView />;
+  }
 
   return (
     <div className="space-y-4">

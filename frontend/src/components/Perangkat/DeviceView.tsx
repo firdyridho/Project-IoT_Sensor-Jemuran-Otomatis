@@ -25,10 +25,12 @@ import {
   CheckCircle2,
   ExternalLink,
   Sparkles,
+  Settings,
 } from 'lucide-react';
 import { weatherAudio } from '../../services/weatherAudio';
 import { Notifications } from '../../services/notifications';
 import { getDefaultBackendUrl } from '../../services/storage';
+import { WebPushService } from '../../services/webpush';
 import { Perangkat } from '../../types/iot';
 import { Card } from '../Common/Card';
 import { Button } from '../Common/Button';
@@ -44,6 +46,7 @@ interface DeviceViewProps {
   theme: 'light' | 'dark' | 'system';
   onChangeTheme: (theme: 'light' | 'dark' | 'system') => void;
   onClearStorage: () => void;
+  onOpenSettings?: (tab?: 'telegram' | 'preferences') => void;
 }
 
 export const DeviceView: React.FC<DeviceViewProps> = ({
@@ -56,6 +59,7 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   theme,
   onChangeTheme,
   onClearStorage,
+  onOpenSettings,
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -89,6 +93,44 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
   const [isBotConfigured, setIsBotConfigured] = useState<boolean>(true);
   const [isSendingTelegram, setIsSendingTelegram] = useState(false);
   const [isSavingTelegram, setIsSavingTelegram] = useState(false);
+
+  // Web Push Notification State (REQ-FE-09)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(() => {
+    return typeof Notification !== 'undefined' ? Notification.permission : 'default';
+  });
+  const [isPushSubscribing, setIsPushSubscribing] = useState(false);
+  const [isPushTesting, setIsPushTesting] = useState(false);
+
+  const handleToggleWebPush = async () => {
+    setIsPushSubscribing(true);
+    const backendBase = getDefaultBackendUrl();
+    const res = await WebPushService.subscribe(backendBase, activeDevice.deviceId);
+    setIsPushSubscribing(false);
+    if (typeof Notification !== 'undefined') {
+      setPushPermission(Notification.permission);
+    }
+    Notifications.addToast({
+      id: 'webpush-' + Date.now(),
+      type: res.success ? 'success' : 'warning',
+      title: res.success ? 'Notifikasi Push Aktif' : 'Gagal Mengaktifkan',
+      message: res.message,
+      timestamp: Date.now(),
+    });
+  };
+
+  const handleTestWebPush = async () => {
+    setIsPushTesting(true);
+    const backendBase = getDefaultBackendUrl();
+    const res = await WebPushService.testPush(backendBase, activeDevice.deviceId);
+    setIsPushTesting(false);
+    Notifications.addToast({
+      id: 'test-push-' + Date.now(),
+      type: res.success ? 'success' : 'warning',
+      title: res.success ? 'Uji Coba Push Terkirim' : 'Gagal Uji Coba',
+      message: res.message,
+      timestamp: Date.now(),
+    });
+  };
 
   // Ambil konfigurasi bot Telegram dari backend server
   useEffect(() => {
@@ -673,201 +715,124 @@ export const DeviceView: React.FC<DeviceViewProps> = ({
         </div>
       </section>
 
-      {/* 4. Pengaturan Nada Dering Alarm Hujan (FE-10) */}
+      {/* 4. Pengaturan Alarm & Integrasi Telegram Terpusat (REQ-FE-12) */}
       <section className="space-y-3">
         <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
-          Alarm & Peringatan Audio (FE-10)
+          Pengaturan Alarm & Integrasi Telegram (REQ-FE-12)
         </h3>
 
-        <Card className="p-4 md:p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-garis pb-3">
-            <div>
+        <Card className="p-5 md:p-6 space-y-3 bg-gradient-to-r from-blue-950/20 via-slate-900/40 to-slate-900/60 border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
-                  <Bell className="w-5 h-5" />
+                <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+                  <Sliders className="w-5 h-5" />
                 </span>
                 <h4 className="font-bold text-sm text-teks-utama">
-                  Nada Dering Alarm Deteksi Hujan
+                  Konfigurasi Akun & Preferensi Peringatan Terpusat
                 </h4>
               </div>
-              <p className="text-xs text-teks-sekunder mt-0.5">
-                Pilih suara peringatan instan saat mikrokontroler mendeteksi tetesan air hujan
+              <p className="text-xs text-teks-sekunder leading-relaxed max-w-xl">
+                Pengaturan nada dering alarm hujan, tingkat volume audio, dering persisten, dan integrasi bot Telegram kini telah dipindahkan ke menu <strong>Pengaturan Akun</strong> terpadu agar konfigurasi kartu perangkat ini khusus untuk kendali hardware mikrokontroler ESP32.
               </p>
             </div>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handlePreviewAlarm}
-              className="gap-1.5 self-start sm:self-auto"
-            >
-              <Volume2 className="w-4 h-4 text-cyan-400" />
-              <span>Putar Contoh Suara</span>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {[
-              { id: 'sirine' as const, label: 'Nada Sirine Ringan', desc: 'Sinyal frekuensi siaga cepat' },
-              { id: 'bell' as const, label: 'Bell Ding Lembut', desc: 'Lonceng harmonis 2-nada' },
-              { id: 'hujan' as const, label: 'Suara Desir Hujan', desc: 'Desir ambient rintik air' },
-            ].map((snd) => (
-              <button
-                key={snd.id}
-                type="button"
-                onClick={() => handleSaveAlarmSettings(snd.id, alarmVolume)}
-                className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                  alarmSound === snd.id
-                    ? 'bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-transparent border-cyan-500 text-teks-utama ring-1 ring-cyan-500/30 shadow-xs'
-                    : 'bg-kartu border-garis text-teks-sekunder hover:border-cyan-500/30 hover:text-teks-utama'
-                }`}
+            {onOpenSettings && (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => onOpenSettings('telegram')}
+                className="gap-2 shrink-0 font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-md shadow-cyan-900/30"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-teks-utama">{snd.label}</span>
-                  {alarmSound === snd.id && <CheckCircle2 className="w-4 h-4 text-cyan-400" />}
-                </div>
-                <p className="text-[11px] text-teks-sekunder mt-1">{snd.desc}</p>
-              </button>
-            ))}
-          </div>
-
-          {/* Volume Slider */}
-          <div className="pt-2 border-t border-garis flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-xs">
-              <Volume2 className="w-4 h-4 text-teks-sekunder" />
-              <span className="font-semibold text-teks-utama">Tingkat Volume:</span>
-              <span className="font-mono text-cyan-400 font-bold">{alarmVolume}%</span>
-            </div>
-            <div className="w-full sm:w-64">
-              <input
-                type="range"
-                min="10"
-                max="100"
-                value={alarmVolume}
-                onChange={(e) => handleSaveAlarmSettings(alarmSound, parseInt(e.target.value, 10))}
-                className="w-full accent-cyan-500 cursor-pointer"
-              />
-            </div>
+                <Settings className="w-4 h-4" />
+                <span>Buka Pengaturan</span>
+              </Button>
+            )}
           </div>
         </Card>
       </section>
 
-      {/* 5. Integrasi Bot Telegram (FE-11) */}
+      {/* 6. Integrasi Notifikasi Realtime PWA & Browser Push (REQ-FE-09 / REQ-BE-09) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-teks-sekunder uppercase tracking-wider">
-            Integrasi Notifikasi Bot Telegram (FE-11)
+            Notifikasi Realtime PWA & Browser Web Push (REQ-FE-09)
           </h3>
-          {telegramChatId ? (
-            <Badge variant="sukses" className="text-[10px] gap-1 font-bold">
-              <CheckCircle2 className="w-3 h-3" />
-              <span>Terhubung (ID: {telegramChatId})</span>
-            </Badge>
-          ) : (
-            <Badge variant="netral" className="text-[10px]">
-              Belum Terhubung
-            </Badge>
-          )}
+          <Badge
+            variant={pushPermission === 'granted' ? 'sukses' : pushPermission === 'denied' ? 'bahaya' : 'netral'}
+            className="text-[10px] gap-1 font-bold"
+          >
+            {pushPermission === 'granted' ? (
+              <>
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Push Aktif</span>
+              </>
+            ) : pushPermission === 'denied' ? (
+              <span>Izin Diblokir</span>
+            ) : (
+              <span>Belum Diizinkan</span>
+            )}
+          </Badge>
         </div>
 
         <Card className="p-4 md:p-6 space-y-4">
           <div className="flex items-start justify-between gap-3 border-b border-garis pb-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-sky-500/10 text-sky-400">
-                  <MessageSquare className="w-5 h-5" />
+                <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                  <Bell className="w-5 h-5" />
                 </span>
                 <h4 className="font-bold text-sm text-teks-utama">
-                  Notifikasi Darurat via Telegram Bot
+                  Notifikasi Push Sistem Native (Web Push API + VAPID)
                 </h4>
               </div>
               <p className="text-xs text-teks-sekunder mt-0.5">
-                Dapatkan pesan peringatan instan di HP saat jemuran otomatis ditarik kanopi akibat hujan
+                Menerima notifikasi darurat langsung di action center peramban/layar ponsel saat hujan terdeteksi, bahkan saat aplikasi terminimalkan.
               </p>
             </div>
           </div>
 
-          {/* METODE 1: CARA TERCEPAT 1-KLIK (SANGAT USER-FRIENDLY) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-500/10 via-blue-500/10 to-indigo-500/10 border border-sky-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-sky-400">
-                  Cara Tercepat & Praktis (1-Klik)
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/20">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-teks-utama block">
+                Status Layanan Push: {pushPermission === 'granted' ? 'Terhubung & Siaga' : 'Perlu Izin Browser'}
+              </span>
+              <span className="text-[11px] text-teks-sekunder block">
+                Terhubung ke VAPID Gateway PostgreSQL Backend.
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant={pushPermission === 'granted' ? 'secondary' : 'primary'}
+                size="sm"
+                onClick={handleToggleWebPush}
+                disabled={isPushSubscribing}
+                className="gap-1.5 font-bold"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span>
+                  {isPushSubscribing
+                    ? 'Mendaftarkan...'
+                    : pushPermission === 'granted'
+                    ? 'Perbarui Langganan Push'
+                    : 'Izinkan Notifikasi Push'}
                 </span>
-              </div>
-              <h5 className="font-bold text-sm text-teks-utama">
-                Hubungkan Otomatis ke Bot Rintik
-              </h5>
-              <p className="text-xs text-teks-sekunder leading-relaxed max-w-xl">
-                Cukup klik tombol di samping untuk membuka bot di Telegram, lalu tekan tombol <strong>START</strong>. Akun Anda akan otomatis terhubung seketika tanpa perlu salin-tempel token atau kode rumit!
-              </p>
+              </Button>
+              {pushPermission === 'granted' && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleTestWebPush}
+                  disabled={isPushTesting}
+                  className="gap-1.5 font-bold"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>{isPushTesting ? 'Mengirim...' : 'Uji Coba Push'}</span>
+                </Button>
+              )}
             </div>
-
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={handleOpenTelegramBot}
-              className="shrink-0 gap-2 whitespace-nowrap shadow-lg shadow-sky-500/20 font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white"
-            >
-              <Send className="w-4 h-4" />
-              <span>Hubungkan ke Telegram</span>
-              <ExternalLink className="w-3.5 h-3.5 opacity-80" />
-            </Button>
           </div>
-
-          {/* METODE 2: ATAU MASUKKAN CHAT ID SECARA MANUAL */}
-          <form onSubmit={handleSaveTelegramChatId} className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-teks-utama">
-                Atau Masukkan ID Obrolan Telegram (Chat ID) Manual:
-              </label>
-              <button
-                type="button"
-                onClick={handleOpenUserInfoBot}
-                className="text-[11px] text-sky-400 hover:underline flex items-center gap-1 font-medium cursor-pointer"
-              >
-                <span>Cek Chat ID di @userinfobot</span>
-                <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={telegramChatId}
-                onChange={(e) => setTelegramChatId(e.target.value)}
-                placeholder="Contoh: 123456789 atau -100xxxxxxxxxx"
-                className="flex-1 px-3 py-2.5 rounded-xl bg-latar border border-garis text-teks-utama text-xs focus:outline-none focus:border-cyan-500 font-mono"
-              />
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                disabled={isSavingTelegram}
-                className="gap-1.5 whitespace-nowrap font-bold"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{isSavingTelegram ? 'Menyimpan...' : 'Simpan ID'}</span>
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleTestTelegram}
-                disabled={isSendingTelegram}
-                className="gap-1.5 whitespace-nowrap font-bold"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>{isSendingTelegram ? 'Mengirim...' : 'Kirim Uji Coba'}</span>
-              </Button>
-            </div>
-
-            <p className="text-[11px] text-teks-sekunder leading-relaxed">
-              💡 <em>Catatan:</em> Token bot sudah dikonfigurasi dan disimpan aman di server backend aplikasi. Pengguna <strong>tidak perlu lagi repot mengisi token bot</strong> apa pun.
-            </p>
-          </form>
         </Card>
       </section>
     </div>

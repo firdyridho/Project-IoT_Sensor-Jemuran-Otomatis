@@ -8,6 +8,7 @@ import {
   Radio,
   PanelLeftClose,
   PanelLeftOpen,
+  Settings,
 } from 'lucide-react';
 import { NavTab } from './BottomNav';
 import { Badge } from '../Common/Badge';
@@ -43,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'cuaca' as NavTab, label: 'Prakiraan BMKG', icon: CloudSun },
     { id: 'riwayat' as NavTab, label: 'Riwayat Event', icon: History },
     { id: 'perangkat' as NavTab, label: 'Kelola Perangkat', icon: Cpu },
+    { id: 'settings' as NavTab, label: 'Pengaturan', icon: Settings },
   ];
 
   const isDashboard = activeTab === 'dashboard';

@@ -40,216 +40,130 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-07: Peningkatan Responsivitas Mobile (Mobile-First Layout) pada Header Dashboard, Navigasi Tab, dan Komponen Fitur**
+* [x] **REQ-FE-07: Peningkatan Responsivitas Mobile (Mobile-First Layout) pada Header Dashboard, Navigasi Tab, dan Komponen Fitur**
   * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
   * Komponen & Berkas Terkait:
-    * `frontend/src/components/Dashboard/Header.tsx`
-    * `frontend/src/components/Dashboard/DashboardView.tsx`
-    * `frontend/src/components/Navigation/Sidebar.tsx` / `BottomNav.tsx`
+    * `frontend/src/components/Layout/Header.tsx`
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx`
+    * `frontend/src/components/Layout/BottomNav.tsx`
     * `frontend/src/App.tsx`
-  * Masalah Saat Ini:
-    * Pada tampilan mobile (layar smartphone, viewport lebar < 640px / 768px), header dashboard dan elemen fitur bertumpukan (overlap), teks terpotong, badge koneksi MQTT meluap keluar layar, dan grid kartu dashboard memaksakan kolom horizontal yang membuat tata letak berantakan.
-  * Spesifikasi Desain & Tampilan yang Diinginkan:
-    1. **Responsive Header Layout**:
-       * Gunakan breakpoint Tailwind (`sm:`, `md:`, `lg:`).
-       * Di layar mobile (< 640px), susun header menjadi 2 baris atau gunakan *compact action bar*: Baris 1 untuk Logo, Nama Perangkat (dengan truncate jika panjang), dan Tombol Menu/Tema; Baris 2 untuk Status Koneksi Broker (chip mini: ikon titik berdenyut hijau/merah + "Online/Offline") dan tombol aksi cepat.
-       * Nama perangkat yang panjang diberi class `truncate max-w-[140px] sm:max-w-none`.
-    2. **Mobile-First Dashboard Cards**:
-       * Kartu telemetri utama (Status Hujan, Akumulasi Basah, Intensitas Analog, Estimasi BMKG) wajib beralih ke layout `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`.
-       * Padding kontainer utama disesuaikan: `px-3 py-3` di mobile, `px-6 py-6` di tablet/desktop.
-    3. **Navigasi Tab Mobile yang Halus**:
-       * Pastikan navigasi tab di mobile memiliki horizontal scrolling yang mulus (`overflow-x-auto scrollbar-none flex-nowrap`) atau menggunakan Bottom Navigation Dock yang proporsional tanpa menutupi tombol aksi di bawah layar.
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Responsive Header Layout**: Header mobile (< 640px) beralih ke 2 baris (Baris 1 untuk Logo, nama perangkat truncate `max-w-[140px] sm:max-w-none`, tema & aksi; Baris 2 untuk chip status broker online/offline & ID perangkat).
+    2. **Mobile-First Dashboard Cards**: Kartu telemetri utama beralih ke layout `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Padding kontainer utama disesuaikan: `px-3 py-3` di mobile, `px-6 py-6` di tablet/desktop.
+    3. **Navigasi Tab Mobile yang Halus**: Dock bottom navigation dengan safe area inset, target sentuh min-h-11, dan responsif.
   * Dokumen Rujukan: [PRD.md](PRD.md) Bagian 3 (User Interface), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
-* [ ] **REQ-FE-08: Redesain Splash Screen agar Lebih Clean, Elegan, dan Minimalis Modern**
+* [x] **REQ-FE-08: Redesain Splash Screen agar Lebih Clean, Elegan, dan Minimalis Modern**
   * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
   * Komponen & Berkas Terkait:
     * `frontend/src/components/Common/SplashScreen.tsx`
-  * Spesifikasi Desain & Tampilan yang Diinginkan:
-    1. **Visual Simpel & Elegan**:
-       * Hindari elemen dekoratif yang terlalu ramai atau berlebihan.
-       * Tampilkan logo resmi Rintik (`/favicon.svg?v=2`) dengan animasi *subtle breathing* (skala 0.98 -> 1.02) atau pendaran lembut (*soft ambient glow*).
-       * Tipografi nama aplikasi **RINTIK** menggunakan font *Outfit 900* dengan letter-spacing elegan (`tracking-[0.2em]`) dan sub-label minimalis *"IoT Jemuran Otomatis & Presisi Cuaca"*.
-    2. **Minimalist Loading Bar**:
-       * Indikator progres berupa garis tipis (*thin progress line* 2px) dengan gradien cyan ke indigo (`from-cyan-400 to-indigo-500`) yang berjalan mulus 0% -> 100%.
-    3. **Transisi Halus (Smooth Exit Transition)**:
-       * Saat pemuatan selesai, berikan efek transisi *fade-out* + *scale-up* lembut (`opacity-0 scale-105 duration-700 ease-out`) sebelum komponen dilepas dari DOM.
-    4. **Dukungan Tema**:
-       * Mendukung tema Dark (`#070b14` / `#0b1329`) dan Light (`#f8fafc` / `#f0f9ff`) secara otomatis.
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Visual Simpel & Elegan**: Menggunakan logo resmi `/favicon.svg?v=2` dengan animasi bernapas lembut (subtle breathing pulse). Tipografi `R I N T I K` dengan font-heading dan tracking proporsional serta sub-label *"IoT Jemuran Otomatis & Presisi Cuaca"*.
+    2. **Minimalist Loading Bar**: Garis progres 2px dengan gradien cyan ke indigo (`from-cyan-400 to-indigo-500`) berjalan mulus 0% -> 100%.
+    3. **Transisi Halus**: Efek transisi *fade-out* + *scale-up* (`opacity-0 scale-105 duration-700 ease-out`).
+    4. **Dukungan Tema**: Mendukung tema Dark (`#070b14`) dan Light (`#f8fafc`) secara adaptif.
   * Dokumen Rujukan: [PRD.md](PRD.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
-* [ ] **REQ-FE-09: Integrasi Notifikasi Realtime PWA & Browser Push Notification (Web Push API + VAPID)**
+* [x] **REQ-FE-09: Integrasi Notifikasi Realtime PWA & Browser Push Notification (Web Push API + VAPID)**
   * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer
-  * Endpoint Backend yang Sudah Tersedia:
-    * `GET /api/notifications/vapid-public-key` : Mengambil VAPID Public Key backend untuk pendaftaran di browser client.
-    * `POST /api/notifications/subscribe` : Mendaftarkan push subscription browser pengguna ke database PostgreSQL.
-  * Format Request Payload `POST /api/notifications/subscribe`:
-    ```json
-    {
-      "endpoint": "https://fcm.googleapis.com/fcm/send/...",
-      "keys": {
-        "p256dh": "BLm5V...",
-        "auth": "wK8s..."
-      },
-      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
-    }
-    ```
-  * Arsitektur & Cara Kerja:
-    * **Apakah butuh permission?** YA, browser memerlukan izin eksplisit dari pengguna (`Notification.requestPermission()`). Tanpa izin ini, browser secara ketat memblokir notifikasi sistem demi privasi dan keamanan pengguna.
-    * Notifikasi sistem ini bekerja seperti notifikasi aplikasi native (APK Android / Windows Action Center), bahkan saat tab browser ditutup atau terminimalkan jika Service Worker terdaftar.
-  * Spesifikasi Implementasi di Frontend:
-    1. **Tombol Aktivasi Notifikasi (User Gesture Trigger)**:
-       * Sediakan tombol saklar / lonceng di Header atau Pengaturan: *"Aktifkan Notifikasi Hujan"* / *"Izinkan Notifikasi"*.
-       * Jangan memicu popup izin browser secara agresif saat pertama kali halaman dimuat (agar tidak ditolak atau dianggap spam oleh browser).
-    2. **Permintaan Izin & Registrasi Service Worker**:
-       * Saat tombol diklik:
-         ```javascript
-         const permission = await Notification.requestPermission();
-         if (permission === 'granted') {
-           const reg = await navigator.serviceWorker.register('/sw.js');
-           const keyRes = await fetch(`${backendUrl}/api/notifications/vapid-public-key`);
-           const { public_key } = await keyRes.json();
-           const sub = await reg.pushManager.subscribe({
-             userVisibleOnly: true,
-             applicationServerKey: urlBase64ToUint8Array(public_key)
-           });
-           await fetch(`${backendUrl}/api/notifications/subscribe`, {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-             body: JSON.stringify(sub)
-           });
-         }
-         ```
-    3. **File Service Worker (`frontend/public/sw.js`)**:
-       * Tangani event `push` dan `notificationclick` di Service Worker untuk menampilkan notifikasi native dengan judul, isi pesan, badge, dan ikon Rintik:
-         ```javascript
-         self.addEventListener('push', function(e) {
-           const data = e.data ? e.data.json() : {};
-           const title = data.title || 'Peringatan Hujan Rintik!';
-           const options = {
-             body: data.body || 'Sensor mendeteksi hujan! Kanopi jemuran diamankan.',
-             icon: '/favicon.svg?v=2',
-             badge: '/favicon.svg?v=2',
-             vibrate: [200, 100, 200]
-           };
-           e.waitUntil(self.registration.showNotification(title, options));
-         });
-         ```
-    4. **In-App Toast Fallback**:
-       * Saat pengguna sedang aktif membuka website di tab depan, tetap tampilkan in-app toast notification melalui WebSocket/MQTT event `rain_start` / `rain_stop` seperti yang sudah berjalan di `ToastContainer`.
+  * Diselesaikan Oleh: Frontend Developer
+  * Komponen & Berkas Terkait:
+    * `frontend/public/sw.js` (event listener `push` dan `notificationclick`)
+    * `frontend/src/services/webpush.ts` (layanan `WebPushService` pendaftaran PushManager & API backend)
+    * `frontend/src/components/Perangkat/DeviceView.tsx` (kartu saklar izin & trigger push uji coba)
+    * `frontend/src/components/Layout/Header.tsx` & `frontend/src/App.tsx` (lonceng notifikasi & aktivasi langsung)
+  * Spesifikasi Implementasi yang Terpenuhi:
+    1. **Tombol Aktivasi Notifikasi (User Gesture Trigger)**: Ikon lonceng di Header dan panel kendali notifikasi di tab Perangkat menyediakan pemicu eksplisit tanpa memicu popup browser secara agresif saat initial load.
+    2. **Permintaan Izin & Registrasi Service Worker**: Integrasi penuh Web Push API via `WebPushService.subscribe()`, mengambil VAPID Public Key dari backend (`/api/notifications/vapid-public-key`), mengonversi ke `Uint8Array`, dan mendaftarkan push subscription ke endpoint `/api/notifications/subscribe`.
+    3. **File Service Worker (`frontend/public/sw.js`)**: Dilengkapi listener event `push` dengan judul, isi pesan, badge, ikon `/favicon.svg?v=2`, getaran `[200, 100, 200]`, dan listener `notificationclick` yang memfokuskan atau membuka tab aplikasi.
+    4. **In-App Toast Fallback**: Tetap aktif menampilkan toast WebSocket saat tab terbuka aktif di latar depan.
   * Dokumen Rujukan: [BACKEND_REQUESTS.md](BACKEND_REQUESTS.md), [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
-* [ ] **REQ-FE-10: Pembuatan Halaman / Modal Ketentuan Layanan (Terms of Service) dan Kebijakan Privasi (Privacy Policy)**
+* [x] **REQ-FE-10: Pembuatan Halaman / Modal Ketentuan Layanan (Terms of Service) dan Kebijakan Privasi (Privacy Policy)**
   * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
   * Komponen & Berkas Terkait:
-    * `frontend/src/components/Common/LegalModal.tsx` atau `frontend/src/components/Legal/LegalView.tsx`
-    * `frontend/src/components/Landing/LandingPage.tsx` (Footer / Legal Links)
-    * `frontend/src/components/Auth/AuthPage.tsx` (Register terms checkbox / note)
-    * `frontend/src/App.tsx` (Routing `/terms`, `/privacy`, dan validasi rute 404)
-  * Spesifikasi Desain & Tampilan yang Diinginkan:
-    1. **Format Akses & Navigasi**:
-       * Sediakan tautan pada footer `LandingPage.tsx` dan catatan pendaftaran di `AuthPage.tsx` ("Dengan mendaftar, Anda menyetujui Ketentuan Layanan & Kebijakan Privasi Rintik").
-       * Dapat dibuka sebagai rute halaman mandiri (`/terms` dan `/privacy`) atau modal dialog elegan (*read-friendly modal*) dengan tab switcher antara *"Ketentuan Layanan"* dan *"Kebijakan Privasi"*.
-       * Pastikan rute `/terms` dan `/privacy` didaftarkan ke array `isValidAppRoute` di `App.tsx` agar tidak memicu halaman 404.
-    2. **Struktur Konten Ketentuan Layanan (Terms of Service)**:
-       * **Ruang Lingkup**: Layanan monitoring telemetri cuaca sensor fisik ESP32, otomatisasi motor penutup jemuran, dan integrasi prakiraan BMKG.
-       * **Batas Tanggung Jawab (Disclaimer)**: Sensor fisik dan data BMKG disajikan sebagai alat bantu presisi; pengguna bertanggung jawab atas keamanan jemuran/aset saat terjadi bencana cuaca ekstrem di luar batas operasional hardware.
-       * **Akun & Perangkat**: Pengguna bertanggung jawab menjaga kerahasiaan kata sandi dan ID perangkat ESP32 masing-masing.
-       * **Penggunaan Wajar (Fair Use)**: Larangan melakukan spamming request HTTP/WebSocket/MQTT atau manipulasi telemetri ilegal.
-    3. **Struktur Konten Kebijakan Privasi (Privacy Policy)**:
-       * **Data yang Dikumpulkan**: Kredensial akun (nama, email), data telemetri sensor (nilai analog kelembapan, status basah, RSSI WiFi), kode wilayah BMKG (Adm4), dan push subscription token.
-       * **Tujuan Pengolahan Data**: Pengoperasian kendali motor jemuran otomatis, peringatan dini cuaca, serta analitik riwayat cuaca personal.
-       * **Keamanan & Multi-Tenancy**: Data telemetri dan perangkat terisolasi per akun pengguna (*multi-tenant*), password di-hash dengan standar industri, dan tidak dibagikan/dijual ke pihak ketiga.
-       * **Hak Pengguna**: Hak mengekspor data telemetri (fitur CSV Export), hak menghapus riwayat telemetri/event, dan hak menghapus perangkat/akun sewaktu-waktu.
-    4. **Estetika Tampilan**:
-       * Tipografi bersih, mudah dibaca (*prose typography*, line-height proporsional, heading hierarkis, badge versi dokumen).
-       * Mendukung tema Dark dan Light mode secara konsisten dengan tombol kembali / tutup yang intuitif.
+    * `frontend/src/components/Common/LegalModal.tsx` (modal dialog interaktif dengan tab switcher)
+    * `frontend/src/components/Legal/LegalView.tsx` (halaman mandiri untuk `/terms` dan `/privacy`)
+    * `frontend/src/components/Landing/LandingPage.tsx` (tautan footer legal & modal trigger)
+    * `frontend/src/components/Auth/AuthPage.tsx` (klausul persetujuan pendaftaran & modal trigger)
+    * `frontend/src/App.tsx` (rute `/terms`, `/privacy`, dan pendaftaran ke `isValidAppRoute`)
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Format Akses & Navigasi**: Dapat diakses sebagai rute mandiri (`/terms` dan `/privacy`) serta modal dialog dengan tab switcher antara *"Ketentuan Layanan"* dan *"Kebijakan Privasi"*. Didukung tombol kembali ke landing/dashboard dan cetak dokumen.
+    2. **Konten Ketentuan Layanan (Terms of Service)**: Meliputi ruang lingkup telemetri ESP32 & kanopi otomatis, batasan tanggung jawab (disclaimer cuaca ekstrem), keamanan akun & ID ESP32, serta pedoman penggunaan wajar (fair use).
+    3. **Konten Kebijakan Privasi (Privacy Policy)**: Menjelaskan jenis data yang dikumpulkan (kredensial, analog sensor, RSSI, push token), tujuan pengolahan data, arsitektur multi-tenancy yang aman, dan hak pengguna (ekspor CSV & penghapusan riwayat/akun).
+    4. **Estetika Dual-Mode**: Tipografi rapi bernuansa artikel/prose dengan hierarki jelas, badge versi dokumen v1.2, serta adaptasi tema gelap/terang konsisten.
   * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
-* [ ] **REQ-FE-11: Implementasi Skeleton Loading (Shimmer Animation) untuk Status Loading Data (Cuaca, Telemetri, Grafik, & Riwayat)**
+* [x] **REQ-FE-11: Implementasi Skeleton Loading (Shimmer Animation) untuk Status Loading Data (Cuaca, Telemetri, Grafik, & Riwayat)**
   * Tanggal Diminta: 2026-10-13
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
   * Komponen & Berkas Terkait:
-    * `frontend/src/components/Common/Skeleton.tsx` (komponen reusable Skeleton / Shimmer)
-    * `frontend/src/components/Cuaca/WeatherView.tsx` & `frontend/src/components/Dashboard/QuickWeatherCard.tsx` (saat fetching data BMKG)
-    * `frontend/src/components/Grafik/ChartsView.tsx` & `frontend/src/components/Grafik/TelemetryTable.tsx` (saat query telemetri riwayat)
-    * `frontend/src/components/Riwayat/EventsView.tsx` (saat memuat log event sensor & jemuran)
-    * `frontend/src/components/Perangkat/DeviceManager.tsx` (saat memuat daftar perangkat ESP32)
-  * Spesifikasi Desain & Tampilan yang Diinginkan:
-    1. **Komponen Reusable Skeleton (`Skeleton.tsx`)**:
-       * Sediakan utilitas komponen `<Skeleton className="..." />` yang luwes dengan efek gelombang kilau (*shimmer animation wave* / `animate-pulse` halus).
-       * Dukungan penuh dual-mode:
-         * **Dark Mode**: basis `bg-slate-800/70` dengan highlight shimmer translusen `bg-slate-700/50`.
-         * **Light Mode**: basis `bg-slate-200/80` dengan highlight shimmer translusen `bg-slate-100`.
-       * Hindari balok abu-abu mati kaku (*flat grey block*) yang terkesan murahan; gunakan sudut membulat (`rounded-xl` / `rounded-lg`) serasi dengan desain kartu aplikasi.
-    2. **Pencegahan Cumulative Layout Shift (Zero CLS)**:
-       * Dimensi dan hierarki skeleton wajib menyerupai struktur visual komponen target saat terisi data.
-       * Contoh:
-         * **Kartu Cuaca BMKG**: placeholder lingkaran untuk ikon cuaca, placeholder teks tebal untuk angka temperatur (°C), dan baris-baris info kelembapan & angin.
-         * **Tabel Telemetri & Log Riwayat**: baris header tabel dummy disertai 5 baris data placeholder bergaris tipis.
-         * **Grafik Telemetri**: placeholder kontur kurva / balok area chart dengan tinggi proporsional (`h-64` atau `h-80`).
-         * **Kartu Perangkat**: placeholder status pill badge, judul perangkat, dan tombol aksi.
-    3. **Transisi Konten Halus (Smooth Transition)**:
-       * Terapkan transisi memudar halus (`transition-opacity duration-300`) ketika data selesai dimuat dari API backend atau BMKG agar perpindahan dari skeleton ke data riil tidak tersentak atau flicker.
+    * `frontend/src/components/Common/Skeleton.tsx` (utilitas Skeleton, SkeletonQuickWeatherCard, SkeletonWeatherView, SkeletonTable, SkeletonChart, SkeletonDeviceCard)
+    * `frontend/src/index.css` (animasi `@keyframes shimmer` dan utilitas `.animate-shimmer`)
+    * `frontend/src/components/Dashboard/QuickWeatherCard.tsx`
+    * `frontend/src/components/Cuaca/WeatherView.tsx`
+    * `frontend/src/components/Grafik/RealtimeChart.tsx`
+    * `frontend/src/components/Riwayat/AIAccuracyView.tsx`
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Komponen Reusable Skeleton**: Menyediakan efek kilau animasi shimmer halus (`animate-shimmer`) berbasis gradien linier CSS, mendukung tema Dark (`bg-slate-800/80` ke `bg-slate-700/50`) dan Light (`bg-slate-200/80` ke `bg-white/60`) dengan sudut membulat elegan (`rounded-xl` / `rounded-lg`).
+    2. **Pencegahan Cumulative Layout Shift (Zero CLS)**: Struktur dan rasio tinggi/lebar skeleton identik dengan komponen aslinya (kartu cuaca, grafik kurva, baris tabel, dan analitik metrik), menjaga stabilitas visual tanpa lonjakan layout.
+    3. **Transisi Konten Halus**: Penggantian skeleton ke konten nyata berjalan mulus dengan animasi fade-in opasitas.
   * Dokumen Rujukan: [PRD.md](PRD.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
-* [ ] **REQ-FE-12: Halaman Pengaturan (Settings), Keamanan Akun & Password Strength Meter, Integrasi Telegram, dan Looping Alarm Hujan**
+* [x] **REQ-FE-12: Halaman Pengaturan (Settings), Keamanan Akun & Password Strength Meter, Integrasi Telegram, dan Looping Alarm Hujan**
   * Tanggal Diminta: 2026-10-14
+  * Tanggal Selesai: 2026-10-14
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
   * Komponen & Berkas Terkait:
-    * `frontend/src/components/Settings/SettingsView.tsx` atau `frontend/src/components/Pengaturan/SettingsModal.tsx`
-    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx`
-    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx` / `frontend/src/utils/audioAlarm.ts`
-    * `frontend/src/components/Perangkat/DeviceView.tsx` & `frontend/src/components/Perangkat/DeviceManager.tsx` (pindahkan konfigurasi Telegram dari kartu perangkat ke menu Pengaturan)
-    * `frontend/src/App.tsx` (navigasi Settings & event listener WebSocket / WebPush untuk pemicu alarm persisten)
-  * Spesifikasi Desain & Tampilan yang Diinginkan:
-    1. **Halaman / Modal Pengaturan Terpadu (Unified Settings)**:
-       * **Tab Profil & Akun**:
-         * Form ubah Nama Lengkap dan Username (dengan validasi realtime).
-         * Mengonsumsi endpoint backend `PUT /api/user/profile`. Jika token baru dikembalikan pada pembaruan username, perbarui token sesi di `localStorage`.
-       * **Tab Keamanan Kata Sandi (Password Security)**:
-         * Form input `Kata Sandi Lama / Saat Ini` (wajib diisi).
-         * Form input `Kata Sandi Baru` dan `Konfirmasi Kata Sandi Baru`.
-         * **Indikator Kekuatan Sandi (*Password Strength Meter*)**: visualisasi bar warna (Merah = Lemah, Kuning = Sedang, Hijau = Kuat) dan checklist aturan: minimal 8 karakter, kombinasi huruf dan angka.
-         * Tombol simpan dinonaktifkan jika sandi belum memenuhi standar atau konfirmasi sandi tidak cocok.
-         * Mengonsumsi endpoint backend `PUT /api/user/password` (`{ currentPassword, newPassword }`).
-       * **Tab Integrasi Telegram**:
-         * Input `Telegram Chat ID` akun pengguna.
-         * Tautan langsung ke bot Telegram (`https://t.me/<bot_username>?start=pair_user_<userId>`) untuk pairing 1-klik otomatis.
-         * Tombol *"Uji Kirim Pesan"* mengonsumsi `POST /api/user/test-telegram` dengan feedback toast loading dan sukses/gagal.
-         * Hapus kolom input Telegram dari form kartu perangkat (`DeviceManager.tsx`) agar perangkat ESP32 khusus untuk konfigurasi hardware.
-       * **Tab Preferensi Alarm Hujan & Tampilan**:
-         * Dropdown pilihan nada dering: `Emergency Siren (Bawaan)`, `Digital Phone Ring`, `Radar Alert`, `High Pitch Chime`.
-         * Tombol preview audio *"Dengarkan Bunyi"* (Play / Pause) di samping dropdown agar pengguna bisa menguji kenyamanan nada dering.
-         * Switch toggle *"Alarm Darurat Berdering Terus-Menerus Sampai Dimatikan"*.
-         * Toggle tema Dark Mode dan Light Mode yang tersinkronisasi ke preferensi backend dan antarmuka.
-    2. **Alarm Darurat Hujan Persisten (*Persistent Incoming Rain Alert*)**:
-       * Saat sensor mendeteksi hujan (event WebSocket / WebPush `rain_start`):
-         * Putar audio nada dering yang dipilih secara berulang-ulang (*looping audio = true* tanpa henti) layaknya dering panggilan telepon masuk darurat.
-         * Tampilkan modal layar penuh atau banner mengambang berdenyut (*pulsing warning HUD*) bertuliskan: *"Hujan Terdeteksi! Jemuran Otomatis Ditarik ke Kanopi"*.
-         * Tombol besar *"Matikan Alarm"* berwarna merah/oranye mencolok dengan haptic/suara klik yang menghentikan audio pemutar secara instan di semua tab aktif.
-         * Tambahkan tombol aksi Web Push API pada notifikasi browser: `action: 'dismiss'` (Matikan Alarm) dan `action: 'open'` (Buka Aplikasi).
+    * `frontend/src/components/Settings/SettingsView.tsx` (antarmuka Pengaturan Terpadu: Profil, Kata Sandi, Telegram, Preferensi)
+    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx` (bar indikator kekuatan sandi & checklist aturan)
+    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx` (modal HUD darurat hujan persisten dengan tombol matikan alarm raksasa)
+    * `frontend/src/utils/audioAlarm.ts` (layanan Web Audio synthesizer looping 4 nada dering & sinkronisasi multi-tab)
+    * `frontend/public/sw.js` (aksi push notification `dismiss` & `open` serta broadcast ke client)
+    * `frontend/src/components/Perangkat/DeviceView.tsx` (pemindahan konfigurasi Telegram & alarm ke menu Pengaturan)
+    * `frontend/src/components/Layout/Header.tsx` & `frontend/src/components/Layout/Sidebar.tsx` (tombol pintas pengaturan akun)
+    * `frontend/src/App.tsx` (rute `/settings`, pemicu audio looping persisten saat sensor basah, & modal alarm HUD)
+  * Spesifikasi Desain & Tampilan yang Terpenuhi:
+    1. **Halaman Pengaturan Terpadu (Unified Settings)**:
+       * **Tab Profil & Akun**: Form ubah nama lengkap & username dengan validasi realtime. Terintegrasi `PUT /api/user/profile` dan pembaruan otomatis token sesi di `localStorage`.
+       * **Tab Keamanan Kata Sandi**: Form sandi saat ini, baru, dan konfirmasi. Dilengkapi `PasswordStrengthMeter.tsx` dengan bar warna (Merah, Kuning, Hijau) dan checklist aturan ketat (min 8 karakter, kombinasi huruf & angka). Mengonsumsi `PUT /api/user/password`.
+       * **Tab Integrasi Telegram**: Tautan 1-klik otomatis ke bot `https://t.me/<bot_username>?start=pair_user_<userId>`, input manual Chat ID, dan tombol uji coba kirim pesan via `POST /api/user/test-telegram`. Kolom Telegram di kartu perangkat dihapus dan dialihkan ke pengaturan akun.
+       * **Tab Preferensi Alarm & Tampilan**: Pilihan 4 nada dering (`Emergency Siren`, `Digital Phone Ring`, `Tactical Radar Alert`, `High Pitch Chime`), preview audio instan, slider volume, toggle switch dering terus-menerus, dan pemilih tema sinkron ke cloud.
+    2. **Alarm Darurat Hujan Persisten & Looping Audio**:
+       * Saat sensor mendeteksi hujan (`rain_start` atau `wet: true`), audio nada dering berputar berulang-ulang (*looping = true*) tanpa henti.
+       * Tampilan modal HUD darurat berdenyut dengan tombol mencolok *"MATIKAN ALARM"* yang mematikan audio seketika di seluruh tab yang sedang terbuka via `BroadcastChannel` dan Web Worker message listener.
+       * Service worker `sw.js` diperkaya aksi `action: 'dismiss'` (Matikan Alarm) dan `action: 'open'` (Buka Aplikasi).
   * Dokumen Rujukan: [PRD.md](PRD.md), [BACKEND_REQUESTS.md](BACKEND_REQUESTS.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
-  * Status: Siap Dikerjakan oleh Frontend Developer
+  * Status: [x] SELESAI
 
 ---
 
