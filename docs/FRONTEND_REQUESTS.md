@@ -212,6 +212,47 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ---
 
+* [ ] **REQ-FE-12: Halaman Pengaturan (Settings), Keamanan Akun & Password Strength Meter, Integrasi Telegram, dan Looping Alarm Hujan**
+  * Tanggal Diminta: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Komponen & Berkas Terkait:
+    * `frontend/src/components/Settings/SettingsView.tsx` atau `frontend/src/components/Pengaturan/SettingsModal.tsx`
+    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx`
+    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx` / `frontend/src/utils/audioAlarm.ts`
+    * `frontend/src/components/Perangkat/DeviceView.tsx` & `frontend/src/components/Perangkat/DeviceManager.tsx` (pindahkan konfigurasi Telegram dari kartu perangkat ke menu Pengaturan)
+    * `frontend/src/App.tsx` (navigasi Settings & event listener WebSocket / WebPush untuk pemicu alarm persisten)
+  * Spesifikasi Desain & Tampilan yang Diinginkan:
+    1. **Halaman / Modal Pengaturan Terpadu (Unified Settings)**:
+       * **Tab Profil & Akun**:
+         * Form ubah Nama Lengkap dan Username (dengan validasi realtime).
+         * Mengonsumsi endpoint backend `PUT /api/user/profile`. Jika token baru dikembalikan pada pembaruan username, perbarui token sesi di `localStorage`.
+       * **Tab Keamanan Kata Sandi (Password Security)**:
+         * Form input `Kata Sandi Lama / Saat Ini` (wajib diisi).
+         * Form input `Kata Sandi Baru` dan `Konfirmasi Kata Sandi Baru`.
+         * **Indikator Kekuatan Sandi (*Password Strength Meter*)**: visualisasi bar warna (Merah = Lemah, Kuning = Sedang, Hijau = Kuat) dan checklist aturan: minimal 8 karakter, kombinasi huruf dan angka.
+         * Tombol simpan dinonaktifkan jika sandi belum memenuhi standar atau konfirmasi sandi tidak cocok.
+         * Mengonsumsi endpoint backend `PUT /api/user/password` (`{ currentPassword, newPassword }`).
+       * **Tab Integrasi Telegram**:
+         * Input `Telegram Chat ID` akun pengguna.
+         * Tautan langsung ke bot Telegram (`https://t.me/<bot_username>?start=pair_user_<userId>`) untuk pairing 1-klik otomatis.
+         * Tombol *"Uji Kirim Pesan"* mengonsumsi `POST /api/user/test-telegram` dengan feedback toast loading dan sukses/gagal.
+         * Hapus kolom input Telegram dari form kartu perangkat (`DeviceManager.tsx`) agar perangkat ESP32 khusus untuk konfigurasi hardware.
+       * **Tab Preferensi Alarm Hujan & Tampilan**:
+         * Dropdown pilihan nada dering: `Emergency Siren (Bawaan)`, `Digital Phone Ring`, `Radar Alert`, `High Pitch Chime`.
+         * Tombol preview audio *"Dengarkan Bunyi"* (Play / Pause) di samping dropdown agar pengguna bisa menguji kenyamanan nada dering.
+         * Switch toggle *"Alarm Darurat Berdering Terus-Menerus Sampai Dimatikan"*.
+         * Toggle tema Dark Mode dan Light Mode yang tersinkronisasi ke preferensi backend dan antarmuka.
+    2. **Alarm Darurat Hujan Persisten (*Persistent Incoming Rain Alert*)**:
+       * Saat sensor mendeteksi hujan (event WebSocket / WebPush `rain_start`):
+         * Putar audio nada dering yang dipilih secara berulang-ulang (*looping audio = true* tanpa henti) layaknya dering panggilan telepon masuk darurat.
+         * Tampilkan modal layar penuh atau banner mengambang berdenyut (*pulsing warning HUD*) bertuliskan: *"Hujan Terdeteksi! Jemuran Otomatis Ditarik ke Kanopi"*.
+         * Tombol besar *"Matikan Alarm"* berwarna merah/oranye mencolok dengan haptic/suara klik yang menghentikan audio pemutar secara instan di semua tab aktif.
+         * Tambahkan tombol aksi Web Push API pada notifikasi browser: `action: 'dismiss'` (Matikan Alarm) dan `action: 'open'` (Buka Aplikasi).
+  * Dokumen Rujukan: [PRD.md](PRD.md), [BACKEND_REQUESTS.md](BACKEND_REQUESTS.md), [FRONTEND_REQUESTS.md](FRONTEND_REQUESTS.md)
+  * Status: Siap Dikerjakan oleh Frontend Developer
+
+---
+
 ## Riwayat Permintaan Selesai (Archive)
 
 * [x] **REQ-FE-06: Perbaikan Logika Status Potensi Hujan BMKG (Sinkronisasi Badge Hujan vs Ilustrasi & Deskripsi Cuaca)**

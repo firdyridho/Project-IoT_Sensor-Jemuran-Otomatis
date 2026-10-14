@@ -262,11 +262,21 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 	}
 
 	targetChat := s.telegramChat
-	// Cek apakah perangkat ini memiliki Chat ID khusus yang terhubung di database
+	// Cek apakah akun pemilik atau perangkat ini memiliki Chat ID yang terhubung di database
 	if ev.DeviceID != "" && database.DB != nil {
 		var dev models.Device
-		if err := database.DB.First(&dev, "id = ?", ev.DeviceID).Error; err == nil && dev.TelegramChatID != "" {
-			targetChat = dev.TelegramChatID
+		if err := database.DB.First(&dev, "id = ?", ev.DeviceID).Error; err == nil {
+			// Prioritaskan Chat ID akun pemilik perangkat (User Settings)
+			if dev.UserID != "" {
+				var u models.User
+				if err := database.DB.First(&u, "id = ?", dev.UserID).Error; err == nil && u.TelegramChatID != "" {
+					targetChat = u.TelegramChatID
+				}
+			}
+			// Fallback ke Chat ID pada perangkat jika akun user belum disetel
+			if targetChat == s.telegramChat && dev.TelegramChatID != "" {
+				targetChat = dev.TelegramChatID
+			}
 		}
 	}
 

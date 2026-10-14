@@ -85,36 +85,51 @@ func StartBotPoller(botToken string) {
 				if strings.HasPrefix(msgText, "/start") {
 					parts := strings.Fields(msgText)
 					targetDeviceID := "hs-24e1796dc9a1" // default fallback
+					targetUserID := ""
 					if len(parts) > 1 {
 						payload := strings.TrimPrefix(parts[1], "pair_")
-						if payload != "" {
+						if strings.HasPrefix(payload, "user_") {
+							targetUserID = strings.TrimPrefix(payload, "user_")
+						} else if payload != "" {
 							targetDeviceID = payload
 						}
 					}
 
-					// Simpan ke database jika tabel device ada
+					// Simpan ke database jika database aktif
 					if database.DB != nil {
-						var dev models.Device
-						if err := database.DB.First(&dev, "id = ?", targetDeviceID).Error; err == nil {
-							dev.TelegramChatID = chatID
-							database.DB.Save(&dev)
+						if targetUserID != "" {
+							var u models.User
+							if err := database.DB.First(&u, "id = ?", targetUserID).Error; err == nil {
+								u.TelegramChatID = chatID
+								database.DB.Save(&u)
+								log.Printf("[Telegram] Berhasil menghubungkan user '%s' (ID: %s) ke Chat ID: %s", u.Name, targetUserID, chatID)
+							}
+						}
+
+						if targetDeviceID != "" {
+							var dev models.Device
+							if err := database.DB.First(&dev, "id = ?", targetDeviceID).Error; err == nil {
+								dev.TelegramChatID = chatID
+								database.DB.Save(&dev)
+							}
 						}
 					}
 
 					// Kirim pesan konfirmasi ke pengguna di Telegram
-					replyText := fmt.Sprintf("<b>Halo %s!</b>\n\nAkun Telegram Anda <b>BERHASIL TERHUBUNG</b> ke aplikasi <b>Rintik IoT</b> untuk perangkat <code>%s</code>!\n\nID Obrolan Anda: <code>%s</code>\n\nSekarang Anda akan menerima pesan darurat otomatis di sini jika hujan turun dan jemuran ditarik ke kanopi.",
-						userName, targetDeviceID, chatID)
+					replyText := fmt.Sprintf("<b>Halo %s!</b>\n\nAkun Telegram Anda <b>BERHASIL TERHUBUNG</b> ke aplikasi <b>Rintik IoT</b>!\n\nID Obrolan Anda: <code>%s</code>\n\nSekarang Anda akan menerima pesan darurat otomatis di sini jika sensor mendeteksi hujan dan jemuran ditarik ke kanopi.",
+						userName, chatID)
 
 					sendReply(botToken, chatID, replyText)
 
 					// Broadcast ke Dashboard Web agar langsung update statusnya secara realtime
 					handlers.Hub.Broadcast("telegram_paired", map[string]interface{}{
 						"deviceId": targetDeviceID,
+						"userId":   targetUserID,
 						"chatId":   chatID,
 						"username": userName,
 					})
 
-					log.Printf("[Telegram] Berhasil menghubungkan user '%s' (Chat ID: %s) ke device %s", userName, chatID, targetDeviceID)
+					log.Printf("[Telegram] Berhasil menghubungkan user '%s' (Chat ID: %s)", userName, chatID)
 				}
 			}
 		}

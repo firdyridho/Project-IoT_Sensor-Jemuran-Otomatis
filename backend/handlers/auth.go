@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -180,7 +183,7 @@ func GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-// UpdateProfile updates the display name of current user (REQ-BE-08)
+// UpdateProfile updates display name, username, telegram chat ID, alarm tone, and theme
 func UpdateProfile(c *gin.Context) {
 	userID, err := ExtractUserID(c)
 	if err != nil {
@@ -189,8 +192,8 @@ func UpdateProfile(c *gin.Context) {
 	}
 
 	var req models.UpdateProfileReq
-	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Name) == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Nama lengkap tidak boleh kosong"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input profil tidak valid"})
 		return
 	}
 
@@ -200,21 +203,65 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user.Name = strings.TrimSpace(req.Name)
+	var newToken string
+
+	// 1. Update Name jika diberikan
+	if strings.TrimSpace(req.Name) != "" {
+		user.Name = strings.TrimSpace(req.Name)
+	}
+
+	// 2. Update Username jika diberikan dan berbeda
+	trimmedUsername := strings.ToLower(strings.TrimSpace(req.Username))
+	if trimmedUsername != "" && trimmedUsername != user.Username {
+		if len(trimmedUsername) < 3 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Username minimal 3 karakter"})
+			return
+		}
+
+		var existing models.User
+		if err := database.DB.Where("username = ? AND id != ?", trimmedUsername, user.ID).First(&existing).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "Username sudah digunakan oleh akun lain"})
+			return
+		}
+
+		user.Username = trimmedUsername
+		newToken = generateToken(user.ID, user.Username)
+	}
+
+	// 3. Update TelegramChatID jika pointer disuplai (bisa string kosong jika user ingin menghapus)
+	if req.TelegramChatID != nil {
+		user.TelegramChatID = strings.TrimSpace(*req.TelegramChatID)
+	}
+
+	// 4. Update AlarmTone jika disuplai
+	if strings.TrimSpace(req.AlarmTone) != "" {
+		user.AlarmTone = strings.TrimSpace(req.AlarmTone)
+	}
+
+	// 5. Update Theme jika disuplai
+	if strings.TrimSpace(req.Theme) != "" {
+		user.Theme = strings.TrimSpace(req.Theme)
+	}
+
 	user.UpdatedAt = time.Now()
 	if err := database.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui profil: " + err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"status":  "success",
-		"message": "Profil berhasil diperbarui",
+		"message": "Profil dan pengaturan berhasil diperbarui",
 		"user":    user,
-	})
+	}
+	if newToken != "" {
+		resp["token"] = newToken
+	}
+
+	c.JSON(http.StatusOK, resp)
 }
 
-// UpdatePassword updates user password after verifying old password (REQ-BE-08)
+// UpdatePassword updates user password after verifying current password and enforcing strength policy
 func UpdatePassword(c *gin.Context) {
 	userID, err := ExtractUserID(c)
 	if err != nil {
@@ -224,7 +271,22 @@ func UpdatePassword(c *gin.Context) {
 
 	var req models.UpdatePasswordReq
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input kata sandi tidak valid (minimal 6 karakter)"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input kata sandi tidak valid"})
+		return
+	}
+
+	oldPass := strings.TrimSpace(req.OldPassword)
+	if oldPass == "" {
+		oldPass = strings.TrimSpace(req.CurrentPassword)
+	}
+	if oldPass == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi lama wajib diisi"})
+		return
+	}
+
+	newPass := strings.TrimSpace(req.NewPassword)
+	if newPass == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi baru wajib diisi"})
 		return
 	}
 
@@ -234,12 +296,38 @@ func UpdatePassword(c *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
+	// Verifikasi kata sandi lama
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(oldPass)); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi lama salah"})
 		return
 	}
 
-	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	// Validasi kekuatan kata sandi baru (Clean code & Policy)
+	if len(newPass) < 8 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi baru minimal 8 karakter"})
+		return
+	}
+
+	hasLetter := false
+	hasDigit := false
+	for _, ch := range newPass {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') {
+			hasLetter = true
+		} else if ch >= '0' && ch <= '9' {
+			hasDigit = true
+		}
+	}
+	if !hasLetter || !hasDigit {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi baru harus mengandung kombinasi huruf dan angka"})
+		return
+	}
+
+	if newPass == oldPass {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kata sandi baru tidak boleh sama dengan kata sandi lama"})
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(newPass), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengenkripsi kata sandi baru"})
 		return
@@ -255,6 +343,85 @@ func UpdatePassword(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Kata sandi berhasil diperbarui",
+	})
+}
+
+// TestUserTelegram sends a test alert message to user's Telegram Chat ID
+func TestUserTelegram(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.First(&user, "id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Akun pengguna tidak ditemukan"})
+		return
+	}
+
+	var req struct {
+		ChatID string `json:"chatId"`
+	}
+	_ = c.ShouldBindJSON(&req)
+
+	targetChatID := strings.TrimSpace(req.ChatID)
+	if targetChatID == "" {
+		targetChatID = strings.TrimSpace(user.TelegramChatID)
+	}
+
+	if targetChatID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Chat ID Telegram belum diatur. Masukkan Chat ID akun Telegram Anda terlebih dahulu.",
+		})
+		return
+	}
+
+	botToken := strings.TrimSpace(os.Getenv("TELEGRAM_BOT_TOKEN"))
+	if botToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Bot Telegram belum dikonfigurasi di server. Pastikan environment TELEGRAM_BOT_TOKEN telah disetel.",
+		})
+		return
+	}
+
+	text := fmt.Sprintf("<b>Halo %s!</b>\n\nTes notifikasi bot Telegram dari sistem <b>Rintik IoT Jemuran Otomatis</b> BERHASIL!\n\nID Obrolan Terdaftar: <code>%s</code>\n\nSekarang akun Anda siap menerima peringatan darurat otomatis saat sensor mendeteksi hujan dan jemuran ditarik ke kanopi.",
+		user.Name, targetChatID)
+
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
+	body, _ := json.Marshal(map[string]interface{}{
+		"chat_id":    targetChatID,
+		"text":       text,
+		"parse_mode": "HTML",
+	})
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(body))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal terhubung ke Telegram API: " + err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var tgErr struct {
+			Description string `json:"description"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&tgErr)
+		desc := tgErr.Description
+		if desc == "" {
+			desc = "Status kode Telegram HTTP " + resp.Status
+		}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Telegram menolak pengiriman pesan: " + desc + ". Pastikan Anda sudah menekan tombol /start pada bot Telegram.",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Pesan tes berhasil dikirim ke akun Telegram Anda!",
+		"chatId":  targetChatID,
 	})
 }
 

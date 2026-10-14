@@ -83,12 +83,16 @@ func main() {
 	// REST API Routes
 	api := r.Group("/api")
 	{
-		// Authentication endpoints (Multi-User) dengan proteksi brute-force (BE-10)
+		// Authentication & Profil endpoints (Multi-User) dengan proteksi brute-force (BE-10 & REQ-BE-11)
 		api.POST("/auth/register", handlers.Register)
 		api.POST("/auth/login", handlers.LoginBruteForceMiddleware(), handlers.Login)
 		api.GET("/auth/me", handlers.GetMe)
+		api.GET("/user/profile", handlers.GetMe)
 		api.PUT("/auth/profile", handlers.UpdateProfile)   // REQ-BE-08
+		api.PUT("/user/profile", handlers.UpdateProfile)   // REQ-BE-11
 		api.PUT("/auth/password", handlers.UpdatePassword) // REQ-BE-08
+		api.PUT("/user/password", handlers.UpdatePassword) // REQ-BE-11
+		api.POST("/user/test-telegram", handlers.TestUserTelegram) // REQ-BE-11
 
 		// Sinkronisasi Pengaturan Akun & Preferensi Cloud (REQ-BE-06)
 		api.GET("/user/settings", handlers.GetUserSettings)

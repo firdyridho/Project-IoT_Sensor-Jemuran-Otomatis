@@ -6,12 +6,15 @@ import (
 
 // User represents an authenticated account
 type User struct {
-	ID           string    `gorm:"primaryKey;size:64" json:"id"`
-	Username     string    `gorm:"size:64;uniqueIndex;not null" json:"username"`
-	Name         string    `gorm:"size:128;not null" json:"name"`
-	PasswordHash string    `gorm:"size:256;not null" json:"-"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID             string    `gorm:"primaryKey;size:64" json:"id"`
+	Username       string    `gorm:"size:64;uniqueIndex;not null" json:"username"`
+	Name           string    `gorm:"size:128;not null" json:"name"`
+	PasswordHash   string    `gorm:"size:256;not null" json:"-"`
+	TelegramChatID string    `gorm:"size:64" json:"telegramChatId"`
+	AlarmTone      string    `gorm:"size:64;default:'emergency_siren'" json:"alarmTone"`
+	Theme          string    `gorm:"size:32;default:'dark'" json:"theme"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // Device represents a registered ESP32 clothesline monitor unit
@@ -197,15 +200,20 @@ type UserSettings struct {
 	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
-// UpdateProfileReq format for PUT /api/auth/profile (REQ-BE-08)
+// UpdateProfileReq format for PUT /api/user/profile and /api/auth/profile (REQ-BE-08 & REQ-BE-11)
 type UpdateProfileReq struct {
-	Name string `json:"name" binding:"required"`
+	Name           string `json:"name"`
+	Username       string `json:"username"`
+	TelegramChatID *string `json:"telegramChatId"`
+	AlarmTone      string `json:"alarmTone"`
+	Theme          string `json:"theme"`
 }
 
-// UpdatePasswordReq format for PUT /api/auth/password (REQ-BE-08)
+// UpdatePasswordReq format for PUT /api/user/password and /api/auth/password (REQ-BE-08 & REQ-BE-11)
 type UpdatePasswordReq struct {
-	OldPassword string `json:"oldPassword" binding:"required"`
-	NewPassword string `json:"newPassword" binding:"required,min=6"`
+	OldPassword     string `json:"oldPassword"`
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
 }
 
 // WebPushSubscription format for PWA push notification subscriptions (REQ-BE-09)
