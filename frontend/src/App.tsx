@@ -197,6 +197,20 @@ export const App: React.FC = () => {
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>(() =>
     Notifications.getPermission()
   );
+  const [isNotifSubscribed, setIsNotifSubscribed] = useState<boolean>(() => {
+    return (
+      typeof window !== 'undefined' &&
+      localStorage.getItem('rintik.notif.subscribed') === 'true' &&
+      localStorage.getItem('rintik.notif.disabled_by_user') !== 'true'
+    );
+  });
+
+  useEffect(() => {
+    WebPushService.isSubscribed().then((active) => {
+      setIsNotifSubscribed(active);
+    });
+  }, []);
+
   const [deviceToDelete, setDeviceToDelete] = useState<Perangkat | null>(null);
   const [showClearStorageModal, setShowClearStorageModal] = useState<boolean>(false);
 
@@ -639,8 +653,23 @@ export const App: React.FC = () => {
     };
   }, [activeDevice.deviceId, activeDevice.brokerUrl, settings.backendUrl]);
 
-  // Request browser notifications with Web Push VAPID API (REQ-FE-09)
-  const handleRequestNotification = async () => {
+  // Toggle / Request / Disable browser notifications with Web Push VAPID API (REQ-FE-09 / REQ-BE-10)
+  const handleToggleNotification = async (targetState?: boolean) => {
+    const shouldEnable = typeof targetState === 'boolean' ? targetState : !isNotifSubscribed;
+
+    if (!shouldEnable) {
+      const res = await WebPushService.unsubscribe(settings.backendUrl, session?.token);
+      setIsNotifSubscribed(false);
+      Notifications.addToast({
+        id: 'notif-perm-' + Date.now(),
+        type: 'info',
+        title: 'Notifikasi Dinonaktifkan',
+        message: res.message || 'Pemberitahuan push di peramban ini telah dinonaktifkan.',
+        timestamp: Date.now(),
+      });
+      return;
+    }
+
     if (settings.backendUrl) {
       const res = await WebPushService.subscribe(
         settings.backendUrl,
@@ -648,6 +677,7 @@ export const App: React.FC = () => {
         session?.token
       );
       setNotifPermission(Notifications.getPermission());
+      setIsNotifSubscribed(res.success);
       Notifications.addToast({
         id: 'notif-perm-' + Date.now(),
         type: res.success ? 'success' : 'warning',
@@ -658,7 +688,9 @@ export const App: React.FC = () => {
     } else {
       const perm = await Notifications.requestPermission();
       setNotifPermission(perm);
-      if (perm === 'granted') {
+      const isGranted = perm === 'granted';
+      setIsNotifSubscribed(isGranted);
+      if (isGranted) {
         Notifications.addToast({
           id: 'notif-perm-' + Date.now(),
           type: 'success',
@@ -668,6 +700,27 @@ export const App: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleTestNotification = async () => {
+    if (!settings.backendUrl) {
+      Notifications.addToast({
+        id: 'notif-test-' + Date.now(),
+        type: 'info',
+        title: 'Uji Notifikasi',
+        message: 'Backend URL belum disetel.',
+        timestamp: Date.now(),
+      });
+      return;
+    }
+    const res = await WebPushService.testPush(settings.backendUrl, activeDevice.deviceId);
+    Notifications.addToast({
+      id: 'notif-test-' + Date.now(),
+      type: res.success ? 'success' : 'warning',
+      title: res.success ? 'Uji Notifikasi Terkirim' : 'Gagal Mengirim Uji',
+      message: res.message,
+      timestamp: Date.now(),
+    });
   };
 
   // Switch Device
@@ -1284,7 +1337,11 @@ export const App: React.FC = () => {
                   onClose={() => navigate('/dashboard')}
                   backendUrl={settings.backendUrl}
                   notifPermission={notifPermission}
-                  onRequestNotif={handleRequestNotification}
+                  isNotifEnabled={isNotifSubscribed}
+                  onRequestNotif={() => handleToggleNotification(true)}
+                  onDisableNotif={() => handleToggleNotification(false)}
+                  onToggleNotif={handleToggleNotification}
+                  onTestNotif={handleTestNotification}
                   onLogout={handleLogout}
                 />
               </div>

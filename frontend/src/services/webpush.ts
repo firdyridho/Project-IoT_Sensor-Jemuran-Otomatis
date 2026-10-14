@@ -123,6 +123,11 @@ export class WebPushService {
         throw new Error(errJson.error || `HTTP ${saveRes.status} saat menyimpan langganan`);
       }
 
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rintik.notif.subscribed', 'true');
+        localStorage.removeItem('rintik.notif.disabled_by_user');
+      }
+
       return {
         success: true,
         message: 'Notifikasi Push Realtime berhasil diaktifkan!',
@@ -138,19 +143,64 @@ export class WebPushService {
   }
 
   /**
-   * Unsubscribe from push notifications
+   * Check if push notifications are actively subscribed and not disabled by user
    */
-  public static async unsubscribe(): Promise<{ success: boolean; message: string }> {
+  public static async isSubscribed(): Promise<boolean> {
+    if (!this.isSupported()) return false;
+    if (typeof window !== 'undefined' && localStorage.getItem('rintik.notif.disabled_by_user') === 'true') {
+      return false;
+    }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      return sub !== null;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Unsubscribe from push notifications locally and inform backend
+   */
+  public static async unsubscribe(
+    backendUrl?: string,
+    token?: string
+  ): Promise<{ success: boolean; message: string }> {
     if (!this.isSupported()) {
-      return { success: false, message: 'Web Push tidak didukung.' };
+      return { success: false, message: 'Web Push tidak didukung di peramban ini.' };
     }
 
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
+
+      // Notify backend to remove push endpoint from database/Redis (REQ-BE-10)
+      if (backendUrl && sub?.endpoint) {
+        const cleanUrl = backendUrl.replace(/\/+$/, '');
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        await fetch(`${cleanUrl}/api/notifications/unsubscribe`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ endpoint: sub.endpoint }),
+        }).catch((err) => {
+          console.warn('[WebPush] Gagal lapor unsubscribe ke backend:', err);
+        });
+      }
+
       if (sub) {
         await sub.unsubscribe();
       }
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('rintik.notif.subscribed');
+        localStorage.setItem('rintik.notif.disabled_by_user', 'true');
+      }
+
       return { success: true, message: 'Langganan notifikasi push berhasil dinonaktifkan.' };
     } catch (err: any) {
       return { success: false, message: err.message || 'Gagal menonaktifkan notifikasi push.' };
