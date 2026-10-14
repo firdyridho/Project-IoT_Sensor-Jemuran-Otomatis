@@ -271,10 +271,9 @@ func (s *MqttSubscriber) handleEvent(topic string, raw []byte) {
 
 	database.DB.Create(&eventRecord)
 
-	// Trigger Telegram alert on rain_start or HUJAN_TERDETEKSI (with 10-minute cooldown) (BE-11)
+	// Trigger Telegram alert on rain_start or HUJAN_TERDETEKSI (BE-11: Instant real-time alert via Telegram Bot)
 	if ev.Type == "rain_start" || ev.Type == "HUJAN_TERDETEKSI" {
 		s.triggerTelegramAlert(ev)
-		handlers.SendWebPushAlert(ev.DeviceID, "Peringatan Hujan!", fmt.Sprintf("Sensor mendeteksi air hujan pada perangkat %s. Kanopi jemuran diamankan!", ev.DeviceID))
 	}
 
 	handlers.Hub.Broadcast("event", ev)

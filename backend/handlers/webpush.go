@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -226,73 +225,9 @@ func TestWebPush(c *gin.Context) {
 	})
 }
 
-// SendWebPushAlert broadcasts push notification to registered browsers for a device
+// SendWebPushAlert broadcasts push notification to registered browsers for a device.
+// DEPRECATED: Fitur Web Push browser telah dinonaktifkan demi keandalan & efisiensi VPS.
+// Seluruh notifikasi darurat hujan kini dialihkan 100% ke Telegram Bot (telegram.SendRainAlert).
 func SendWebPushAlert(deviceID string, title string, body string) {
-	vapidMu.RLock()
-	pubKey := vapidPublicKey
-	privKey := vapidPrivateKey
-	vapidMu.RUnlock()
-
-	if pubKey == "" || privKey == "" {
-		return
-	}
-
-	var subs []models.WebPushSubscription
-	if deviceID != "" {
-		database.DB.Where("device_id = ? OR device_id = ''", deviceID).Find(&subs)
-	} else {
-		database.DB.Find(&subs)
-	}
-
-	if len(subs) == 0 {
-		return
-	}
-
-	payloadData, err := json.Marshal(gin.H{
-		"title":     title,
-		"body":      body,
-		"icon":      "/favicon.svg?v=2",
-		"badge":     "/favicon.svg?v=2",
-		"url":       "/",
-		"timestamp": time.Now().UnixMilli(),
-	})
-	if err != nil {
-		return
-	}
-
-	subscriberEmail := os.Getenv("VAPID_SUBSCRIBER_EMAIL")
-	if subscriberEmail == "" {
-		subscriberEmail = "admin@hujanpantau.sslip.io"
-	}
-
-	go func(subscriptions []models.WebPushSubscription, payload []byte) {
-		for _, s := range subscriptions {
-			sub := &webpush.Subscription{
-				Endpoint: s.Endpoint,
-				Keys: webpush.Keys{
-					P256dh: s.P256dh,
-					Auth:   s.Auth,
-				},
-			}
-
-			resp, err := webpush.SendNotification(payload, sub, &webpush.Options{
-				Subscriber:      subscriberEmail,
-				VAPIDPublicKey:  pubKey,
-				VAPIDPrivateKey: privKey,
-				TTL:             60,
-				Urgency:         webpush.UrgencyHigh,
-			})
-
-			if err != nil {
-				log.Printf("[WebPush] Gagal kirim ke subscription #%d (%s): %v", s.ID, s.Endpoint, err)
-			} else if resp != nil {
-				_ = resp.Body.Close()
-				// Jika 410 Gone atau 404, subscription sudah kedaluwarsa di browser, hapus dari DB
-				if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {
-					database.DB.Delete(&s)
-					log.Printf("[WebPush] Menghapus subscription kedaluwarsa #%d (HTTP %d)", s.ID, resp.StatusCode)
-				}
-			}
-		}
-	}(subs, payloadData)
+	// No-op: Web Push dinonaktifkan. Menghindari pemborosan goroutine, query DB, dan outbound HTTP ke Google FCM.
 }
