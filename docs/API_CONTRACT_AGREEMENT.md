@@ -178,6 +178,15 @@ Untuk menjamin sinkronisasi visual yang akurat antara kondisi fisik perangkat da
 * **Arsitektur Penyimpanan**: Berkas disimpan di filesystem VPS Linux pada direktori `uploads/tones/` untuk menjaga efisiensi RAM/CPU server dan menghindari database bloat. Database hanya menyimpan URL ringkas (`customAlarmUrl: "/uploads/tones/..."`).
 * **Serving Berkas**: Dapat diakses langsung oleh peramban secara statis via `GET /uploads/tones/:filename` dengan dukungan HTTP caching dan byte-range streaming.
 
+### 7.2 Deprekasi Web Push Browser & Penyatuan Notifikasi via Telegram Bot
+* **Status**: Web Push Google FCM / VAPID (`/api/notifications/*`) resmi **DINONAKTIFKAN (DEPRECATED)**.
+* **Kanal Peringatan Utama**:
+  1. **Telegram Bot**: Pengiriman otomatis seketika saat sensor mendeteksi hujan (`wet: true` / `rain_start`). Konfigurasi Chat ID dikelola via menu Pengaturan Akun (`PUT /api/user/profile`) dan diuji via `POST /api/user/test-telegram`.
+  2. **Looping Audio Alarm**: Berbunyi di sisi peramban pengguna saat aplikasi terbuka (`PersistentRainAlarmModal.tsx` & `audioAlarm.ts`), mendukung pilihan 4 nada dering bawaan dan nada dering kustom hasil unggah.
+  3. **WebSocket Realtime**: Event `rain_start` dan perubahan status jemuran disiarkan secara instan via WebSocket `/ws`.
+* **Ketentuan Tim Frontend**:
+  * Frontend menghentikan pemanggilan endpoint `/api/notifications/subscribe` dan `/api/notifications/vapid-key`.
+  * Seluruh prompt izin notifikasi browser (`Notification.requestPermission()`) dan tombol toggle Web Push dihapus dari antarmuka aplikasi.
 
 ---
 

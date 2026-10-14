@@ -40,7 +40,26 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
+* [ ] **REQ-FE-14: Penghapusan Fitur Web Push Browser (Google VAPID) & Penyatuan Notifikasi 100% ke Telegram Bot**
+  * Tanggal Diminta: 2026-10-14
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Layout/Header.tsx` (hapus ikon lonceng izin notifikasi browser atau popover pendaftaran web push)
+    * `frontend/src/components/Perangkat/DeviceView.tsx` (hapus kartu pendaftaran notifikasi push browser jika masih ada)
+    * `frontend/src/components/Settings/SettingsView.tsx` (pastikan info notifikasi mengarahkan pengguna ke konfigurasi Telegram Bot)
+    * `frontend/src/services/webpush.ts` (hentikan pendaftaran otomatis ke `/api/notifications/subscribe` dan `/api/notifications/vapid-key`)
+    * `frontend/public/sw.js` (bersihkan event handler push Google FCM yang menampilkan toast native OS, namun **tetap pertahankan** caching berkas offline & nada dering kustom)
+  * Spesifikasi & Instruksi Kerja Frontend:
+    1. **Penyatuan Notifikasi ke Telegram Bot (Unified Alerts Strategy)**:
+       * Project Owner telah memutuskan bahwa fitur Web Push Notification browser (Google VAPID/FCM) tidak lagi digunakan karena keterbatasan peramban seluler (sering diblokir, butuh konfigurasi SSL/domain ketat, dan tidak stabil saat diakses via IP).
+       * Seluruh pengiriman peringatan hujan keluar (eksternal) kini ditangani **100% oleh Telegram Bot**.
+       * Di dalam aplikasi web (foreground), peringatan tetap mengandalkan **Modal HUD Alarm Darurat Hujan & Nada Dering Looping Persisten** (`PersistentRainAlarmModal.tsx` & `audioAlarm.ts`).
+    2. **Pembersihan Antarmuka (UI Cleanup)**:
+       * Hapus elemen UI aktivasi push notification browser (misal: tombol *"Aktifkan Notifikasi"*, tombol lonceng izin push browser, atau snackbar izin browser).
+       * Hapus pemanggilan fungsi `subscribeUserToPush()` saat aplikasi pertama kali dimuat.
+       * Pada tab Pengaturan atau kartu informasi, tambahkan keterangan jelas: *"Peringatan hujan otomatis dikirimkan langsung ke Telegram Anda. Pastikan Chat ID Telegram Anda sudah terhubung."*
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md) Bagian 7.2
+  * Status: Siap Dikerjakan oleh Frontend
 
 ---
 
