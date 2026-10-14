@@ -34,6 +34,10 @@ func setupUserSettingsTestRouter() *gin.Engine {
 		api.PUT("/auth/password", handlers.UpdatePassword)
 		api.PUT("/user/password", handlers.UpdatePassword)
 		api.POST("/user/test-telegram", handlers.TestUserTelegram)
+		api.POST("/user/accept-terms", handlers.AcceptTerms)
+		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
+		api.POST("/notifications/unsubscribe", handlers.UnsubscribeWebPush)
+		api.DELETE("/notifications/subscribe", handlers.UnsubscribeWebPush)
 	}
 	return r
 }
@@ -303,3 +307,113 @@ func TestTelegramTestEndpoint(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, wWithChat.Code)
 	assert.Contains(t, wWithChat.Body.String(), "Bot Telegram belum dikonfigurasi di server")
 }
+
+func TestTermsAuditAcceptance(t *testing.T) {
+	r := setupUserSettingsTestRouter()
+
+	// 1. Registrasi dengan termsAccepted = false -> 400 Bad Request
+	falseVal := false
+	regReject := map[string]interface{}{
+		"name":          "Legal Reject User",
+		"username":      "rejectlegal",
+		"password":      "Password123!",
+		"termsAccepted": &falseVal,
+	}
+	bodyReject, _ := json.Marshal(regReject)
+	reqReject, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(bodyReject))
+	reqReject.Header.Set("Content-Type", "application/json")
+	wReject := httptest.NewRecorder()
+	r.ServeHTTP(wReject, reqReject)
+	assert.Equal(t, http.StatusBadRequest, wReject.Code)
+	assert.Contains(t, wReject.Body.String(), "wajib menyetujui Ketentuan Layanan")
+
+	// 2. Registrasi berhasil otomatis mengisi TermsAcceptedAt
+	regSuccess := map[string]interface{}{
+		"name":     "Legal Accepted User",
+		"username": "legaluser",
+		"password": "Password123!",
+	}
+	bodySuccess, _ := json.Marshal(regSuccess)
+	reqSuccess, _ := http.NewRequest("POST", "/api/auth/register", bytes.NewBuffer(bodySuccess))
+	reqSuccess.Header.Set("Content-Type", "application/json")
+	wSuccess := httptest.NewRecorder()
+	r.ServeHTTP(wSuccess, reqSuccess)
+	assert.Equal(t, http.StatusCreated, wSuccess.Code)
+
+	var authResp handlers.AuthResponse
+	_ = json.Unmarshal(wSuccess.Body.Bytes(), &authResp)
+	assert.NotNil(t, authResp.User.TermsAcceptedAt)
+	token := authResp.Token
+
+	// 3. Panggil POST /api/user/accept-terms untuk mencatat audit persetujuan ulang
+	reqAccept, _ := http.NewRequest("POST", "/api/user/accept-terms", nil)
+	reqAccept.Header.Set("Authorization", "Bearer "+token)
+	wAccept := httptest.NewRecorder()
+	r.ServeHTTP(wAccept, reqAccept)
+	assert.Equal(t, http.StatusOK, wAccept.Code)
+
+	var acceptResp struct {
+		Status          string `json:"status"`
+		TermsAcceptedAt string `json:"termsAcceptedAt"`
+	}
+	_ = json.Unmarshal(wAccept.Body.Bytes(), &acceptResp)
+	assert.Equal(t, "success", acceptResp.Status)
+	assert.NotEmpty(t, acceptResp.TermsAcceptedAt)
+}
+
+func TestWebPushUnsubscribe(t *testing.T) {
+	r := setupUserSettingsTestRouter()
+
+	testEndpoint := "https://fcm.googleapis.com/fcm/send/test-token-12345"
+
+	// 1. Mendaftarkan langganan push baru
+	subPayload := map[string]interface{}{
+		"endpoint": testEndpoint,
+		"keys": map[string]string{
+			"p256dh": "test-p256dh-key",
+			"auth":   "test-auth-secret",
+		},
+	}
+	subBody, _ := json.Marshal(subPayload)
+	reqSub, _ := http.NewRequest("POST", "/api/notifications/subscribe", bytes.NewBuffer(subBody))
+	reqSub.Header.Set("Content-Type", "application/json")
+	wSub := httptest.NewRecorder()
+	r.ServeHTTP(wSub, reqSub)
+	assert.Equal(t, http.StatusCreated, wSub.Code)
+
+	// Pastikan tersimpan di database
+	var count int64
+	database.DB.Model(&models.WebPushSubscription{}).Where("endpoint = ?", testEndpoint).Count(&count)
+	assert.Equal(t, int64(1), count)
+
+	// 2. Unsubscribe via POST /api/notifications/unsubscribe
+	unsubPayload := map[string]string{
+		"endpoint": testEndpoint,
+	}
+	unsubBody, _ := json.Marshal(unsubPayload)
+	reqUnsub, _ := http.NewRequest("POST", "/api/notifications/unsubscribe", bytes.NewBuffer(unsubBody))
+	reqUnsub.Header.Set("Content-Type", "application/json")
+	wUnsub := httptest.NewRecorder()
+	r.ServeHTTP(wUnsub, reqUnsub)
+	assert.Equal(t, http.StatusOK, wUnsub.Code)
+
+	// Pastikan telah terhapus dari database
+	database.DB.Model(&models.WebPushSubscription{}).Where("endpoint = ?", testEndpoint).Count(&count)
+	assert.Equal(t, int64(0), count)
+
+	// 3. Subscribe lagi lalu Unsubscribe via DELETE /api/notifications/subscribe
+	wSub2 := httptest.NewRecorder()
+	reqSub2, _ := http.NewRequest("POST", "/api/notifications/subscribe", bytes.NewBuffer(subBody))
+	reqSub2.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wSub2, reqSub2)
+	assert.Equal(t, http.StatusCreated, wSub2.Code)
+
+	reqDel, _ := http.NewRequest("DELETE", "/api/notifications/subscribe?endpoint="+testEndpoint, nil)
+	wDel := httptest.NewRecorder()
+	r.ServeHTTP(wDel, reqDel)
+	assert.Equal(t, http.StatusOK, wDel.Code)
+
+	database.DB.Model(&models.WebPushSubscription{}).Where("endpoint = ?", testEndpoint).Count(&count)
+	assert.Equal(t, int64(0), count)
+}
+

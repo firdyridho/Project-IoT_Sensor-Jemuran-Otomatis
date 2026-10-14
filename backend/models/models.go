@@ -12,9 +12,10 @@ type User struct {
 	PasswordHash   string    `gorm:"size:256;not null" json:"-"`
 	TelegramChatID string    `gorm:"size:64" json:"telegramChatId"`
 	AlarmTone      string    `gorm:"size:64;default:'emergency_siren'" json:"alarmTone"`
-	Theme          string    `gorm:"size:32;default:'dark'" json:"theme"`
-	CreatedAt      time.Time `json:"createdAt"`
-	UpdatedAt      time.Time `json:"updatedAt"`
+	Theme           string     `gorm:"size:32;default:'dark'" json:"theme"`
+	TermsAcceptedAt *time.Time `json:"termsAcceptedAt"`
+	CreatedAt       time.Time  `json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
 }
 
 // Device represents a registered ESP32 clothesline monitor unit

@@ -92,7 +92,8 @@ func main() {
 		api.PUT("/user/profile", handlers.UpdateProfile)   // REQ-BE-11
 		api.PUT("/auth/password", handlers.UpdatePassword) // REQ-BE-08
 		api.PUT("/user/password", handlers.UpdatePassword) // REQ-BE-11
-		api.POST("/user/test-telegram", handlers.TestUserTelegram) // REQ-BE-11
+		api.POST("/user/test-telegram", handlers.TestUserTelegram) // REQ-BE-09
+		api.POST("/user/accept-terms", handlers.AcceptTerms)       // REQ-BE-11
 
 		// Sinkronisasi Pengaturan Akun & Preferensi Cloud (REQ-BE-06)
 		api.GET("/user/settings", handlers.GetUserSettings)
@@ -116,10 +117,13 @@ func main() {
 		api.GET("/devices/:id/latest", handlers.GetLatest)
 		api.POST("/devices/:id/telegram", handlers.SaveDeviceTelegram)
 
-		// Web Push Notification PWA VAPID (REQ-BE-09)
+		// Web Push Notification PWA VAPID (REQ-BE-09 & REQ-BE-10)
 		api.GET("/notifications/vapid-key", handlers.GetVapidPublicKey)
 		api.GET("/notifications/vapid-public-key", handlers.GetVapidPublicKey)
 		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
+		api.POST("/notifications/unsubscribe", handlers.UnsubscribeWebPush)   // REQ-BE-10
+		api.DELETE("/notifications/subscribe", handlers.UnsubscribeWebPush)   // REQ-BE-10
+		api.DELETE("/notifications/unsubscribe", handlers.UnsubscribeWebPush) // REQ-BE-10
 		api.POST("/notifications/test", handlers.TestWebPush)
 		api.POST("/notifications/test-push", handlers.TestWebPush)
 

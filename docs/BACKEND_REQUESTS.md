@@ -42,41 +42,40 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-BE-10: Endpoint Unsubscribe Web Push Notification (`POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`)**
-  * Tanggal Diminta: 2026-10-14
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI:
-    * Komponen pengaturan perangkat (`DeviceView.tsx`) dan header memiliki tombol untuk menonaktifkan notifikasi push. Saat pengguna mencabut izin atau menonaktifkan push di UI, browser melepaskan push token lokal, namun record di tabel PostgreSQL `web_push_subscriptions` masih tersimpan sehingga worker backend masih berupaya mengirim pesan push ke endpoint tersebut (dan menghasilkan error 410 Gone / 404 dari FCM).
-  * Usulan Endpoint:
-    * `POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`
-  * Format Request Payload yang Diharapkan:
-    ```json
-    {
-      "endpoint": "https://fcm.googleapis.com/fcm/send/..."
-    }
-    ```
-  * Respons yang Diharapkan:
-    ```json
-    {
-      "status": "success",
-      "message": "Langganan notifikasi push berhasil dihapus"
-    }
-    ```
-  * Status: Menunggu Dikerjakan oleh Backend Engineer
-
-* [ ] **REQ-BE-11: Kolom & Endpoint Pencatatan Audit Persetujuan Ketentuan Layanan & Privasi (`terms_accepted_at`)**
-  * Tanggal Diminta: 2026-10-14
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI:
-    * Sesuai kepatuhan dokumen legal (REQ-FE-10), pengguna yang mendaftar diwajibkan menyetujui Ketentuan Layanan & Kebijakan Privasi. Frontend telah menyediakan checkbox dan pernyataan persetujuan. Diperlukan kolom audit `terms_accepted_at` (timestamp datetime) pada tabel `users` saat registrasi atau endpoint konfirmasi.
-  * Usulan Perubahan:
-    * Tambahkan kolom `terms_accepted_at` (nullable datetime) pada model `models.User`.
-    * Di handler `POST /api/auth/register`, otomatis set `terms_accepted_at = time.Now()`.
-  * Status: Menunggu Dikerjakan oleh Backend Engineer
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-BE-10: Endpoint Unsubscribe Web Push Notification (`POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`)**
+  * Tanggal Diminta: 2026-10-14
+  * Tanggal Selesai: 2026-10-14
+  * Diselesaikan Oleh: Backend Engineer
+  * Komponen & Berkas Terkait:
+    * `backend/handlers/webpush.go` (handler `UnsubscribeWebPush`)
+    * `backend/main.go` (rute `POST /notifications/unsubscribe`, `DELETE /notifications/subscribe`, `DELETE /notifications/unsubscribe`)
+    * `backend/user_settings_test.go` (`TestWebPushUnsubscribe`)
+  * Spesifikasi yang Terpenuhi:
+    1. Menyediakan endpoint penghapusan push subscription melalui `POST /api/notifications/unsubscribe`, `DELETE /api/notifications/subscribe`, dan `DELETE /api/notifications/unsubscribe`.
+    2. Mendukung pembacaan `endpoint` dari JSON body `{ "endpoint": "..." }`, format bersarang `{ "subscription": { "endpoint": "..." } }`, maupun query parameter `?endpoint=...`.
+    3. Menghapus record langganan di database sehingga worker backend tidak lagi mengirimkan pesan push ke client yang telah mencabut izin.
+  * Status: [x] SELESAI
+
+* [x] **REQ-BE-11: Kolom & Endpoint Pencatatan Audit Persetujuan Ketentuan Layanan & Privasi (`terms_accepted_at`)**
+  * Tanggal Diminta: 2026-10-14
+  * Tanggal Selesai: 2026-10-14
+  * Diselesaikan Oleh: Backend Engineer
+  * Komponen & Berkas Terkait:
+    * `backend/models/models.go` (kolom `TermsAcceptedAt *time.Time` pada `models.User`)
+    * `backend/handlers/auth.go` (handler `Register` & `AcceptTerms`)
+    * `backend/main.go` (rute `POST /api/user/accept-terms`)
+    * `backend/user_settings_test.go` (`TestTermsAuditAcceptance`)
+  * Spesifikasi yang Terpenuhi:
+    1. Menambahkan kolom `terms_accepted_at` (nullable datetime) pada tabel `users`.
+    2. Pada saat pendaftaran pengguna (`POST /api/auth/register`), `TermsAcceptedAt` otomatis diisi dengan timestamp saat ini (`time.Now()`), serta memvalidasi jika field `termsAccepted` dikirim `false` maka pendaftaran ditolak (400 Bad Request).
+    3. Menyediakan endpoint `POST /api/user/accept-terms` terproteksi JWT untuk mencatat audit persetujuan ulang bagi akun pengguna.
+  * Status: [x] SELESAI
 
 * [x] **REQ-BE-06: Endpoint Sinkronisasi Pengaturan Akun & Preferensi Cloud (`GET /api/user/settings` & `PUT /api/user/settings`)**
   * Tanggal Diminta: 2026-10-13

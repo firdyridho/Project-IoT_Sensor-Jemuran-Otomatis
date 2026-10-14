@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -152,6 +153,42 @@ func SubscribeWebPush(c *gin.Context) {
 		"status":         "success",
 		"message":        "Langganan notifikasi push berhasil didaftarkan",
 		"subscriptionId": newSub.ID,
+	})
+}
+
+// UnsubscribeWebPush removes a client PWA push subscription (REQ-BE-10)
+func UnsubscribeWebPush(c *gin.Context) {
+	var raw struct {
+		Endpoint     string `json:"endpoint"`
+		Subscription struct {
+			Endpoint string `json:"endpoint"`
+		} `json:"subscription"`
+	}
+	_ = c.ShouldBindJSON(&raw)
+
+	endpoint := strings.TrimSpace(raw.Endpoint)
+	if endpoint == "" {
+		endpoint = strings.TrimSpace(raw.Subscription.Endpoint)
+	}
+	if endpoint == "" {
+		endpoint = strings.TrimSpace(c.Query("endpoint"))
+	}
+
+	if endpoint == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Endpoint wajib disertakan"})
+		return
+	}
+
+	if database.DB != nil {
+		if err := database.DB.Where("endpoint = ?", endpoint).Delete(&models.WebPushSubscription{}).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus langganan notifikasi: " + err.Error()})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "Langganan notifikasi push berhasil dihapus",
 	})
 }
 

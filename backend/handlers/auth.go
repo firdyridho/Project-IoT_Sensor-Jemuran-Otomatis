@@ -23,9 +23,10 @@ import (
 var jwtSecret = []byte("hujan-pantau-secret-key-2026")
 
 type RegisterReq struct {
-	Name     string `json:"name" binding:"required"`
-	Username string `json:"username" binding:"required,min=3"`
-	Password string `json:"password" binding:"required,min=6"`
+	Name          string `json:"name" binding:"required"`
+	Username      string `json:"username" binding:"required,min=3"`
+	Password      string `json:"password" binding:"required,min=6"`
+	TermsAccepted *bool  `json:"termsAccepted"`
 }
 
 type LoginReq struct {
@@ -83,6 +84,11 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	if req.TermsAccepted != nil && !*req.TermsAccepted {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Anda wajib menyetujui Ketentuan Layanan & Kebijakan Privasi"})
+		return
+	}
+
 	username := strings.ToLower(strings.TrimSpace(req.Username))
 
 	var existing models.User
@@ -101,13 +107,17 @@ func Register(c *gin.Context) {
 	_, _ = rand.Read(randomBytes)
 	userID := fmt.Sprintf("usr-%s", hex.EncodeToString(randomBytes))
 
+	now := time.Now()
 	newUser := models.User{
-		ID:           userID,
-		Username:     username,
-		Name:         strings.TrimSpace(req.Name),
-		PasswordHash: string(hash),
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
+		ID:              userID,
+		Username:        username,
+		Name:            strings.TrimSpace(req.Name),
+		PasswordHash:    string(hash),
+		AlarmTone:       "emergency_siren",
+		Theme:           "dark",
+		TermsAcceptedAt: &now,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	if err := database.DB.Create(&newUser).Error; err != nil {
@@ -482,3 +492,25 @@ func UpdateUserSettings(c *gin.Context) {
 
 	c.JSON(http.StatusOK, req)
 }
+
+// AcceptTerms records user acceptance of Terms of Service & Privacy Policy (REQ-BE-11)
+func AcceptTerms(c *gin.Context) {
+	userID, err := ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Sesi login tidak valid atau telah kedaluwarsa"})
+		return
+	}
+
+	now := time.Now()
+	if err := database.DB.Model(&models.User{}).Where("id = ?", userID).Update("terms_accepted_at", &now).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mencatat persetujuan ketentuan: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":          "success",
+		"message":         "Persetujuan Ketentuan Layanan & Kebijakan Privasi berhasil dicatat",
+		"termsAcceptedAt": now,
+	})
+}
+
