@@ -94,6 +94,34 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
   * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md)
   * Status: Siap Dikerjakan oleh Frontend
 
+* [ ] **REQ-FE-17: Pemisahan Status "Alarm Audio Dimatikan" dengan "Status Fisik Sensor Masih Basah" & Visualisasi Tingkat Hujan (Gerimis / Hujan / Badai)**
+  * Tanggal Diminta: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai evaluasi Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx`
+    * `frontend/src/App.tsx` (handler `onDismiss` modal alarm & floating banner status)
+    * `frontend/src/components/Dashboard/HeroStatusCard.tsx` (indikator level cuaca: Gerimis, Hujan, Badai)
+  * Masalah & Investigasi UX:
+    1. **Persepsi "Mati Alarm = Hujan Reda"**:
+       * Saat alarm persisten hujan berbunyi dan modal popup raksasa muncul, pengguna menekan tombol *"MATIKAN ALARM"*.
+       * Begitu tombol ditekan, modal popup tertutup dan audio sirine berhenti. Pengguna secara psikologis mengira sistem menganggap cuaca sudah "reda".
+       * Padahal di lapangan, tetesan air masih ada di lempeng sensor fisik ESP32, kanopi jemuran masih diamankan di dalam, dan status telemetri `wet` masih `true`.
+    2. **Solusi Antarmuka yang Diinginkan**:
+       * **Banner / Badge "Alarm Diheningkan"**:
+         Ketika modal alarm ditutup (`onDismiss`) sementara sensor fisik masih mendeteksi basah (`effectiveWet === true`):
+         Tampilkan banner/badge informatif yang tenang di atas Dashboard:
+         *"🔇 Alarm Suara Diheningkan — Sensor Masih Basah (Kanopi Tetap Aman di Dalam)"*.
+         Sertakan tombol pintas kecil untuk membunyikan kembali suara alarm jika diinginkan.
+       * **Klasifikasi Tingkat Hujan Jelas**:
+         Tampilkan level hujan secara transparan berdasarkan persentase basah (`rainPercentage` / `effectivePct`):
+         - `20% - 50%`: **Gerimis** (*Drizzle*)
+         - `51% - 80%`: **Hujan Sedang / Deras** (*Rain*)
+         - `> 80%`: **Badai / Hujan Sangat Lebat** (*Heavy Storm*)
+       * **Jangan Mengeluarkan Toast "Reda" Prematur**:
+         Pastikan notifikasi/toast *"Hujan Telah Reda"* hanya muncul jika status `wet` dari telemetri perangkat benar-benar berubah menjadi `false` (yang kini telah dilatch dengan histeresis Schmitt Trigger pada firmware ESP32).
+  * Dokumen Rujukan: [PRD.md](PRD.md), [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md)
+  * Status: Siap Dikerjakan oleh Frontend
+
 ---
 
 ## Riwayat Permintaan Selesai (Archive)

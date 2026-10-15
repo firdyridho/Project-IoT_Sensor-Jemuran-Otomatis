@@ -45,9 +45,13 @@ PubSubClient client(espClient);
 // Status Posisi Jemuran (false = Di Luar/Jemur, true = Di Dalam/Teduh)
 bool jemuranDiDalam = false;
 
+// Status Hujan Aktif dengan Latch Hysteresis (Schmitt Trigger)
+// Mencegah status 'reda' prematur saat lempeng sensor masih basah/lembab
+bool statusHujanAktif = false;
+
 // Batas Ambang ADC dengan Hysteresis (Mencegah motor bolak-balik karena fluktuasi air)
-#define AMBANG_HUJAN_MASUK    2300 // Jika ADC < 2300, terdeteksi air hujan -> tarik jemuran masuk
-#define AMBANG_KERING_KELUAR  3000 // Jika ADC > 3000, sensor benar-benar kering
+#define AMBANG_HUJAN_MASUK    2300 // Jika ADC < 2300, terdeteksi air hujan -> status terkunci HUJAN & tarik jemuran
+#define AMBANG_KERING_KELUAR  3000 // Jika ADC > 3000, sensor benar-benar kering -> status menjadi KERING
 
 // Timer Debounce Kestabilan Kering (dalam milidetik)
 // Sensor harus kering terus-menerus selama 20 detik sebelum motor boleh mendorong jemuran keluar
@@ -156,10 +160,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   } 
   else if (pesan.indexOf("dorong") >= 0 || pesan.indexOf("keluar") >= 0 || pesan.indexOf("extend") >= 0 || pesan.indexOf("out") >= 0 || pesan.indexOf("buka") >= 0 || pesan == "0") {
     int adcHujan = analogRead(PIN_HUJAN);
-    if (adcHujan >= 2500) {
+    if (!statusHujanAktif && adcHujan >= AMBANG_KERING_KELUAR) {
       gerakkanJemuran(false, "Tombol Web");
     } else {
-      Serial.println("Ditolak: Sensor masih mendeteksi air hujan!");
+      Serial.println("Ditolak: Sensor masih mendeteksi air hujan (status basah aktif)!");
     }
   }
 }
@@ -256,23 +260,37 @@ void loop() {
     int adcHujan = analogRead(PIN_HUJAN);
     int adcLdr   = analogRead(PIN_LDR);
 
-    // Evaluasi logika dengan Hysteresis (mencegah osilasi bolak-balik motor)
-    bool isHujan   = (adcHujan < AMBANG_HUJAN_MASUK);
-    bool isKering  = (adcHujan > AMBANG_KERING_KELUAR);
+    // 1. Konversi ADC hujan ke persentase basah (0-100%)
+    int rainPct = (4095 - adcHujan) * 100 / (4095 - 800);
+    if (rainPct < 0) rainPct = 0;
+    if (rainPct > 100) rainPct = 100;
+
+    // 2. Evaluasi Logika Hysteresis Sejati (Schmitt Trigger)
+    // Mencegah status 'reda' palsu saat lempeng sensor masih basah/lembab
+    if (adcHujan < AMBANG_HUJAN_MASUK) {
+      statusHujanAktif = true; // Air hujan terdeteksi -> status terkunci HUJAN
+    } else if (adcHujan > AMBANG_KERING_KELUAR) {
+      statusHujanAktif = false; // Sensor benar-benar kering -> status menjadi KERING
+    }
+    // Jika ADC di antara AMBANG_HUJAN_MASUK (2300) dan AMBANG_KERING_KELUAR (3000):
+    // statusHujanAktif TETAP mempertahankan status sebelumnya (tidak berubah prematur)!
+
+    // 3. Klasifikasi Tingkat Cuaca: Kering, Hujan Biasa, atau Badai
+    bool isBadai   = (statusHujanAktif && (rainPct > 80 || adcHujan < 1400));
     bool isMendung = (adcLdr > 2500);
 
-    // 1. LOGIKA OTOMATIS CERDAS DENGAN TIMER DEBOUNCE
-    if (isHujan) {
+    // 4. LOGIKA OTOMATIS CERDAS MOTOR DENGAN TIMER DEBOUNCE
+    if (statusHujanAktif) {
       waktuMulaiKering = 0; // Reset timer kering jika masih terdeteksi air hujan
       if (!jemuranDiDalam) {
-        gerakkanJemuran(true, "Auto Hujan");
+        gerakkanJemuran(true, isBadai ? "Auto Badai" : "Auto Hujan");
       }
     } 
-    else if (isKering && jemuranDiDalam) {
-      // Sensor kering: hitung kestabilan cuaca 20 detik sebelum didorong keluar
+    else if (jemuranDiDalam) {
+      // Sensor kering sempurna (> 3000): hitung kestabilan cuaca 20 detik sebelum didorong keluar
       if (waktuMulaiKering == 0) {
         waktuMulaiKering = millis();
-        Serial.println("Sensor kering terdeteksi. Menunggu 20 detik kestabilan cuaca sebelum keluar...");
+        Serial.println("Sensor kering terbukti. Menunggu 20 detik kestabilan cuaca sebelum keluar...");
       } else if (millis() - waktuMulaiKering >= WAKTU_TUNGGU_KERING_MS) {
         Serial.println("Cuaca terbukti stabil kering selama 20 detik! Mendorong jemuran keluar...");
         gerakkanJemuran(false, "Auto Kering");
@@ -280,36 +298,41 @@ void loop() {
       }
     } 
     else {
-      // Di zona buffer hysteresis (2300 - 3000): pertahankan posisi
+      // Di luar dan kering: pastikan timer reset
       waktuMulaiKering = 0;
     }
 
-    // 2. UPDATE TAMPILAN LAYAR OLED
-    String txtHujan   = isHujan ? "HUJAN!" : "Kering";
+    // 5. UPDATE TAMPILAN LAYAR OLED
+    String txtHujan;
+    if (isBadai) {
+      txtHujan = "BADAI!";
+    } else if (statusHujanAktif) {
+      txtHujan = "HUJAN!";
+    } else {
+      txtHujan = "Kering";
+    }
     String txtLangit  = isMendung ? "Mendung" : "Cerah";
     String txtPosisi  = jemuranDiDalam ? "Di Dalam" : "Di Luar";
     bool warningMendung = (isMendung && !jemuranDiDalam);
 
     updateOLED(txtHujan, txtLangit, adcLdr, txtPosisi, warningMendung);
+    Serial.println("Sensor Hujan ADC: " + String(adcHujan) + " (" + String(rainPct) + "%) -> " + txtHujan);
     Serial.println("Sensor LDR: " + String(adcLdr) + " -> " + txtLangit);
 
-    // 3. KIRIM DATA JSON KE WEB LEWAT BROKER MQTT VPS
+    // 6. KIRIM DATA JSON KE WEB LEWAT BROKER MQTT VPS
     String payload = "{";
     payload += "\"device_id\":\"" + String(device_id) + "\",";
     payload += "\"adc_hujan\":" + String(adcHujan) + ",";
+    payload += "\"rain_pct\":" + String(rainPct) + ",";
     payload += "\"adc_ldr\":" + String(adcLdr) + ",";
-    payload += "\"hujan\":" + String(isHujan ? "true" : "false") + ",";
+    payload += "\"hujan\":" + String(statusHujanAktif ? "true" : "false") + ",";
+    payload += "\"badai\":" + String(isBadai ? "true" : "false") + ",";
     payload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
     payload += "\"peringatan\":" + String(warningMendung ? "true" : "false") + ",";
     payload += "\"posisi\":\"" + String(jemuranDiDalam ? "didalam" : "diluar") + "\"";
     payload += "}";
 
     client.publish(topic_publish.c_str(), payload.c_str());
-
-    // Konversi ADC hujan ke persentase basah (0-100%)
-    int rainPct = (4095 - adcHujan) * 100 / (4095 - 800);
-    if (rainPct < 0) rainPct = 0;
-    if (rainPct > 100) rainPct = 100;
 
     // Publikasikan ke topik standar format sistem
     String stdPayload = "{";
@@ -318,7 +341,7 @@ void loop() {
     stdPayload += "\"ts\":" + String(millis()) + ",";
     stdPayload += "\"raw\":" + String(adcHujan) + ",";
     stdPayload += "\"pct\":" + String(rainPct) + ",";
-    stdPayload += "\"wet\":" + String(isHujan ? "true" : "false") + ",";
+    stdPayload += "\"wet\":" + String(statusHujanAktif ? "true" : "false") + ",";
     stdPayload += "\"rssi\":" + String(WiFi.RSSI());
     stdPayload += "}";
     client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
