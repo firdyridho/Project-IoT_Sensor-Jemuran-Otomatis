@@ -371,150 +371,234 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
           {/* Physical Stage: Rope Pulley & Sheltered Roof Simulator (High Contrast & Clear Typography) */}
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-kartu-muted to-kartu border border-garis relative overflow-hidden shadow-xs">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div className="flex flex-col sm:flex-row items-stretch justify-between gap-5">
               {/* Visual Rope & Clothesline Simulator */}
-              <div className="relative w-full sm:w-3/5 h-48 sm:h-52 rounded-xl bg-latar border border-garis flex flex-col justify-between overflow-hidden p-3 shadow-inner">
-                {/* Stage Roof and Sky Layout */}
-                <div className="absolute inset-0 flex">
-                  {/* Left Half: Area Atap Tertutup (Sheltered Terrace Roof) */}
-                  <div className="w-1/2 h-full bg-slate-200/70 dark:bg-slate-800/80 border-r-2 border-dashed border-slate-300 dark:border-slate-700 relative flex flex-col justify-start p-2.5">
-                    <div className="flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400">
-                      <Umbrella className="w-3.5 h-3.5 shrink-0" />
-                      <span>Area Atap Tertutup</span>
+              <div className="relative w-full sm:w-3/5 min-h-[250px] sm:min-h-[270px] rounded-2xl bg-latar border border-garis flex flex-col justify-between overflow-hidden p-3.5 sm:p-4 shadow-inner select-none">
+                {/* Layer 1: Background & Environment (Atap vs Luar) */}
+                <div className="absolute inset-0 flex pointer-events-none">
+                  {/* Left Zone: Sheltered Terrace & Canopy (48%) */}
+                  <div className="w-[48%] h-full bg-slate-200/60 dark:bg-slate-800/70 border-r border-slate-300/80 dark:border-slate-700/80 relative flex flex-col justify-between overflow-hidden">
+                    {/* Architectural Awning / Roof Overhang */}
+                    <div className="w-full">
+                      <div className="h-3.5 bg-slate-300 dark:bg-slate-700 border-b border-slate-400/40 dark:border-slate-600/60 flex items-center px-2 shadow-xs">
+                        <div className="w-full h-1 bg-slate-400/50 dark:bg-slate-600/50 rounded-full" />
+                      </div>
                     </div>
-                    {/* Architectural roof shelter beam */}
-                    <div className="w-full h-3 bg-slate-300 dark:bg-slate-700 rounded-sm mt-1.5 shadow-xs" />
-                    <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">
-                      (Tempat Teduh Kering)
-                    </span>
+
+                    {/* Wall Texture / Servo Motor Wall Mount on Far Left */}
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-14 bg-slate-400 dark:bg-slate-700 rounded-r-md border-y border-r border-slate-500/40 dark:border-slate-600/60 flex flex-col items-center justify-around py-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" title="Motor Aktuator" />
+                      <span className="w-1.5 h-1 bg-slate-600 dark:bg-slate-400 rounded-full" />
+                    </div>
+
+                    {/* Subtle floor surface */}
+                    <div className="w-full h-3 bg-slate-300/70 dark:bg-slate-700/50 border-t border-slate-300 dark:border-slate-700" />
                   </div>
 
-                  {/* Right Half: Area Luar Terbuka (Open Outdoors) */}
-                  <div className="w-1/2 h-full relative p-2.5 flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 text-xs font-black text-amber-600 dark:text-amber-400">
-                      <span>Area Luar Terbuka</span>
-                      <Sun className="w-3.5 h-3.5 shrink-0" />
-                    </div>
-                    <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">
-                      (Sinar Matahari Terik)
-                    </span>
+                  {/* Right Zone: Outdoor Open Air & Sunshine / Rain (52%) */}
+                  <div
+                    className={`w-[52%] h-full relative flex flex-col justify-between overflow-hidden transition-colors duration-700 ${
+                      previewWet
+                        ? 'bg-gradient-to-b from-slate-300/40 via-cyan-900/10 to-blue-900/15 dark:from-slate-800/60 dark:via-cyan-950/30 dark:to-blue-950/40'
+                        : 'bg-gradient-to-b from-amber-100/40 via-amber-50/20 to-transparent dark:from-amber-950/20 dark:via-amber-900/10 dark:to-transparent'
+                    }`}
+                  >
+                    {/* Sky Ambient / Sun Glow in Dry Mode */}
+                    {!previewWet && (
+                      <div className="absolute top-2 right-3 w-20 h-20 rounded-full bg-amber-400/15 blur-xl pointer-events-none" />
+                    )}
 
-                    {/* Animated Rain Falling Exclusively Outdoors When Wet */}
+                    {/* Animated Rain Falling Outdoors Exclusively when Wet */}
                     {previewWet && (
-                      <div className="absolute inset-0 pointer-events-none flex justify-around pl-4 opacity-80">
-                        {[1, 2, 3, 4, 5].map((drop) => (
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        {[15, 35, 55, 75, 90].map((leftPercent, idx) => (
                           <span
-                            key={drop}
-                            className="w-0.5 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-full animate-bounce"
+                            key={idx}
+                            className="absolute top-0 w-0.5 bg-gradient-to-b from-cyan-400/80 to-blue-500/80 rounded-full animate-bounce"
                             style={{
-                              height: `${14 + (drop % 3) * 8}px`,
-                              animationDuration: `${0.5 + (drop % 3) * 0.15}s`,
-                              animationDelay: `${drop * 0.1}s`,
+                              left: `${leftPercent}%`,
+                              height: `${14 + (idx % 3) * 8}px`,
+                              animationDuration: `${0.45 + (idx % 3) * 0.12}s`,
+                              animationDelay: `${idx * 0.08}s`,
                             }}
                           />
                         ))}
                       </div>
                     )}
+
+                    {/* Right Pole / Wall Anchor with idler pulley bracket */}
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-12 bg-slate-300 dark:bg-slate-700 rounded-l-md border-y border-l border-slate-400/40 dark:border-slate-600/50" />
+
+                    {/* Ground surface */}
+                    <div className="w-full h-3 bg-slate-200/80 dark:bg-slate-800/80 border-t border-slate-300 dark:border-slate-700" />
                   </div>
                 </div>
 
-                {/* Pulley Rope Cable & Motor Pulley Gear */}
-                <div className="relative z-10 w-full mt-10">
-                  {/* Horizontal Clothesline Rope */}
-                  <div className="relative w-full h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full flex items-center justify-between shadow-xs">
-                    {/* Left Pulley Wheel (Atap) */}
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 border-indigo-400 bg-slate-900 flex items-center justify-center -ml-1 transition-transform duration-700 ${
-                        previewWet ? 'rotate-180' : 'rotate-0'
-                      }`}
-                    >
-                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                {/* Layer 2: Top Zone Headers (Spacious, Clear, Non-Overlapping) */}
+                <div className="relative z-10 flex items-start justify-between gap-2">
+                  {/* Left Zone Header: Sheltered Area */}
+                  <div className="flex items-center gap-2 max-w-[48%]">
+                    <div className="w-7 h-7 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Umbrella className="w-4 h-4" />
                     </div>
-
-                    {/* Right Pulley Wheel (Luar) */}
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 border-indigo-400 bg-slate-900 flex items-center justify-center -mr-1 transition-transform duration-700 ${
-                        previewWet ? 'rotate-180' : 'rotate-0'
-                      }`}
-                    >
-                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-teks-utama block leading-tight truncate">
+                        Area Atap Tertutup
+                      </span>
+                      <span className="text-[10px] text-teks-sekunder font-medium block leading-tight truncate">
+                        Teduh & Bebas Basah
+                      </span>
                     </div>
                   </div>
 
-                  {/* Movable Clothes Rack Gliding on the Pulley Rope */}
+                  {/* Right Zone Header: Outdoor Area */}
+                  <div className="flex items-center gap-2 max-w-[50%] justify-end text-right">
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400 block leading-tight truncate">
+                        Area Luar Terbuka
+                      </span>
+                      <span className="text-[10px] text-teks-sekunder font-medium block leading-tight truncate">
+                        {previewWet ? 'Terguyur Hujan' : 'Sinar Matahari Terik'}
+                      </span>
+                    </div>
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Sun className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Layer 3: Pulley Rope System & Gliding Clothes Carriage */}
+                <div className="relative z-10 w-full my-auto py-5">
+                  {/* Steel Pulley Track Cable */}
+                  <div className="relative w-full h-1 bg-slate-300 dark:bg-slate-600 rounded-full flex items-center justify-between shadow-xs">
+                    {/* Motor Pulley Hub (Left Wall / Atap) */}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 border-indigo-500 bg-slate-900 flex items-center justify-center -ml-2.5 transition-transform duration-700 shadow-sm ${
+                        previewWet ? 'rotate-180' : 'rotate-0'
+                      }`}
+                      title="Motor Servo Katrol"
+                    >
+                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                    </div>
+
+                    {/* Return Idler Wheel (Right Outdoor Anchor) */}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 border-slate-400 dark:border-slate-500 bg-slate-900 flex items-center justify-center -mr-2.5 transition-transform duration-700 shadow-sm ${
+                        previewWet ? 'rotate-180' : 'rotate-0'
+                      }`}
+                    >
+                      <div className="w-1.5 h-1.5 bg-slate-300 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Gliding Clothesline Trolley Carriage */}
                   <div
-                    className="absolute top-[-5px] transition-all duration-700 ease-out flex flex-col items-center"
+                    className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out flex flex-col items-center pointer-events-none"
                     style={{
-                      left: previewWet ? '14%' : '66%',
-                      transform: 'translateX(-50%)',
+                      left: previewWet ? '24%' : '74%',
+                      transform: 'translate(-50%, -50%)',
                     }}
                   >
-                    {/* Pulley Trolley Hanger */}
-                    <div className="w-4 h-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xs flex items-center justify-center shadow-xs">
-                      <Cable className="w-2.5 h-2.5 text-white" />
+                    {/* Trolley Roller Wheels Riding on Cable */}
+                    <div className="flex items-center gap-2 -mb-0.5">
+                      <div className="w-2 h-2 rounded-full bg-slate-700 dark:bg-slate-200 border border-slate-900" />
+                      <div className="w-2 h-2 rounded-full bg-slate-700 dark:bg-slate-200 border border-slate-900" />
                     </div>
-                    {/* Clothesline Bar */}
-                    <div className="w-16 h-1 bg-slate-700 dark:bg-slate-200 rounded-full my-0.5" />
 
-                    {/* Clean SVG Vector Clothes Hanging */}
-                    <div className="flex items-center gap-2 pt-1">
-                      {/* Item 1: Shirt SVG */}
-                      <svg
-                        className="w-5 h-6 text-indigo-500 dark:text-indigo-400 filter drop-shadow-xs"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M20.38 3.46l-4.22 1.41a2 2 0 0 1-1.31-.05L12 3.65l-2.85 1.17a2 2 0 0 1-1.31.05L3.62 3.46a1 1 0 0 0-1.28 1.13l1.1 5.51a1 1 0 0 0 .9.8l1.66.17V20a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8.93l1.66-.17a1 1 0 0 0 .9-.8l1.1-5.51a1 1 0 0 0-1.26-1.13z" />
-                      </svg>
+                    {/* Trolley Metal Bracket with Cable/Motor icon */}
+                    <div className="w-5 h-4 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xs flex items-center justify-center shadow-md">
+                      <Cable className="w-3 h-3 text-white" />
+                    </div>
 
-                      {/* Item 2: Pants SVG */}
-                      <svg
-                        className="w-4 h-6 text-cyan-600 dark:text-cyan-400 filter drop-shadow-xs"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M18 2H6a2 2 0 0 0-2 2v18l7-4 7 4V4a2 2 0 0 0-2-2z" />
-                      </svg>
+                    {/* Clothes Drying Bar / Rod */}
+                    <div className="w-20 sm:w-24 h-1.5 bg-slate-800 dark:bg-slate-200 rounded-full my-0.5 shadow-sm" />
 
-                      {/* Item 3: Towel SVG */}
-                      <svg
-                        className="w-4 h-5 text-amber-500 dark:text-amber-400 filter drop-shadow-xs"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <rect x="4" y="3" width="16" height="18" rx="2" />
-                      </svg>
+                    {/* Clothes Hanging Gracefully with Real Hanger Hooks */}
+                    <div className="flex items-start justify-center gap-2 sm:gap-2.5 pt-0.5">
+                      {/* Item 1: Shirt on Hanger */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-1 border-t border-l border-slate-500 dark:border-slate-400 rounded-tl-sm -mb-0.5" />
+                        <svg
+                          className="w-5 h-6 text-indigo-500 dark:text-indigo-400 filter drop-shadow-xs"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M20.38 3.46l-4.22 1.41a2 2 0 0 1-1.31-.05L12 3.65l-2.85 1.17a2 2 0 0 1-1.31.05L3.62 3.46a1 1 0 0 0-1.28 1.13l1.1 5.51a1 1 0 0 0 .9.8l1.66.17V20a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8.93l1.66-.17a1 1 0 0 0 .9-.8l1.1-5.51a1 1 0 0 0-1.26-1.13z" />
+                        </svg>
+                      </div>
+
+                      {/* Item 2: Pants / Trousers */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-1 border-t border-l border-slate-500 dark:border-slate-400 rounded-tl-sm -mb-0.5" />
+                        <svg
+                          className="w-4 h-6 text-cyan-600 dark:text-cyan-400 filter drop-shadow-xs"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path d="M18 2H6a2 2 0 0 0-2 2v18l7-4 7 4V4a2 2 0 0 0-2-2z" />
+                        </svg>
+                      </div>
+
+                      {/* Item 3: Towel / Cloth */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-3 h-1 border-t border-l border-slate-500 dark:border-slate-400 rounded-tl-sm -mb-0.5" />
+                        <svg
+                          className="w-4 h-5 text-amber-500 dark:text-amber-400 filter drop-shadow-xs"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <rect x="4" y="3" width="16" height="18" rx="2" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Status Indicator at the Bottom */}
-                <div className="relative z-10 flex items-center justify-between text-xs font-mono pt-2 border-t border-garis/60">
-                  <span className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
-                    <Activity className="w-3.5 h-3.5 text-indigo-500" />
-                    Posisi Rel Tali: {previewWet ? '90° (Bawah Atap)' : '0° (Area Luar)'}
-                  </span>
-                  <span className={`font-bold ${previewWet ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                    {previewWet ? 'Pakaian Aman Terlindungi' : 'Menjemur di Terik Sinar'}
+                {/* Layer 4: Clean Telemetry Status Dock (Zero Collisions, Spacious & Crisp) */}
+                <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-garis/60">
+                  <div className="flex items-center gap-1.5 text-xs text-teks-utama font-medium">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>
+                      Posisi Rel:{' '}
+                      <span className="font-mono font-bold">{previewWet ? '90°' : '0°'}</span>
+                    </span>
+                    <span className="text-[11px] text-teks-sekunder">
+                      ({previewWet ? 'Bawah Atap' : 'Area Luar'})
+                    </span>
+                  </div>
+
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                      previewWet
+                        ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                        : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        previewWet ? 'bg-indigo-500 animate-pulse' : 'bg-amber-500'
+                      }`}
+                    />
+                    <span>{previewWet ? 'Pakaian Terlindungi' : 'Menjemur di Terik Sinar'}</span>
                   </span>
                 </div>
               </div>
 
               {/* Simulation Interactive Controls with Dashboard-Style Blue-Purple Toggle */}
-              <div className="w-full sm:w-2/5 space-y-3.5">
-                <div className="space-y-1">
+              <div className="w-full sm:w-2/5 flex flex-col justify-between space-y-3.5 py-1">
+                <div className="space-y-1.5">
                   <span className="font-bold text-xs sm:text-sm text-teks-utama block">
                     Uji Respon Tali Katrol:
                   </span>
                   <p className="text-[11px] text-teks-sekunder leading-relaxed">
-                    Klik toggle untuk menyimulasikan sensor saat hujan turun. Tali katrol motor seketika menggeser jemuran ke area atap tertutup.
+                    Klik toggle untuk menyimulasikan respon sensor ketika hujan turun. Motor katrol secara otomatis menggeser jemuran ke area atap tertutup dalam hitungan sub-detik.
                   </p>
                 </div>
 
                 {/* Dashboard-Style Rail Toggle Bar with Soft Blue-Purple Accent */}
                 <div
                   onClick={() => setPreviewWet(!previewWet)}
-                  className="relative h-10 w-full rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/90 dark:bg-slate-800 p-1 cursor-pointer select-none transition-all shadow-inner"
+                  className="relative h-11 w-full rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/90 dark:bg-slate-800 p-1 cursor-pointer select-none transition-all shadow-inner"
                   role="button"
                   tabIndex={0}
                   aria-label="Toggle posisi jemuran"
@@ -536,7 +620,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   {/* Sliding Knob with Blue-Purple (Biru Ungu) Accent */}
                   <div
-                    className={`absolute top-1 bottom-1 flex items-center gap-1.5 px-3 rounded-full text-[11px] font-black shadow-md transition-all duration-500 ease-in-out select-none ${
+                    className={`absolute top-1 bottom-1 flex items-center gap-1.5 px-3.5 rounded-full text-[11px] font-black shadow-md transition-all duration-500 ease-in-out select-none ${
                       previewWet
                         ? 'left-1 translate-x-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white ring-2 ring-indigo-400 shadow-indigo-500/30'
                         : 'left-[calc(100%-4px)] -translate-x-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 ring-2 ring-amber-300 shadow-amber-500/25'
