@@ -55,7 +55,43 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
        * Pisahkan kondisi: jika `bmkgDesc` mengandung *"cerah"* (misal *"Cerah Berawan"*), tetapkan kondisi sebagai `'cerah'`.
        * Status `'mendung'` hanya digunakan jika deskripsi BMKG secara eksplisit berbunyi *"Berawan Tebal"* atau *"Mendung"*.
        * Jika telemetri hardware dari WebSocket memiliki flag `mendung: false` (dari sensor LDR yang mendeteksi cahaya terang di atas ambang ADC), dahulukan sensor optik lokal tersebut agar tampilan dashboard akurat mencerminkan kondisi lapangan jemuran.
-  * Dokumen Rujukan: [PRD.md](PRD.md)
+* [ ] **REQ-FE-16: Perbaikan Sinkronisasi Nada Dering Kustom & Preferensi Pengguna Antar-Perangkat (Cross-Device Account Sync)**
+  * Tanggal Diminta: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai laporan Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/services/auth.ts` (fungsi `login()` baris 83-92 dan `register()` baris 160-170)
+    * `frontend/src/components/Settings/SettingsView.tsx`
+    * `frontend/src/App.tsx` (sinkronisasi preferensi akun saat sesi aktif)
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx` (penghapusan/penyembunyian card DHT22 & Baterai karena hardware tidak memakainya)
+  * Masalah & Investigasi:
+    1. **Hilangnya Nada Dering Kustom Saat Ganti Perangkat**:
+       * Backend sudah menyimpan `customAlarmUrl` dan `alarmTone = "custom"` di database (`users` dan `user_settings`) dan mengirimkannya secara utuh pada respon `POST /api/auth/login`.
+       * Namun pada `frontend/src/services/auth.ts`, saat membuat objek `session.user`, frontend hanya menyalin `{ id, name, username, createdAt }`, sedangkan field `customAlarmUrl`, `alarmTone`, `telegramChatId`, dan `theme` **terbuang/tidak disalin**.
+       * Akibatnya saat login di perangkat baru (misal ganti HP atau laptop), perangkat baru tidak mengetahui URL nada dering kustom dan fallback ke default.
+    2. **Pembersihan Telemetri DHT22 & Baterai**:
+       * Project Owner mengonfirmasi bahwa hardware jemuran **tidak menggunakan sensor DHT22 (suhu/kelembapan) maupun modul baterai** (ESP32 ditenagai langsung via kabel USB).
+       * Frontend diminta untuk menyembunyikan atau merapikan kartu Suhu Udara, Kelembapan, dan Daya Baterai pada Dashboard agar antarmuka bersih dan tidak membingungkan pengguna dengan label "DHT22 tidak terpasang".
+  * Solusi untuk Frontend:
+    1. Lengkapi pemetaan `session.user` di `auth.ts`:
+       ```typescript
+       const session: AuthSession = {
+         user: {
+           id: data.user.id,
+           name: data.user.name,
+           username: data.user.username,
+           telegramChatId: data.user.telegramChatId,
+           alarmTone: data.user.alarmTone,
+           customAlarmUrl: data.user.customAlarmUrl,
+           theme: data.user.theme,
+           createdAt: data.user.createdAt,
+         },
+         token: data.token,
+         rememberMe,
+       };
+       ```
+    2. Saat sesi pengguna dimuat di `App.tsx` atau `SettingsView.tsx`, jika `session.user.customAlarmUrl` ada, simpan ke `localStorage.setItem('rintik.alarm.custom_url', ...)` dan trigger `cacheCustomAudio()` agar berkas audio kustom langsung aktif dan tercache di perangkat baru tersebut.
+    3. Rapikan `TelemetryGrid.tsx` agar fokus pada status basah/kering, ADC hujan, sinyal WiFi (RSSI), dan status motor kanopi jemuran.
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md)
   * Status: Siap Dikerjakan oleh Frontend
 
 ---

@@ -422,13 +422,10 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		return
 	}
 
-	// 3. Simpan Telemetri ke Database
-	temp := 28.5
-	hum := 68.0
-	if data.Mendung {
-		hum = 82.0
-	}
-	vbat := 4.10
+	// 3. Simpan Telemetri ke Database (Sensor DHT22 & Baterai tidak dipakai pada hardware)
+	var temp *float64 = nil
+	var hum *float64 = nil
+	var vbat *float64 = nil
 	rssi := -65
 
 	reading := models.Telemetry{
@@ -437,9 +434,9 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		Raw:       data.ADCHujan,
 		Pct:       pct,
 		Wet:       data.Hujan,
-		TempC:     &temp,
-		Hum:       &hum,
-		Vbat:      &vbat,
+		TempC:     temp,
+		Hum:       hum,
+		Vbat:      vbat,
 		RSSI:      &rssi,
 		CreatedAt: now,
 	}
@@ -462,9 +459,9 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		Raw:      data.ADCHujan,
 		Pct:      pct,
 		Wet:      data.Hujan,
-		TempC:    &temp,
-		Hum:      &hum,
-		Vbat:     &vbat,
+		TempC:    temp,
+		Hum:      hum,
+		Vbat:     vbat,
 		RSSI:     &rssi,
 	}
 	handlers.Hub.Broadcast("telemetry", ingestPayload)

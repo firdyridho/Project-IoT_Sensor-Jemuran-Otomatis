@@ -55,7 +55,7 @@ const unsigned long WAKTU_TUNGGU_KERING_MS = 20000;
 unsigned long waktuMulaiKering = 0;
 
 // ================= 3. FUNGSI KONTROL MOTOR & OLED =================
-void updateOLED(String hujan, String cahaya, String posisi, bool warningMendung) {
+void updateOLED(String hujan, String cahaya, int valLdr, String posisi, bool warningMendung) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -72,7 +72,7 @@ void updateOLED(String hujan, String cahaya, String posisi, bool warningMendung)
   display.print("Hujan : "); display.println(hujan);
 
   display.setCursor(0, 32);
-  display.print("Langit: "); display.println(cahaya);
+  display.print("LDR: "); display.print(valLdr); display.print(" "); display.println(cahaya);
 
   display.setCursor(0, 48);
   display.print("Posisi: "); display.println(posisi);
@@ -84,7 +84,7 @@ void updateOLED(String hujan, String cahaya, String posisi, bool warningMendung)
 void gerakkanJemuran(bool tarikMasuk, String sumber) {
   if (tarikMasuk && !jemuranDiDalam) {
     Serial.println("Menarik jemuran masuk (" + sumber + ")...");
-    updateOLED("Proses...", sumber, "Menarik Masuk", false);
+    updateOLED("Proses...", sumber, 0, "Menarik Masuk", false);
 
     // Putar ke arah jemuran masuk (LOW)
     digitalWrite(dirPin, LOW);
@@ -108,7 +108,7 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
   } 
   else if (!tarikMasuk && jemuranDiDalam) {
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
-    updateOLED("Proses...", sumber, "Dorong Keluar", false);
+    updateOLED("Proses...", sumber, 0, "Dorong Keluar", false);
 
     // Putar ke arah jemuran keluar (HIGH)
     digitalWrite(dirPin, HIGH);
@@ -290,7 +290,8 @@ void loop() {
     String txtPosisi  = jemuranDiDalam ? "Di Dalam" : "Di Luar";
     bool warningMendung = (isMendung && !jemuranDiDalam);
 
-    updateOLED(txtHujan, txtLangit, txtPosisi, warningMendung);
+    updateOLED(txtHujan, txtLangit, adcLdr, txtPosisi, warningMendung);
+    Serial.println("Sensor LDR: " + String(adcLdr) + " -> " + txtLangit);
 
     // 3. KIRIM DATA JSON KE WEB LEWAT BROKER MQTT VPS
     String payload = "{";
