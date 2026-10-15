@@ -84,7 +84,57 @@ void updateOLED(String hujan, String cahaya, int valLdr, String posisi, bool war
   display.display();
 }
 
-// Fungsi menggerakkan stepper
+// Fungsi pengiriman telemetri lengkap ke Broker MQTT (dapat dipanggil saat idle maupun saat motor bergerak)
+void kirimDataTelemetri(String posisiMotor, String motorStatus) {
+  int adcHujan = analogRead(PIN_HUJAN);
+  int adcLdr   = analogRead(PIN_LDR);
+
+  int rainPct = (4095 - adcHujan) * 100 / (4095 - 800);
+  if (rainPct < 0) rainPct = 0;
+  if (rainPct > 100) rainPct = 100;
+
+  if (adcHujan < AMBANG_HUJAN_MASUK) {
+    statusHujanAktif = true;
+  } else if (adcHujan > AMBANG_KERING_KELUAR) {
+    statusHujanAktif = false;
+  }
+
+  bool isBadai   = (statusHujanAktif && (rainPct > 80 || adcHujan < 1400));
+  bool isMendung = (adcLdr > 2500);
+  bool warningMendung = (isMendung && (posisiMotor == "diluar" || posisiMotor == "mendorong"));
+
+  // 1. Topik Custom Data (+/data)
+  String payload = "{";
+  payload += "\"device_id\":\"" + String(device_id) + "\",";
+  payload += "\"adc_hujan\":" + String(adcHujan) + ",";
+  payload += "\"rain_pct\":" + String(rainPct) + ",";
+  payload += "\"adc_ldr\":" + String(adcLdr) + ",";
+  payload += "\"hujan\":" + String(statusHujanAktif ? "true" : "false") + ",";
+  payload += "\"badai\":" + String(isBadai ? "true" : "false") + ",";
+  payload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
+  payload += "\"peringatan\":" + String(warningMendung ? "true" : "false") + ",";
+  payload += "\"status\":\"online\",";
+  payload += "\"motor_status\":\"" + motorStatus + "\",";
+  payload += "\"posisi\":\"" + posisiMotor + "\"";
+  payload += "}";
+  client.publish(topic_publish.c_str(), payload.c_str());
+
+  // 2. Topik Standar Format Sistem (hujansensor/+/telemetry)
+  String stdPayload = "{";
+  stdPayload += "\"v\":1,";
+  stdPayload += "\"deviceId\":\"" + String(device_id) + "\",";
+  stdPayload += "\"ts\":" + String(millis()) + ",";
+  stdPayload += "\"raw\":" + String(adcHujan) + ",";
+  stdPayload += "\"pct\":" + String(rainPct) + ",";
+  stdPayload += "\"wet\":" + String(statusHujanAktif ? "true" : "false") + ",";
+  stdPayload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
+  stdPayload += "\"ldrRaw\":" + String(adcLdr) + ",";
+  stdPayload += "\"rssi\":" + String(WiFi.RSSI());
+  stdPayload += "}";
+  client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
+}
+
+// Fungsi menggerakkan stepper dengan pengiriman telemetri realtime berkelanjutan
 void gerakkanJemuran(bool tarikMasuk, String sumber) {
   if (tarikMasuk && !jemuranDiDalam) {
     Serial.println("Menarik jemuran masuk (" + sumber + ")...");
@@ -100,11 +150,10 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
 
-      // PENTING: Kirim heartbeat & panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      // Setiap 500 langkah (~1 detik): panggil loop MQTT & kirim telemetri lengkap realtime
       if (i % 500 == 0) {
         client.loop();
-        String hb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"moving\",\"posisi\":\"menarik\"}";
-        client.publish(topic_publish.c_str(), hb.c_str());
+        kirimDataTelemetri("menarik", "moving");
       } else if (i % 50 == 0) {
         client.loop();
       }
@@ -113,8 +162,7 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     jemuranDiDalam = true;
     Serial.println("Selesai: Jemuran sekarang di dalam.");
-    String doneHb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"idle\",\"posisi\":\"didalam\"}";
-    client.publish(topic_publish.c_str(), doneHb.c_str());
+    kirimDataTelemetri("didalam", "idle");
   } 
   else if (!tarikMasuk && jemuranDiDalam) {
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
@@ -136,11 +184,15 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
 
-      // PENTING: Kirim heartbeat & panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      // Setiap 500 langkah (~1 detik): panggil loop MQTT & kirim telemetri lengkap
       if (i % 500 == 0) {
         client.loop();
-        String hb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"moving\",\"posisi\":\"mendorong\"}";
-        client.publish(topic_publish.c_str(), hb.c_str());
+        kirimDataTelemetri("mendorong", "moving");
+        // Pengaman darurat: Jika mendadak hujan saat didorong keluar, langsung rem dan batalkan!
+        if (statusHujanAktif) {
+          Serial.println("DARURAT: Hujan turun saat jemuran didorong keluar! Berhenti mendorong.");
+          break;
+        }
       } else if (i % 50 == 0) {
         client.loop();
       }
@@ -149,8 +201,7 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     jemuranDiDalam = false;
     Serial.println("Selesai: Jemuran sekarang di luar.");
-    String doneHb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"idle\",\"posisi\":\"diluar\"}";
-    client.publish(topic_publish.c_str(), doneHb.c_str());
+    kirimDataTelemetri("diluar", "idle");
   }
 }
 
@@ -331,35 +382,7 @@ void loop() {
     Serial.println("Sensor Hujan ADC: " + String(adcHujan) + " (" + String(rainPct) + "%) -> " + txtHujan);
     Serial.println("Sensor LDR: " + String(adcLdr) + " -> " + txtLangit);
 
-    // 6. KIRIM DATA JSON KE WEB LEWAT BROKER MQTT VPS
-    String payload = "{";
-    payload += "\"device_id\":\"" + String(device_id) + "\",";
-    payload += "\"adc_hujan\":" + String(adcHujan) + ",";
-    payload += "\"rain_pct\":" + String(rainPct) + ",";
-    payload += "\"adc_ldr\":" + String(adcLdr) + ",";
-    payload += "\"hujan\":" + String(statusHujanAktif ? "true" : "false") + ",";
-    payload += "\"badai\":" + String(isBadai ? "true" : "false") + ",";
-    payload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
-    payload += "\"peringatan\":" + String(warningMendung ? "true" : "false") + ",";
-    payload += "\"posisi\":\"" + String(jemuranDiDalam ? "didalam" : "diluar") + "\"";
-    payload += "}";
-
-    client.publish(topic_publish.c_str(), payload.c_str());
-
-    // Publikasikan ke topik standar format sistem
-    String stdPayload = "{";
-    stdPayload += "\"v\":1,";
-    stdPayload += "\"deviceId\":\"" + String(device_id) + "\",";
-    stdPayload += "\"ts\":" + String(millis()) + ",";
-    stdPayload += "\"raw\":" + String(adcHujan) + ",";
-    stdPayload += "\"pct\":" + String(rainPct) + ",";
-    stdPayload += "\"wet\":" + String(statusHujanAktif ? "true" : "false") + ",";
-    stdPayload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
-    stdPayload += "\"ldrRaw\":" + String(adcLdr) + ",";
-    stdPayload += "\"rssi\":" + String(WiFi.RSSI());
-    stdPayload += "}";
-    client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
-
-    Serial.println("Kirim MQTT [" + topic_publish + "]: " + payload);
+    // 6. KIRIM TELEMETRI LENGKAP KE BROKER MQTT VPS
+    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
   }
 }
