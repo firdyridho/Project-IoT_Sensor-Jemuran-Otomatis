@@ -360,7 +360,7 @@ export const App: React.FC = () => {
     !lastSeenTs ||
     lastSeenTs === 0 ||
     latestState?.status === 'offline' ||
-    Date.now() - lastSeenTs > 6000;
+    Date.now() - lastSeenTs > 15000;
   const isBrokerDisconnected = brokerStatus !== 'connected';
 
   // ---------------------------------------------------------------------------
@@ -387,6 +387,8 @@ export const App: React.FC = () => {
       bateraiV: telemetry.vbat ?? null,
       bateraiPct: telemetry.vbat != null ? Math.min(100, Math.round(((telemetry.vbat - 3.2) / 1.0) * 100)) : null,
       rssi: telemetry.rssi ?? null,
+      mendung: telemetry.mendung ?? null,
+      ldrRaw: telemetry.ldrRaw ?? null,
     };
 
     setReadings((prev) => {
@@ -843,21 +845,23 @@ export const App: React.FC = () => {
     ? 'mendung'
     : 'cerah';
 
-  // LDR sensor optik hardware jika tersedia mendung: false (cahaya terang)
+  // LDR sensor optik hardware realtime (mendung: true / false)
+  const isLdrMendung =
+    latestReading?.mendung === true || (latestState as any)?.mendung === true;
   const isLdrBright =
-    (latestState as any)?.mendung === false || (latestReading as any)?.mendung === false;
+    latestReading?.mendung === false || (latestState as any)?.mendung === false;
 
-  // REQ-FE-17: Tingkat hujan terukur (Gerimis 20-50%, Hujan 51-80%, Badai >80%)
+  // REQ-FE-17 & REQ-FE-19: Tingkat cuaca terukur realtime hardware
   const realCondition: WeatherCondition = currentWet
     ? currentPct > 80
       ? 'badai'
       : currentPct > 50
       ? 'hujan'
       : 'gerimis'
+    : isLdrMendung
+    ? 'mendung'
     : isLdrBright
     ? 'cerah'
-    : currentPct > 40
-    ? 'mendung'
     : bmkgCondition;
 
   const activeCondition: WeatherCondition = realCondition;

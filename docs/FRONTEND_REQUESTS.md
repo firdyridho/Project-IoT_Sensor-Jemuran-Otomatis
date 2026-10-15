@@ -46,6 +46,21 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Riwayat Permintaan Selesai (Archive)
 
+* [x] **REQ-FE-19: Inferensi Cuaca Mendung Realtime dari Sensor Optik LDR Hardware & Toleransi Status Offline saat Motor Kanopi Bergerak**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai pengujian Project Owner)
+  * Diselesaikan Oleh: Fullstack / Backend Engineer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/types/iot.ts` (penambahan field `mendung` dan `ldrRaw` pada interface `PembacaanHujan` dan `TelemetryPayload`)
+    * `frontend/src/App.tsx` (pemetaan `mendung` dan `ldrRaw` pada `handleIngestTelemetry`, prioritas `isLdrMendung` di `realCondition`, serta peningkatan timeout offline dari 6 detik menjadi 15 detik)
+    * `backend/models/models.go` & `backend/mqtt/subscriber.go` (penyiaran data LDR dan status mendung hardware secara realtime via WebSocket)
+    * `iot/hujan_esp32.ino` (pengiriman heartbeat berkala setiap 500 langkah saat motor stepper bergerak agar tidak terjadi blackout komunikasi)
+  * Spesifikasi yang Terpenuhi:
+    1. **Sinkronisasi Realtime Cuaca Mendung**: Ketika sensor optik LDR pada ESP32 mendeteksi intensitas cahaya gelap/mendung (`mendung: true`), dashboard web langsung berubah realtime menjadi status Mendung tanpa tertimpa oleh ramalan cuaca BMKG.
+    2. **Eliminasi Kedipan Status Offline saat Motor Berputar**: Jeda toleransi waktu offline di web ditingkatkan dari 6 detik menjadi 15 detik, dan ESP32 kini menyiarkan heartbeat status gerak (`motor_status: moving`) secara berkala di sela-sela langkah stepper sehingga status perangkat tetap stabil *Online*.
+  * Status: [x] SELESAI
+
 * [x] **REQ-FE-18: Halaman Mandiri Ketentuan Layanan & Kebijakan Privasi (Bebas Scroll Tanpa Popup) serta Redesain Landing Page Dinamis dengan Animasi Counter Meningkat saat Di-scroll**
   * Tanggal Diminta: 2026-10-15
   * Tanggal Selesai: 2026-10-15

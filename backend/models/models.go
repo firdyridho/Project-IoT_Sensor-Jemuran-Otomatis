@@ -74,6 +74,8 @@ type IngestPayload struct {
 	Hum      *float64 `json:"hum"`
 	Vbat     *float64 `json:"vbat"`
 	RSSI     *int     `json:"rssi"`
+	Mendung  *bool    `json:"mendung,omitempty"`
+	LdrRaw   *int     `json:"ldrRaw,omitempty"`
 }
 
 // StatePayload format for MQTT state retained messages
@@ -85,6 +87,8 @@ type StatePayload struct {
 	TS       int64  `json:"ts"`
 	UptimeS  int    `json:"uptimeS"`
 	RSSI     int    `json:"rssi"`
+	Mendung  *bool  `json:"mendung,omitempty"`
+	LdrRaw   *int   `json:"ldrRaw,omitempty"`
 	Rain     struct {
 		Raw          int   `json:"raw"`
 		Pct          int   `json:"pct"`

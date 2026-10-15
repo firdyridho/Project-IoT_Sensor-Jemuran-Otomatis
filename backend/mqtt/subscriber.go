@@ -452,6 +452,8 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	})
 
 	// 5. Siarkan ke WebSocket Frontend
+	isMendung := data.Mendung
+	ldrVal := data.ADCLdr
 	ingestPayload := models.IngestPayload{
 		V:        1,
 		DeviceID: devID,
@@ -463,12 +465,16 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		Hum:      hum,
 		Vbat:     vbat,
 		RSSI:     &rssi,
+		Mendung:  &isMendung,
+		LdrRaw:   &ldrVal,
 	}
 	handlers.Hub.Broadcast("telemetry", ingestPayload)
 	handlers.Hub.Broadcast("state", models.StatePayload{
 		V:        1,
 		DeviceID: devID,
 		Status:   "online",
+		Mendung:  &isMendung,
+		LdrRaw:   &ldrVal,
 	})
 	handlers.Hub.Broadcast("motor", gin.H{
 		"deviceId":    devID,

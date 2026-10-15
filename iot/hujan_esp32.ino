@@ -100,8 +100,12 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
 
-      // PENTING: Panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
-      if (i % 50 == 0) {
+      // PENTING: Kirim heartbeat & panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      if (i % 500 == 0) {
+        client.loop();
+        String hb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"moving\",\"posisi\":\"menarik\"}";
+        client.publish(topic_publish.c_str(), hb.c_str());
+      } else if (i % 50 == 0) {
         client.loop();
       }
       yield();
@@ -109,6 +113,8 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     jemuranDiDalam = true;
     Serial.println("Selesai: Jemuran sekarang di dalam.");
+    String doneHb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"idle\",\"posisi\":\"didalam\"}";
+    client.publish(topic_publish.c_str(), doneHb.c_str());
   } 
   else if (!tarikMasuk && jemuranDiDalam) {
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
@@ -130,8 +136,12 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       digitalWrite(stepPin, LOW);
       delayMicroseconds(1000);
 
-      // PENTING: Panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
-      if (i % 50 == 0) {
+      // PENTING: Kirim heartbeat & panggil client.loop() berkala agar broker MQTT tidak memutus koneksi (LWT Offline)
+      if (i % 500 == 0) {
+        client.loop();
+        String hb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"moving\",\"posisi\":\"mendorong\"}";
+        client.publish(topic_publish.c_str(), hb.c_str());
+      } else if (i % 50 == 0) {
         client.loop();
       }
       yield();
@@ -139,6 +149,8 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
 
     jemuranDiDalam = false;
     Serial.println("Selesai: Jemuran sekarang di luar.");
+    String doneHb = "{\"device_id\":\"" + String(device_id) + "\",\"status\":\"online\",\"motor_status\":\"idle\",\"posisi\":\"diluar\"}";
+    client.publish(topic_publish.c_str(), doneHb.c_str());
   }
 }
 
@@ -342,6 +354,8 @@ void loop() {
     stdPayload += "\"raw\":" + String(adcHujan) + ",";
     stdPayload += "\"pct\":" + String(rainPct) + ",";
     stdPayload += "\"wet\":" + String(statusHujanAktif ? "true" : "false") + ",";
+    stdPayload += "\"mendung\":" + String(isMendung ? "true" : "false") + ",";
+    stdPayload += "\"ldrRaw\":" + String(adcLdr) + ",";
     stdPayload += "\"rssi\":" + String(WiFi.RSSI());
     stdPayload += "}";
     client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());

@@ -26,6 +26,8 @@ export interface PembacaanHujan {
   bateraiV: number | null; // voltage (e.g. 3.91V)
   bateraiPct: number | null; // 0-100%
   rssi: number | null; // dBm e.g. -58
+  mendung?: boolean | null; // LDR optic state
+  ldrRaw?: number | null; // LDR raw ADC
 }
 
 export type JenisPeristiwa =
@@ -105,6 +107,8 @@ export interface TelemetryPayload {
   hum?: number | null;
   vbat?: number | null;
   rssi?: number | null;
+  mendung?: boolean | null;
+  ldrRaw?: number | null;
 }
 
 export interface EventPayload {
