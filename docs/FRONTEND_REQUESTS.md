@@ -40,7 +40,26 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
+* [ ] **REQ-FE-20: Tampilan Status Pergerakan Motor Stepper Realtime (`motor_status: moving`) & Visualisasi Sensor Cahaya LDR pada Dashboard**
+  * Tanggal Diminta: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Dashboard/ClotheslineMotorCard.tsx` (tampilan status pergerakan motor stepper secara visual saat sedang aktif berjalan)
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx` atau `SensorADCCard.tsx` (kartu/badge nilai sensor optik LDR)
+    * `frontend/src/App.tsx` (meneruskan `activeDevice.motorStatus` dan `latestReading.ldrRaw` ke komponen dashboard terkait)
+  * Spesifikasi & Instruksi Kerja Frontend:
+    1. **Indikator Animasi Motor Sedang Bergerak**:
+       * Firmware ESP32 dan Backend kini menyiarkan status pergerakan motor secara realtime setiap 1 detik:
+         `motor_status: "moving"` dengan `posisi: "menarik"` atau `"mendorong"`.
+       * Pada `ClotheslineMotorCard.tsx`, tampilkan indikator visual dinamis saat motor sedang bergerak:
+         - Jika `motorStatus === 'moving'` dan posisi adalah menarik: Tampilkan badge animasi/spinner gear: *"⚙️ Motor Sedang Menarik Jemuran Masuk..."*.
+         - Jika `motorStatus === 'moving'` dan posisi adalah mendorong: Tampilkan badge animasi: *"⚙️ Motor Sedang Membentangkan Jemuran ke Luar..."*.
+         - Tombol kontrol manual dinonaktifkan (*disabled/loading*) saat motor sedang aktif melangkah agar terhindar dari konflik perintah ganda.
+    2. **Kartu / Indikator Nilai Sensor Cahaya LDR**:
+       * WebSocket dan REST telemetri kini sudah menyediakan field `ldrRaw` (nilai ADC LDR 0-4095) dan `mendung` (`boolean`).
+       * Tampilkan informasi intensitas cahaya pada `TelemetryGrid.tsx` (misalnya menambahkan kartu *"Sensor Cahaya (LDR)"* dengan nilai ADC mentah dan label status *"Terang"* / *"Mendung"*), sehingga pengguna dapat memantau angka sensor cahaya di website persis seperti yang tertampil di layar OLED ESP32.
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md)
+  * Status: Siap Dikerjakan oleh Frontend
 
 ---
 
