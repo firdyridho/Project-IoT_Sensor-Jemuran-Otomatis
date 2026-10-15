@@ -40,29 +40,21 @@ function easeOutExpo(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
 }
 
-// Hero typing effect hook
-const TYPING_PHRASES = [
-  'Tali otomatis menarik jemuran ke atap tertutup.',
-  'Amankan pakaian keluarga dari tetesan air pertama.',
-  'Otomatisasi katrol jemuran sub-detik tanpa cemas.',
-];
+// Hero headline typing effect hook
+const HERO_TYPE_TARGET = 'Amankan Jemuran Otomatis.';
 
-function useHeroTypewriter(phrases: string[], typingSpeed = 65, deletingSpeed = 35, pause = 2400) {
-  const [phraseIdx, setPhraseIdx] = useState(0);
+function useHeroHeadlineTypewriter(text = HERO_TYPE_TARGET, typingSpeed = 80, deletingSpeed = 40, pause = 3200) {
   const [subIdx, setSubIdx] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const current = phrases[phraseIdx];
-
-    if (!isDeleting && subIdx === current.length) {
+    if (!isDeleting && subIdx === text.length) {
       const timeout = setTimeout(() => setIsDeleting(true), pause);
       return () => clearTimeout(timeout);
     }
 
     if (isDeleting && subIdx === 0) {
       setIsDeleting(false);
-      setPhraseIdx((prev) => (prev + 1) % phrases.length);
       return;
     }
 
@@ -71,9 +63,9 @@ function useHeroTypewriter(phrases: string[], typingSpeed = 65, deletingSpeed = 
     }, isDeleting ? deletingSpeed : typingSpeed);
 
     return () => clearTimeout(timeout);
-  }, [subIdx, isDeleting, phraseIdx, phrases, typingSpeed, deletingSpeed, pause]);
+  }, [subIdx, isDeleting, text, typingSpeed, deletingSpeed, pause]);
 
-  return phrases[phraseIdx].substring(0, subIdx);
+  return text.substring(0, subIdx);
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -105,8 +97,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const targetHum = previewWet ? 88 : 12;
   const targetLatency = 3.8;
 
-  // Hero typewriter hook
-  const typedText = useHeroTypewriter(TYPING_PHRASES);
+  // Hero headline typing hook
+  const typedHeroText = useHeroHeadlineTypewriter();
 
   // 1. Lenis Smooth Scrolling for Landing Page
   useEffect(() => {
@@ -273,44 +265,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* 2. Hero Section with Typing Animation & Handcrafted Underline Highlight */}
       <section className="pt-12 sm:pt-20 pb-12 sm:pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-6">
         {/* Main Headline */}
-        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.15]">
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.12]">
           Pantau Hujan Realtime.{' '}
-          <span className="block mt-1 sm:mt-2">
-            Tali Otomatis Tarik{' '}
-            <span className="relative inline-block whitespace-nowrap">
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
-                Jemuran Otomatis
-              </span>
-              {/* Harmonized Underline Highlight with Gentle Blue Glow */}
-              <svg
-                className="absolute left-0 -bottom-1.5 w-full h-3.5 text-blue-500/40 dark:text-cyan-400/40 pointer-events-none"
-                viewBox="0 0 100 20"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M0 14 Q 50 2, 100 12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>{' '}
-            ke Bawah Atap.
+          <span className="relative inline-block">
+            <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
+              {typedHeroText}
+            </span>
+            <span className="inline-block w-[3px] h-[0.8em] bg-cyan-400 ml-1.5 align-middle animate-pulse rounded-full" />
+            {/* Harmonized Underline Highlight with Gentle Blue Glow */}
+            <svg
+              className={`absolute left-0 -bottom-1.5 w-full h-3.5 text-blue-500/40 dark:text-cyan-400/40 pointer-events-none transition-opacity duration-300 ${
+                typedHeroText.includes('Jemuran') ? 'opacity-100' : 'opacity-0'
+              }`}
+              viewBox="0 0 100 20"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M0 14 Q 50 2, 100 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3.5"
+                strokeLinecap="round"
+              />
+            </svg>
           </span>
         </h1>
 
-        {/* Dynamic Typewriter Tagline */}
-        <div className="h-10 sm:h-8 flex items-center justify-center">
-          <p className="text-xs xs:text-sm sm:text-base text-teks-sekunder font-mono font-medium max-w-2xl mx-auto leading-relaxed flex items-center justify-center">
-            <span>{typedText}</span>
-            <span className="inline-block w-2 h-4 sm:h-5 ml-1 bg-blue-500 dark:bg-cyan-400 animate-pulse rounded-xs" />
-          </p>
-        </div>
-
         {/* Subtitle Explaining the Rope/Pulley Hardware */}
-        <p className="text-xs xs:text-sm sm:text-base text-teks-sekunder max-w-2xl mx-auto leading-relaxed">
-          Sistem mikrokontroler ESP32 menggerakkan tali katrol rel jemuran seketika plat sensor mendeteksi tetesan air pertama, memindahkan pakaian dari area terik luar langsung ke bawah naungan atap tertutup.
+        <p className="text-xs xs:text-sm sm:text-base lg:text-lg text-teks-sekunder max-w-2xl mx-auto leading-relaxed">
+          Sistem IoT presisi tinggi yang menggerakkan motor servo penarik tali jemuran ke atap tertutup seketika tetesan air pertama terdeteksi di plat sensor. Lindungi pakaian keluarga tanpa rasa cemas, kapan pun dan di mana pun.
         </p>
 
         {/* Action Buttons */}
