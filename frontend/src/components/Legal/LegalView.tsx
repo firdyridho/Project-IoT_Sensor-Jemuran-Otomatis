@@ -77,7 +77,7 @@ export const LegalView: React.FC<LegalViewProps> = ({
   return (
     <div className="min-h-screen bg-latar text-teks-utama selection:bg-cyan-500 selection:text-white flex flex-col">
       {/* 1. Dedicated Top Navigation Bar */}
-      <header className="sticky top-0 z-40 w-full border-b bg-kartu/85 backdrop-blur-md border-garis">
+      <header className="sticky top-0 z-40 w-full border-b bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-garis">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Button

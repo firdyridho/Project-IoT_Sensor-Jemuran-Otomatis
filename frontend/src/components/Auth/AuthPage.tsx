@@ -97,7 +97,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-b from-cyan-500/10 via-blue-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
       {/* Top Bar for Back & Theme Toggle */}
-      <header className="w-full border-b bg-kartu/80 backdrop-blur-md border-garis sticky top-0 z-30">
+      <header className="w-full border-b bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-garis sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-3.5 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           <button
             onClick={onBackToLanding}

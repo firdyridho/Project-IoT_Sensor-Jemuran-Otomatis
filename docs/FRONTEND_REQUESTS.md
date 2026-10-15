@@ -143,19 +143,42 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
     2. Status `'mendung'` hanya digunakan jika BMKG secara eksplisit menyatakan *"Berawan Tebal"* atau *"Mendung"*.
     3. Jika telemetri hardware memiliki flag `mendung: false` (sensor LDR mendeteksi cahaya terang di atas ambang ADC), sensor optik lokal diprioritaskan.
   * Status: [x] SELESAI
+
+* [x] **REQ-FE-17: Halaman Penuh Mandiri Ketentuan Layanan & Kebijakan Privasi serta Interaktivitas Landing Page**
+  * Tanggal Diminta: 2026-10-15
   * Tanggal Selesai: 2026-10-15
   * Diminta Oleh: Project Owner
   * Diselesaikan Oleh: Frontend Developer
   * Target Komponen & Berkas Terkait:
     * `frontend/src/components/Legal/LegalView.tsx` (didesain ulang sebagai halaman penuh independen dengan header navigasi, tab switcher yang menyinkronkan rute `/terms` dan `/privacy`, tombol cetak dokumen/PDF, toggle tema, dan scrolling native dokumen tanpa kendala gestur)
-    * `frontend/src/components/Landing/LandingPage.tsx` (redesain landing page dengan panggung simulasi fisik kanopi jemuran, animasi counter meningkat saat di-scroll untuk Servo 0°, ADC 3850, Kelembapan 12%, dan Latency Sub-4ms, sandbox AI interaktif, accordion FAQ, dan tautan legal langsung)
+    * `frontend/src/components/Landing/LandingPage.tsx` (redesain landing page dengan panggung simulasi fisik tali rel jemuran, animasi counter meningkat saat di-scroll untuk Servo 0°, ADC 3850, Kelembapan 12%, dan Latency Sub-4ms, sandbox AI interaktif, accordion FAQ, dan tautan legal langsung)
     * `frontend/src/components/Auth/AuthPage.tsx` (mengganti popup modal legal pada formulir registrasi dan footer dengan tautan SPA langsung `<Link to="/terms">` dan `<Link to="/privacy">`)
     * `frontend/src/App.tsx` (pemberian props `theme` dan `onToggleTheme` pada rendering rute `/terms` dan `/privacy`)
     * `frontend/src/components/Common/LegalModal.tsx` (didepresiasi dan dilepaskan dari seluruh alur aplikasi)
   * Spesifikasi yang Terpenuhi:
     1. **Eliminasi Popup Modal Legal**: Ketentuan Layanan dan Kebijakan Privasi kini dibuka sebagai halaman mandiri penuh. Masalah scroll tertahan teratasi secara menyeluruh karena menggunakan scrolling native browser yang mulus di ponsel pintar maupun komputer.
     2. **Animasi Angka Counter Meningkat saat Di-scroll**: Ketika pengunjung menggulir ke bagian telemetri konsol hardware, angka secara dinamis meningkat (count-up) dari 0 menuju angka target (Servo 0° Jemur, ADC 3850, Kelembapan 12% Kering, Latensi 3.8ms Sub-4ms) menggunakan kurva easing eksponensial.
-    3. **Panggung Simulasi Interaktif & Sandbox AI**: Pengunjung dapat menyimulasikan tetesan hujan, melihat kanopi menutup dan jemuran terlindungi, serta menggeser slider kelembapan udara untuk melihat reaksi prediksi AI secara realtime.
+    3. **Panggung Simulasi Interaktif & Sandbox AI**: Pengunjung dapat menyimulasikan tetesan hujan, melihat rel tali katrol bergerak ke atap tertutup dan jemuran terlindungi, serta menggeser slider kelembapan udara untuk melihat reaksi prediksi AI secara realtime.
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-18: Desain Taste V1 Landing Page (Ambient Ethereal Blue-Purple Flow, Scrollbar Gradasi Ungu-Biru, Kontras & Toggle Tali Katrol ESP32, Prediksi AI Berwarna & Elegan, dan Perbaikan Bug Header Dark Mode)**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Project Owner
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Landing/LandingPage.tsx`
+    * `frontend/src/components/Layout/Header.tsx`
+    * `frontend/src/components/Legal/LegalView.tsx`
+    * `frontend/src/components/Auth/AuthPage.tsx`
+    * `frontend/src/App.tsx`
+    * `frontend/src/index.css`
+  * Spesifikasi yang Terpenuhi:
+    1. **Ambient Ethereal Blue-Purple Gradient Flow**: Menambahkan lapisan aura gradasi biru-ungu tipis dan lembut di latar belakang landing page (`animate-subtle-gradient` & `animate-float-slow`) yang bergerak halus tanpa mencolok (anti-slop).
+    2. **Scrollbar Gradasi Ungu-Biru**: Menyesuaikan scrollbar di Landing Page, Login, dan Register dengan gradasi warna ungu-biru (`linear-gradient(180deg, #6366f1, #3b82f6, #a855f7)`) yang elegan dan modern.
+    3. **Konsol Telemetri Hardware ESP32 & Panggung Tali Katrol**: Memperbaiki kontras teks pada kedua sisi panggung simulasi (Area Atap Tertutup vs Area Luar Terbuka) sehingga tulisan sangat terbaca di mode terang maupun gelap. Menambahkan toggle switch bergaya rel dashboard dengan aksen gradasi biru-ungu.
+    4. **Prediksi Hujan & Rekomendasi Jemur Berbasis AI**: Memperkaya visual modul AI dengan gauge melingkar berpendar, indikator status berwarna semantik (Hijau Emerald untuk Aman Jemur, Emas Amber untuk Waspada, Merah Rose untuk Tarik ke Atap), slider gradasi mikro, serta 4 kartu metrik pintar yang hidup.
+    5. **Perbaikan Bug Header Dark Mode**: Memastikan seluruh header (Dashboard saat cerah maupun mendung, Landing Page, Auth, dan Legal) selalu merespons pilihan tema gelap pengguna secara konsisten (`bg-slate-900/90 text-slate-100 border-slate-800`).
   * Status: [x] SELESAI
 
 * [x] **REQ-FE-14: Penghapusan Fitur Web Push Browser (Google VAPID) & Penyatuan Notifikasi 100% ke Telegram Bot**

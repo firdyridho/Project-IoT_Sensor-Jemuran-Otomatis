@@ -942,13 +942,15 @@ export const App: React.FC = () => {
 
     if (isLandingOrAuth) {
       if (isDark) {
-        root.style.setProperty('--scrollbar-track', '#070b14');
-        root.style.setProperty('--scrollbar-thumb', '#1e293b');
-        root.style.setProperty('--scrollbar-thumb-hover', '#334155');
+        root.style.setProperty('--scrollbar-track', '#090d16');
+        root.style.setProperty('--scrollbar-thumb', 'linear-gradient(180deg, #6366f1, #3b82f6, #a855f7)');
+        root.style.setProperty('--scrollbar-thumb-hover', 'linear-gradient(180deg, #4f46e5, #2563eb, #9333ea)');
+        root.style.setProperty('--scrollbar-thumb-solid', '#6366f1');
       } else {
         root.style.setProperty('--scrollbar-track', '#f8fafc');
-        root.style.setProperty('--scrollbar-thumb', '#cbd5e1');
-        root.style.setProperty('--scrollbar-thumb-hover', '#94a3b8');
+        root.style.setProperty('--scrollbar-thumb', 'linear-gradient(180deg, #818cf8, #60a5fa, #c084fc)');
+        root.style.setProperty('--scrollbar-thumb-hover', 'linear-gradient(180deg, #6366f1, #3b82f6, #a855f7)');
+        root.style.setProperty('--scrollbar-thumb-solid', '#818cf8');
       }
     } else if (activeTab === 'dashboard') {
       if (activeCondition === 'cerah') {

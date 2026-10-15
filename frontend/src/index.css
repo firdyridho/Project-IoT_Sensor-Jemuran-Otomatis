@@ -69,18 +69,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb, #94a3b8);
+  background: var(--scrollbar-thumb, linear-gradient(180deg, #6366f1, #3b82f6));
   border-radius: 9999px;
   border: 2px solid var(--scrollbar-track, #f1f5f9);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover, #64748b);
+  background: var(--scrollbar-thumb-hover, linear-gradient(180deg, #4f46e5, #2563eb));
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb, #94a3b8) var(--scrollbar-track, #f1f5f9);
+  scrollbar-color: var(--scrollbar-thumb-solid, #6366f1) var(--scrollbar-track, #f1f5f9);
 }
 
 /* Custom Utility Classes for Tokens */
@@ -316,22 +316,41 @@ header.sticky {
   }
 }
 
-/* Ethereal subtle gradient flow for Hero ambient backdrop */
+/* Ethereal subtle blue-purple ambient flow */
 @keyframes subtleGradientFlow {
   0% {
     background-position: 0% 50%;
+    transform: translate(-50%, 0%) scale(1);
   }
   50% {
     background-position: 100% 50%;
+    transform: translate(-49%, 2%) scale(1.03);
   }
   100% {
     background-position: 0% 50%;
+    transform: translate(-50%, 0%) scale(1);
+  }
+}
+
+@keyframes subtleFloatSlow {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-16px) scale(1.04);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
   }
 }
 
 .animate-subtle-gradient {
   background-size: 200% 200%;
-  animation: subtleGradientFlow 22s ease-in-out infinite;
+  animation: subtleGradientFlow 24s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: subtleFloatSlow 18s ease-in-out infinite;
 }
 
 

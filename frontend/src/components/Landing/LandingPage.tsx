@@ -193,18 +193,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
-      {/* Moving Ethereal Blue Gradient Ambient Backdrop (Halus, Tipis & Tidak Mencolok) */}
+      {/* Moving Ethereal Blue-Purple Gradient Ambient Backdrop (Halus, Tipis & Bergerak Perlahan) */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1250px] h-[550px] sm:h-[680px] bg-gradient-to-r from-blue-600/8 via-cyan-500/5 to-indigo-600/8 blur-3xl pointer-events-none -z-10 animate-subtle-gradient"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1300px] h-[580px] sm:h-[720px] bg-gradient-to-r from-blue-600/10 via-indigo-600/8 to-purple-600/10 blur-3xl pointer-events-none -z-10 animate-subtle-gradient"
         aria-hidden="true"
       />
       <div
-        className="absolute top-[850px] right-[-8%] w-[420px] h-[420px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10"
+        className="absolute top-[750px] left-[-6%] w-[520px] h-[520px] bg-gradient-to-tr from-purple-600/6 via-indigo-500/5 to-blue-500/6 rounded-full blur-3xl pointer-events-none -z-10 animate-float-slow"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute top-[1450px] right-[-6%] w-[480px] h-[480px] bg-gradient-to-bl from-blue-600/6 via-violet-500/5 to-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10 animate-subtle-gradient"
         aria-hidden="true"
       />
 
-      {/* 1. Clean Responsive Navbar (Shadcn Minimalist Style) */}
-      <header className="sticky top-0 z-40 w-full border-b bg-kartu/85 backdrop-blur-md border-garis">
+      {/* 1. Clean Responsive Navbar (Shadcn Minimalist Style with Dark Mode Fix) */}
+      <header className="sticky top-0 z-40 w-full border-b bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-slate-200/80 dark:border-slate-800/80 text-slate-900 dark:text-slate-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           {/* Logo & Brand */}
           <Link to="/" className="flex items-center gap-2.5 min-w-0 group">
@@ -363,39 +367,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
           </div>
 
-          {/* Physical Stage: Rope Pulley & Sheltered Roof Simulator */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-kartu-muted to-kartu border border-garis relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Physical Stage: Rope Pulley & Sheltered Roof Simulator (High Contrast & Clear Typography) */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-kartu-muted to-kartu border border-garis relative overflow-hidden shadow-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
               {/* Visual Rope & Clothesline Simulator */}
-              <div className="relative w-full sm:w-3/5 h-44 sm:h-48 rounded-xl bg-latar border border-garis flex flex-col justify-between overflow-hidden p-3 shadow-inner">
+              <div className="relative w-full sm:w-3/5 h-48 sm:h-52 rounded-xl bg-latar border border-garis flex flex-col justify-between overflow-hidden p-3 shadow-inner">
                 {/* Stage Roof and Sky Layout */}
                 <div className="absolute inset-0 flex">
                   {/* Left Half: Area Atap Tertutup (Sheltered Terrace Roof) */}
-                  <div className="w-1/2 h-full bg-slate-800/15 dark:bg-slate-900/60 border-r-2 border-dashed border-garis relative flex flex-col justify-start p-2">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-teks-sekunder">
-                      <Umbrella className="w-3.5 h-3.5 text-blue-500" />
+                  <div className="w-1/2 h-full bg-slate-200/70 dark:bg-slate-800/80 border-r-2 border-dashed border-slate-300 dark:border-slate-700 relative flex flex-col justify-start p-2.5">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-indigo-700 dark:text-indigo-400">
+                      <Umbrella className="w-3.5 h-3.5 shrink-0" />
                       <span>Area Atap Tertutup</span>
                     </div>
                     {/* Architectural roof shelter beam */}
-                    <div className="w-full h-2.5 bg-slate-700/40 rounded-sm mt-1" />
-                    <span className="text-[9px] text-teks-sekunder font-mono mt-1">
+                    <div className="w-full h-3 bg-slate-300 dark:bg-slate-700 rounded-sm mt-1.5 shadow-xs" />
+                    <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">
                       (Tempat Teduh Kering)
                     </span>
                   </div>
 
                   {/* Right Half: Area Luar Terbuka (Open Outdoors) */}
-                  <div className="w-1/2 h-full relative p-2 flex flex-col items-end">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-teks-sekunder">
+                  <div className="w-1/2 h-full relative p-2.5 flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-amber-600 dark:text-amber-400">
                       <span>Area Luar Terbuka</span>
-                      <Sun className="w-3.5 h-3.5 text-amber-500" />
+                      <Sun className="w-3.5 h-3.5 shrink-0" />
                     </div>
-                    <span className="text-[9px] text-teks-sekunder font-mono mt-1">
+                    <span className="text-[10px] font-mono font-bold text-slate-700 dark:text-slate-300 mt-1">
                       (Sinar Matahari Terik)
                     </span>
 
                     {/* Animated Rain Falling Exclusively Outdoors When Wet */}
                     {previewWet && (
-                      <div className="absolute inset-0 pointer-events-none flex justify-around pl-4 opacity-75">
+                      <div className="absolute inset-0 pointer-events-none flex justify-around pl-4 opacity-80">
                         {[1, 2, 3, 4, 5].map((drop) => (
                           <span
                             key={drop}
@@ -415,10 +419,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 {/* Pulley Rope Cable & Motor Pulley Gear */}
                 <div className="relative z-10 w-full mt-10">
                   {/* Horizontal Clothesline Rope */}
-                  <div className="relative w-full h-1 bg-slate-500/50 rounded-full flex items-center justify-between">
+                  <div className="relative w-full h-1.5 bg-slate-400 dark:bg-slate-600 rounded-full flex items-center justify-between shadow-xs">
                     {/* Left Pulley Wheel (Atap) */}
                     <div
-                      className={`w-4 h-4 rounded-full border-2 border-slate-400 bg-slate-800 flex items-center justify-center -ml-1 transition-transform duration-700 ${
+                      className={`w-4 h-4 rounded-full border-2 border-indigo-400 bg-slate-900 flex items-center justify-center -ml-1 transition-transform duration-700 ${
                         previewWet ? 'rotate-180' : 'rotate-0'
                       }`}
                     >
@@ -427,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                     {/* Right Pulley Wheel (Luar) */}
                     <div
-                      className={`w-4 h-4 rounded-full border-2 border-slate-400 bg-slate-800 flex items-center justify-center -mr-1 transition-transform duration-700 ${
+                      className={`w-4 h-4 rounded-full border-2 border-indigo-400 bg-slate-900 flex items-center justify-center -mr-1 transition-transform duration-700 ${
                         previewWet ? 'rotate-180' : 'rotate-0'
                       }`}
                     >
@@ -437,18 +441,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                   {/* Movable Clothes Rack Gliding on the Pulley Rope */}
                   <div
-                    className="absolute top-[-4px] transition-all duration-700 ease-out flex flex-col items-center"
+                    className="absolute top-[-5px] transition-all duration-700 ease-out flex flex-col items-center"
                     style={{
                       left: previewWet ? '14%' : '66%',
                       transform: 'translateX(-50%)',
                     }}
                   >
                     {/* Pulley Trolley Hanger */}
-                    <div className="w-4 h-3 bg-indigo-600 rounded-xs flex items-center justify-center shadow-xs">
+                    <div className="w-4 h-3 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xs flex items-center justify-center shadow-xs">
                       <Cable className="w-2.5 h-2.5 text-white" />
                     </div>
                     {/* Clothesline Bar */}
-                    <div className="w-16 h-1 bg-slate-600 dark:bg-slate-300 rounded-full my-0.5" />
+                    <div className="w-16 h-1 bg-slate-700 dark:bg-slate-200 rounded-full my-0.5" />
 
                     {/* Clean SVG Vector Clothes Hanging */}
                     <div className="flex items-center gap-2 pt-1">
@@ -483,32 +487,83 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 {/* Status Indicator at the Bottom */}
-                <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-teks-sekunder pt-2 border-t border-garis/50">
-                  <span className="flex items-center gap-1 font-semibold text-teks-utama">
-                    <Activity className="w-3 h-3 text-indigo-500" />
-                    Posisi Rel Tali: {previewWet ? '90° (Di Bawah Atap)' : '0° (Area Luar)'}
+                <div className="relative z-10 flex items-center justify-between text-xs font-mono pt-2 border-t border-garis/60">
+                  <span className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500" />
+                    Posisi Rel Tali: {previewWet ? '90° (Bawah Atap)' : '0° (Area Luar)'}
                   </span>
-                  <span>{previewWet ? 'Pakaian Aman Terlindungi' : 'Menjemur di Terik Sinar'}</span>
+                  <span className={`font-bold ${previewWet ? 'text-indigo-600 dark:text-indigo-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                    {previewWet ? 'Pakaian Aman Terlindungi' : 'Menjemur di Terik Sinar'}
+                  </span>
                 </div>
               </div>
 
-              {/* Simulation Interactive Controls */}
-              <div className="w-full sm:w-2/5 space-y-3">
+              {/* Simulation Interactive Controls with Dashboard-Style Blue-Purple Toggle */}
+              <div className="w-full sm:w-2/5 space-y-3.5">
                 <div className="space-y-1">
                   <span className="font-bold text-xs sm:text-sm text-teks-utama block">
                     Uji Respon Tali Katrol:
                   </span>
                   <p className="text-[11px] text-teks-sekunder leading-relaxed">
-                    Klik tombol untuk menyimulasikan sensor saat hujan turun. Tali katrol motor seketika menggeser jemuran ke area atap tertutup.
+                    Klik toggle untuk menyimulasikan sensor saat hujan turun. Tali katrol motor seketika menggeser jemuran ke area atap tertutup.
                   </p>
                 </div>
 
+                {/* Dashboard-Style Rail Toggle Bar with Soft Blue-Purple Accent */}
+                <div
+                  onClick={() => setPreviewWet(!previewWet)}
+                  className="relative h-10 w-full rounded-full border border-slate-300 dark:border-slate-700 bg-slate-200/90 dark:bg-slate-800 p-1 cursor-pointer select-none transition-all shadow-inner"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Toggle posisi jemuran"
+                >
+                  {/* Track guide line */}
+                  <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-1 bg-slate-300 dark:bg-slate-700 rounded-full pointer-events-none" />
+
+                  {/* Two fixed target labels */}
+                  <div className="relative z-0 h-full flex items-center justify-between px-3 text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                    <span className="flex items-center gap-1">
+                      <Umbrella className="w-3 h-3 text-indigo-500" />
+                      <span>Atap (90°)</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Sun className="w-3 h-3 text-amber-500" />
+                      <span>Luar (0°)</span>
+                    </span>
+                  </div>
+
+                  {/* Sliding Knob with Blue-Purple (Biru Ungu) Accent */}
+                  <div
+                    className={`absolute top-1 bottom-1 flex items-center gap-1.5 px-3 rounded-full text-[11px] font-black shadow-md transition-all duration-500 ease-in-out select-none ${
+                      previewWet
+                        ? 'left-1 translate-x-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white ring-2 ring-indigo-400 shadow-indigo-500/30'
+                        : 'left-[calc(100%-4px)] -translate-x-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 ring-2 ring-amber-300 shadow-amber-500/25'
+                    }`}
+                  >
+                    {previewWet ? (
+                      <>
+                        <Umbrella className="w-3.5 h-3.5 shrink-0" />
+                        <span className="whitespace-nowrap">Bawah Atap</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="w-3.5 h-3.5 shrink-0" />
+                        <span className="whitespace-nowrap">Luar Terbuka</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Button with Soft Blue-Purple Gradient */}
                 <div className="flex flex-col gap-2">
-                  <Button
-                    variant={previewWet ? 'danger' : 'primary'}
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={() => setPreviewWet(!previewWet)}
-                    className="w-full text-xs py-2.5 font-bold shadow-md cursor-pointer gap-2"
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md active:scale-98 cursor-pointer ${
+                      previewWet
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 shadow-amber-500/20'
+                        : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white shadow-indigo-500/25'
+                    }`}
                   >
                     {previewWet ? (
                       <>
@@ -521,11 +576,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                         <span>Simulasikan Tetesan Hujan</span>
                       </>
                     )}
-                  </Button>
+                  </button>
 
-                  <div className="flex items-center justify-between text-[11px] text-teks-sekunder px-1">
-                    <span>Kecepatan Tarik Tali:</span>
-                    <span className="font-mono font-bold text-emerald-500">&lt; 450ms</span>
+                  <div className="flex items-center justify-between text-[11px] text-teks-sekunder px-1 font-mono">
+                    <span>Kecepatan Tarik Motor:</span>
+                    <span className="font-bold text-emerald-500">&lt; 450ms (Sub-Detik)</span>
                   </div>
                 </div>
               </div>
@@ -642,22 +697,37 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 4. Interactive AI Rain Prediction & Drying Score Sandbox */}
+      {/* 4. Interactive AI Rain Prediction & Drying Score Sandbox (Vibrant & Elegant) */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold font-mono bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/25 text-indigo-600 dark:text-indigo-400 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI MICROCLIMATE INTELLIGENCE</span>
+          </div>
           <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
             Prediksi Hujan & Rekomendasi Jemur Berbasis AI
           </h2>
-          <p className="text-xs sm:text-sm text-teks-sekunder max-w-lg mx-auto">
-            Algoritma AI Rintik memantau gradien laju perubahan mikroklimat sebelum tetesan air pertama turun.
+          <p className="text-xs sm:text-sm text-teks-sekunder max-w-xl mx-auto leading-relaxed">
+            Algoritma AI Rintik memantau gradien laju perubahan kelembapan dan tekanan udara sebelum tetesan air pertama turun ke permukaan kain jemuran.
           </p>
         </div>
 
-        <div className="p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-kartu border border-garis shadow-lg grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          {/* AI Circular Gauge */}
-          <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-kartu-muted border border-garis/70 text-center space-y-4">
-            <div className="relative w-36 h-36 flex items-center justify-center">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+        <div className="p-6 sm:p-9 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-indigo-500/5 via-kartu to-purple-500/10 border border-indigo-500/20 shadow-xl backdrop-blur-xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* AI Circular Gauge with Radiant Glow */}
+          <div className="flex flex-col items-center justify-center p-6 sm:p-7 rounded-2xl bg-gradient-to-b from-kartu-muted/90 to-kartu border border-garis/80 text-center space-y-4 shadow-sm relative overflow-hidden">
+            {/* Ambient subtle backglow */}
+            <div
+              className={`absolute inset-0 opacity-20 blur-2xl transition-all duration-700 pointer-events-none ${
+                aiScore > 65
+                  ? 'bg-emerald-500'
+                  : aiScore > 35
+                  ? 'bg-amber-500'
+                  : 'bg-rose-500'
+              }`}
+            />
+
+            <div className="relative w-40 h-40 flex items-center justify-center">
+              <svg className="w-full h-full -rotate-90 drop-shadow-sm" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
@@ -665,7 +735,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="8"
-                  className="text-garis/60"
+                  className="text-slate-200 dark:text-slate-800"
                 />
                 <circle
                   cx="50"
@@ -683,43 +753,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                       : aiScore > 35
                       ? 'text-amber-500'
                       : 'text-rose-500'
-                  } transition-all duration-300`}
+                  } transition-all duration-500`}
                 />
               </svg>
               <div className="absolute flex flex-col items-center">
-                <span className="text-3xl font-black font-mono tracking-tight text-teks-utama">
+                <span className="text-4xl font-black font-mono tracking-tight text-teks-utama">
                   {aiScore}
                 </span>
-                <span className="text-[10px] text-teks-sekunder font-semibold uppercase">
+                <span className="text-[10px] text-teks-sekunder font-bold tracking-wider uppercase mt-0.5">
                   Skor Jemur
                 </span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <span className={`text-sm sm:text-base font-black font-heading ${aiStatus.color}`}>
+            <div className="space-y-1.5 z-10">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black font-heading shadow-xs ${
+                aiScore > 65
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  : aiScore > 35
+                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                  : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+              }`}>
                 {aiStatus.label}
               </span>
-              <p className="text-xs text-teks-sekunder">{aiStatus.desc}</p>
+              <p className="text-xs text-teks-sekunder leading-relaxed max-w-xs">{aiStatus.desc}</p>
             </div>
           </div>
 
-          {/* Interactive Slider Controller */}
+          {/* Interactive Slider Controller & Rich Data Grid */}
           <div className="space-y-5">
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <h4 className="text-sm sm:text-base font-bold text-teks-utama flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-indigo-500" />
                 <span>Simulasikan Kelembapan Udara (RH)</span>
               </h4>
-              <p className="text-xs text-teks-sekunder">
-                Geser slider untuk melihat bagaimana model AI Rintik menghitung risiko hujan dan memberikan saran jemur otomatis secara realtime:
+              <p className="text-xs text-teks-sekunder leading-relaxed">
+                Geser penggeser di bawah untuk mengamati adaptasi model AI Rintik dalam menghitung risiko hujan dan mengendalikan motor jemuran:
               </p>
             </div>
 
-            <div className="space-y-2 p-4 rounded-xl bg-kartu-muted border border-garis/60">
+            {/* Slider with Vibrant Gradient Track */}
+            <div className="space-y-2.5 p-4 sm:p-5 rounded-2xl bg-kartu-muted border border-garis/70 shadow-xs">
               <div className="flex justify-between text-xs font-bold font-mono">
-                <span>Kelembapan Udara:</span>
-                <span className="text-indigo-500">{aiSandboxHum}% RH</span>
+                <span className="text-teks-sekunder">Tingkat Kelembapan:</span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-black text-sm">{aiSandboxHum}% RH</span>
               </div>
               <input
                 type="range"
@@ -727,24 +804,64 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 max="95"
                 value={aiSandboxHum}
                 onChange={(e) => setAiSandboxHum(parseInt(e.target.value, 10))}
-                className="w-full accent-indigo-600 cursor-pointer h-2 bg-garis rounded-lg"
+                className="w-full cursor-pointer h-2.5 bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 rounded-lg accent-indigo-600"
               />
-              <div className="flex justify-between text-[10px] text-teks-sekunder font-medium pt-1">
-                <span>20% (Kering Terik)</span>
-                <span>60% (Normal)</span>
-                <span>95% (Mendung Tebal)</span>
+              <div className="flex justify-between text-[10px] text-teks-sekunder font-medium pt-1 font-mono">
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">20% (Kering)</span>
+                <span className="text-amber-600 dark:text-amber-400 font-bold">60% (Sedang)</span>
+                <span className="text-rose-600 dark:text-rose-400 font-bold">95% (Jenuh Air)</span>
               </div>
             </div>
 
+            {/* 4 Rich Colorful Metric Chips */}
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-xl bg-kartu-muted border border-garis/60">
-                <span className="text-[10px] text-teks-sekunder block">Probabilitas Hujan</span>
-                <span className="text-base font-bold font-mono text-teks-utama">{aiProb}%</span>
+              <div className="p-3.5 rounded-xl bg-kartu border border-garis/80 space-y-1 shadow-xs">
+                <span className="text-[11px] text-teks-sekunder font-medium flex items-center gap-1">
+                  <CloudRain className="w-3.5 h-3.5 text-blue-500" />
+                  Probabilitas Hujan
+                </span>
+                <div className="flex items-baseline justify-between">
+                  <span className={`text-lg font-black font-mono ${aiProb > 70 ? 'text-rose-500' : aiProb > 40 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                    {aiProb}%
+                  </span>
+                  <span className="text-[10px] font-mono text-teks-sekunder">
+                    {aiProb > 70 ? 'Tinggi' : aiProb > 40 ? 'Sedang' : 'Rendah'}
+                  </span>
+                </div>
               </div>
-              <div className="p-3 rounded-xl bg-kartu-muted border border-garis/60">
-                <span className="text-[10px] text-teks-sekunder block">Estimasi Waktu Kering</span>
-                <span className="text-base font-bold font-mono text-teks-utama">
-                  {aiProb > 70 ? 'Tarik ke Atap' : `~${(1.2 + (100 - aiScore) * 0.03).toFixed(1)} Jam`}
+
+              <div className="p-3.5 rounded-xl bg-kartu border border-garis/80 space-y-1 shadow-xs">
+                <span className="text-[11px] text-teks-sekunder font-medium flex items-center gap-1">
+                  <Sun className="w-3.5 h-3.5 text-amber-500" />
+                  Estimasi Kering
+                </span>
+                <div className="flex items-baseline justify-between">
+                  <span className="text-lg font-black font-mono text-teks-utama">
+                    {aiProb > 70 ? 'Segera Atap' : `~${(1.2 + (100 - aiScore) * 0.03).toFixed(1)} Jam`}
+                  </span>
+                  <span className="text-[10px] font-mono text-teks-sekunder">
+                    {aiProb > 70 ? 'Kritis' : 'Terik'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-kartu border border-garis/80 space-y-1 shadow-xs">
+                <span className="text-[11px] text-teks-sekunder font-medium flex items-center gap-1">
+                  <Activity className="w-3.5 h-3.5 text-indigo-500" />
+                  Posisi Katrol Tali
+                </span>
+                <span className="text-xs font-black font-mono text-teks-utama block">
+                  {aiProb > 70 ? '90° (Tarik ke Atap)' : '0° (Jemur Luar)'}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-kartu border border-garis/80 space-y-1 shadow-xs">
+                <span className="text-[11px] text-teks-sekunder font-medium flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                  Evaporasi Mikro
+                </span>
+                <span className={`text-xs font-black font-mono block ${aiScore > 65 ? 'text-emerald-500' : aiScore > 35 ? 'text-amber-500' : 'text-rose-500'}`}>
+                  {aiScore > 65 ? 'Optimal (Cepat)' : aiScore > 35 ? 'Cukup (Moderat)' : 'Lambat (Lembap)'}
                 </span>
               </div>
             </div>
