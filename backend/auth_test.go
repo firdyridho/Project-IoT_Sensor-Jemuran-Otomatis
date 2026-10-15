@@ -33,6 +33,7 @@ func setupTestRouter() *gin.Engine {
 		api.GET("/user/settings", handlers.GetUserSettings)
 		api.PUT("/user/settings", handlers.UpdateUserSettings)
 		api.DELETE("/devices/:id/telemetry", handlers.ClearTelemetry)
+		api.GET("/devices/:id/events", handlers.GetEvents)
 		api.DELETE("/devices/:id/events", handlers.ClearEvents)
 		api.GET("/notifications/vapid-key", handlers.GetVapidPublicKey)
 		api.POST("/notifications/subscribe", handlers.SubscribeWebPush)
@@ -305,4 +306,43 @@ func TestWebPushEndpoints(t *testing.T) {
 	reqSub.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(wSub, reqSub)
 	assert.Equal(t, http.StatusCreated, wSub.Code)
+}
+
+func TestMotorCommandEventLogging(t *testing.T) {
+	r := setupTestRouter()
+	devID := "hs-test-motor-ev"
+
+	// Pastikan device terdaftar
+	database.DB.Create(&models.Device{
+		ID:            devID,
+		Name:          "Motor Event Tester",
+		MotorPosition: "extended",
+		MotorStatus:   "idle",
+	})
+
+	// 1. Kirim perintah motor: retract
+	cmdPayload := map[string]string{"action": "retract"}
+	cmdBytes, _ := json.Marshal(cmdPayload)
+	wCmd := httptest.NewRecorder()
+	reqCmd, _ := http.NewRequest("POST", "/api/devices/"+devID+"/motor/command", bytes.NewBuffer(cmdBytes))
+	reqCmd.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(wCmd, reqCmd)
+	assert.Equal(t, http.StatusOK, wCmd.Code)
+
+	// 2. Periksa event di database
+	var events []models.Event
+	database.DB.Where("device_id = ? AND event_type = ?", devID, "motor_move").Find(&events)
+	assert.NotEmpty(t, events)
+	assert.Equal(t, "motor_move", events[0].EventType)
+
+	// 3. Panggil GET /api/devices/:id/events
+	wEv := httptest.NewRecorder()
+	reqEv, _ := http.NewRequest("GET", "/api/devices/"+devID+"/events", nil)
+	r.ServeHTTP(wEv, reqEv)
+	assert.Equal(t, http.StatusOK, wEv.Code)
+
+	var evList []models.Event
+	_ = json.Unmarshal(wEv.Body.Bytes(), &evList)
+	assert.NotEmpty(t, evList)
+	assert.Equal(t, "motor_move", evList[0].EventType)
 }

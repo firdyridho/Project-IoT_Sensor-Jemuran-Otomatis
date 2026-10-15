@@ -31,22 +31,24 @@ func PublishCommand(topic string, payload string) error {
 }
 
 type MqttSubscriber struct {
-	client          mqtt.Client
-	brokerURL       string
-	telegramBot     string
-	telegramChat    string
-	lastAlertMu     sync.Mutex
-	deviceLastAlert map[string]time.Time
-	deviceLastWet   map[string]bool
+	client             mqtt.Client
+	brokerURL          string
+	telegramBot        string
+	telegramChat       string
+	lastAlertMu        sync.Mutex
+	deviceLastAlert    map[string]time.Time
+	deviceLastWet      map[string]bool
+	deviceLastMotorPos map[string]string
 }
 
 func NewSubscriber(brokerURL, tgBot, tgChat string) *MqttSubscriber {
 	return &MqttSubscriber{
-		brokerURL:       brokerURL,
-		telegramBot:     tgBot,
-		telegramChat:    tgChat,
-		deviceLastAlert: make(map[string]time.Time),
-		deviceLastWet:   make(map[string]bool),
+		brokerURL:          brokerURL,
+		telegramBot:        tgBot,
+		telegramChat:       tgChat,
+		deviceLastAlert:    make(map[string]time.Time),
+		deviceLastWet:      make(map[string]bool),
+		deviceLastMotorPos: make(map[string]string),
 	}
 }
 
@@ -173,7 +175,7 @@ func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 	database.CacheLatestTelemetry(p.DeviceID, p)
 	database.PushTelemetryList(p.DeviceID, p)
 
-	// 5. Notifikasi Telegram instan saat transisi dari kering ke basah (state change)
+	// 5. Notifikasi Telegram instan & simpan Event saat transisi dari kering ke basah (state change)
 	s.lastAlertMu.Lock()
 	if s.deviceLastWet == nil {
 		s.deviceLastWet = make(map[string]bool)
@@ -189,8 +191,37 @@ func (s *MqttSubscriber) handleTelemetry(topic string, raw []byte) {
 			TS:       reading.Timestamp,
 			Data:     map[string]interface{}{"pct": p.Pct, "raw": p.Raw},
 		}
+		s.recordAndBroadcastEvent(ev)
 		s.triggerTelegramAlert(ev)
+	} else if !p.Wet && wasWet {
+		ev := models.EventPayload{
+			DeviceID: p.DeviceID,
+			Type:     "rain_stop",
+			TS:       reading.Timestamp,
+			Data:     map[string]interface{}{"pct": p.Pct, "raw": p.Raw},
+		}
+		s.recordAndBroadcastEvent(ev)
 	}
+}
+
+func (s *MqttSubscriber) recordAndBroadcastEvent(ev models.EventPayload) {
+	dataStr, _ := json.Marshal(ev.Data)
+	eventRecord := models.Event{
+		DeviceID:  ev.DeviceID,
+		EventType: ev.Type,
+		Timestamp: ev.TS,
+		DataJSON:  string(dataStr),
+		CreatedAt: time.Now(),
+	}
+	if eventRecord.Timestamp == 0 {
+		eventRecord.Timestamp = time.Now().UnixMilli()
+	}
+
+	if database.DB != nil {
+		database.DB.Create(&eventRecord)
+	}
+
+	handlers.Hub.Broadcast("event", ev)
 }
 
 func (s *MqttSubscriber) handleState(topic string, raw []byte) {
@@ -234,6 +265,24 @@ func (s *MqttSubscriber) handleState(topic string, raw []byte) {
 		if st.Motor.LastMovedTs > 0 {
 			updates["motor_last_moved_at"] = time.UnixMilli(st.Motor.LastMovedTs)
 		}
+
+		s.lastAlertMu.Lock()
+		if s.deviceLastMotorPos == nil {
+			s.deviceLastMotorPos = make(map[string]string)
+		}
+		prevPos := s.deviceLastMotorPos[st.DeviceID]
+		s.deviceLastMotorPos[st.DeviceID] = st.Motor.Position
+		s.lastAlertMu.Unlock()
+
+		if prevPos != "" && prevPos != st.Motor.Position && st.Motor.Position != "" {
+			ev := models.EventPayload{
+				DeviceID: st.DeviceID,
+				Type:     "motor_move",
+				TS:       time.Now().UnixMilli(),
+				Data:     map[string]interface{}{"position": st.Motor.Position, "status": st.Motor.Status, "source": "hardware_state"},
+			}
+			s.recordAndBroadcastEvent(ev)
+		}
 	}
 
 	database.DB.Model(&models.Device{}).Where("id = ?", st.DeviceID).Updates(updates)
@@ -257,26 +306,12 @@ func (s *MqttSubscriber) handleEvent(topic string, raw []byte) {
 		return
 	}
 
-	dataStr, _ := json.Marshal(ev.Data)
-	eventRecord := models.Event{
-		DeviceID:  ev.DeviceID,
-		EventType: ev.Type,
-		Timestamp: ev.TS,
-		DataJSON:  string(dataStr),
-		CreatedAt: time.Now(),
-	}
-	if eventRecord.Timestamp == 0 {
-		eventRecord.Timestamp = time.Now().UnixMilli()
-	}
-
-	database.DB.Create(&eventRecord)
+	s.recordAndBroadcastEvent(ev)
 
 	// Trigger Telegram alert on rain_start or HUJAN_TERDETEKSI (BE-11: Instant real-time alert via Telegram Bot)
 	if ev.Type == "rain_start" || ev.Type == "HUJAN_TERDETEKSI" {
 		s.triggerTelegramAlert(ev)
 	}
-
-	handlers.Hub.Broadcast("event", ev)
 }
 
 func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
@@ -449,13 +484,19 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	database.CacheLatestTelemetry(devID, ingestPayload)
 	database.PushTelemetryList(devID, ingestPayload)
 
-	// 7. Notifikasi Darurat Telegram HANYA saat transisi dari kering ke basah (state change)
+	// 7. Notifikasi Darurat Telegram & simpan Event saat transisi dari kering ke basah / pergerakan motor
 	s.lastAlertMu.Lock()
 	if s.deviceLastWet == nil {
 		s.deviceLastWet = make(map[string]bool)
 	}
+	if s.deviceLastMotorPos == nil {
+		s.deviceLastMotorPos = make(map[string]string)
+	}
 	wasWet := s.deviceLastWet[devID]
 	s.deviceLastWet[devID] = data.Hujan
+
+	prevPos := s.deviceLastMotorPos[devID]
+	s.deviceLastMotorPos[devID] = motorPos
 	s.lastAlertMu.Unlock()
 
 	if data.Hujan && !wasWet {
@@ -465,7 +506,26 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 			TS:       nowMs,
 			Data:     map[string]interface{}{"pct": pct, "raw": data.ADCHujan},
 		}
+		s.recordAndBroadcastEvent(ev)
 		s.triggerTelegramAlert(ev)
+	} else if !data.Hujan && wasWet {
+		ev := models.EventPayload{
+			DeviceID: devID,
+			Type:     "rain_stop",
+			TS:       nowMs,
+			Data:     map[string]interface{}{"pct": pct, "raw": data.ADCHujan},
+		}
+		s.recordAndBroadcastEvent(ev)
+	}
+
+	if prevPos != "" && prevPos != motorPos {
+		ev := models.EventPayload{
+			DeviceID: devID,
+			Type:     "motor_move",
+			TS:       nowMs,
+			Data:     map[string]interface{}{"position": motorPos, "source": "esp32_auto"},
+		}
+		s.recordAndBroadcastEvent(ev)
 	}
 }
 

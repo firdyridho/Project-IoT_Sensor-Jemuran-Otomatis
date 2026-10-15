@@ -40,7 +40,23 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
+* [ ] **REQ-FE-15: Penyesuaian Inferensi Cuaca 'Mendung' (Pemisahan Cerah Berawan vs Mendung Tebal & Konsumsi Data LDR Hardware)**
+  * Tanggal Diminta: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai investigasi Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/App.tsx` (evaluasi `bmkgCondition` dan `realCondition` di baris 900-925)
+    * `frontend/src/components/Dashboard/HeroStatusCard.tsx` & `DailyForecastCards.tsx`
+  * Spesifikasi & Instruksi Kerja Frontend:
+    1. **Masalah Tampilan 'Mendung Mulu'**:
+       * Saat ini, saat sensor hujan fisik sedang kering, frontend mengonversi data BMKG menggunakan regex `/berawan|mendung|kabut/i.test(bmkgDesc) ? 'mendung' : 'cerah'`.
+       * Data BMKG Indonesia (terutama wilayah Banten/Jawa) hampir 90% waktu mengembalikan deskripsi *"Berawan"* atau *"Cerah Berawan"*.
+       * Akibatnya, kondisi *"Cerah Berawan"* (yang sebenarnya terang benderang dengan sedikit awan) terpaksa berubah menjadi status visual `'mendung'` (awan gelap pekat).
+    2. **Solusi Perbaikan di Sisi Klien**:
+       * Pisahkan kondisi: jika `bmkgDesc` mengandung *"cerah"* (misal *"Cerah Berawan"*), tetapkan kondisi sebagai `'cerah'`.
+       * Status `'mendung'` hanya digunakan jika deskripsi BMKG secara eksplisit berbunyi *"Berawan Tebal"* atau *"Mendung"*.
+       * Jika telemetri hardware dari WebSocket memiliki flag `mendung: false` (dari sensor LDR yang mendeteksi cahaya terang di atas ambang ADC), dahulukan sensor optik lokal tersebut agar tampilan dashboard akurat mencerminkan kondisi lapangan jemuran.
+  * Dokumen Rujukan: [PRD.md](PRD.md)
+  * Status: Siap Dikerjakan oleh Frontend
 
 ---
 

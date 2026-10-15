@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
@@ -92,6 +93,27 @@ func CommandMotor(c *gin.Context) {
 		"action":      action,
 	}
 	Hub.Broadcast("motor", motorPayload)
+
+	// Simpan peristiwa motor_move ke tabel events dan broadcast ke UI
+	evData, _ := json.Marshal(map[string]interface{}{
+		"action":   action,
+		"position": targetPosition,
+		"source":   "web_manual",
+	})
+	eventRecord := models.Event{
+		DeviceID:  dev.ID,
+		EventType: "motor_move",
+		Timestamp: now.UnixMilli(),
+		DataJSON:  string(evData),
+		CreatedAt: now,
+	}
+	database.DB.Create(&eventRecord)
+	Hub.Broadcast("event", models.EventPayload{
+		DeviceID: dev.ID,
+		Type:     "motor_move",
+		TS:       now.UnixMilli(),
+		Data:     map[string]interface{}{"action": action, "position": targetPosition, "source": "web_manual"},
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"status":      "success",
