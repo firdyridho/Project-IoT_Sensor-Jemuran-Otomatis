@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 
 interface SplashScreenProps {
@@ -9,6 +9,11 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [isExiting, setIsExiting] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  const isCompletedRef = useRef(false);
+
   // Check dark mode preference / class
   const isDark =
     typeof document !== 'undefined'
@@ -17,35 +22,49 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       : true;
 
   useEffect(() => {
-    // Smooth progress bar animation from 0% to 100% over 1800ms
+    if (isCompletedRef.current) return;
+
     const start = Date.now();
-    const duration = 1800;
+    const duration = 1600;
 
     const timer = setInterval(() => {
+      if (isCompletedRef.current) {
+        clearInterval(timer);
+        return;
+      }
+
       const elapsed = Date.now() - start;
       const pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      setProgress(pct);
+
+      // Monotonically increasing progress: never go backwards!
+      setProgress((prev) => Math.max(prev, pct));
 
       if (pct >= 100) {
+        isCompletedRef.current = true;
         clearInterval(timer);
-        // Start smooth exit transition: fade out + scale up 105
+        setProgress(100);
+
+        // Smooth exit transition: fade out + scale up
         setTimeout(() => {
           setIsExiting(true);
           setTimeout(() => {
-            onComplete();
-          }, 700);
+            onCompleteRef.current();
+          }, 600);
         }, 150);
       }
-    }, 20);
+    }, 25);
 
     return () => clearInterval(timer);
-  }, [onComplete]);
+  }, []);
 
   const handleSkip = () => {
+    if (isCompletedRef.current) return;
+    isCompletedRef.current = true;
+    setProgress(100);
     setIsExiting(true);
     setTimeout(() => {
-      onComplete();
-    }, 300);
+      onCompleteRef.current();
+    }, 250);
   };
 
   return (
@@ -54,9 +73,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       aria-label="Memuat Rintik"
       aria-modal="true"
       className={`fixed inset-0 z-50 flex flex-col items-center justify-center select-none transition-all duration-700 ease-out ${
-        isDark
-          ? 'bg-[#070b14] text-white'
-          : 'bg-[#f8fafc] text-slate-900'
+        isDark ? 'bg-[#070b14] text-white' : 'bg-[#f8fafc] text-slate-900'
       } ${
         isExiting
           ? 'opacity-0 scale-105 pointer-events-none'
@@ -76,8 +93,9 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       {/* Skip Button (Top Right) */}
       <div className="absolute top-5 right-5 sm:top-8 sm:right-8 z-20">
         <button
+          type="button"
           onClick={handleSkip}
-          className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
+          className={`group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all cursor-pointer ${
             isDark
               ? 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10'
               : 'bg-slate-200/60 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border border-slate-300/60'
@@ -91,9 +109,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
       {/* Center Logo & Typographic Brand */}
       <div className="relative z-10 flex flex-col items-center text-center px-6">
-        {/* Subtle breathing official logo container */}
         <div className="relative mb-6">
-          {/* Ambient logo glow */}
           <div
             className={`absolute -inset-2.5 rounded-3xl blur-lg transition-opacity duration-700 ${
               isDark
@@ -103,7 +119,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             aria-hidden="true"
           />
 
-          {/* Official Rintik Logo with subtle breathing animation */}
           <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl flex items-center justify-center p-2.5 transition-transform duration-1000 ease-in-out hover:scale-105 animate-[pulse_3s_ease-in-out_infinite]">
             <img
               src="/favicon.svg?v=2"
@@ -145,7 +160,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           </div>
           <div
             className={`flex justify-between items-center text-[10px] font-mono tracking-wider ${
-              isDark ? 'text-slate-500' : 'text-slate-500'
+              isDark ? 'text-slate-400' : 'text-slate-500'
             }`}
           >
             <span>Memulai sistem</span>
@@ -154,7 +169,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         </div>
       </div>
 
-      {/* Subtle Bottom Attribution */}
       <div
         className={`absolute bottom-6 text-[11px] tracking-wider font-medium opacity-80 ${
           isDark ? 'text-slate-500' : 'text-slate-500'

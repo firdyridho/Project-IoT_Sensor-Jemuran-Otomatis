@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import Lenis from 'lenis';
+import 'lenis/dist/lenis.css';
 import {
   Shield,
   Zap,
@@ -19,15 +21,12 @@ import {
   Activity,
   Wifi,
   ChevronDown,
-  Layers,
-  Gauge,
-  RotateCcw,
   Sliders,
-  Check,
-  Radio,
+  Umbrella,
+  Home,
+  Cable,
 } from 'lucide-react';
 import { Button } from '../Common/Button';
-import { Badge } from '../Common/Badge';
 
 interface LandingPageProps {
   onGoToAuth: (mode: 'login' | 'register') => void;
@@ -36,9 +35,45 @@ interface LandingPageProps {
   onToggleTheme: () => void;
 }
 
-// Ease out expo for snappy high-tech counter movement
+// Ease-out expo curve for snappy telemetry counter movement
 function easeOutExpo(x: number): number {
   return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+}
+
+// Hero typing effect hook
+const TYPING_PHRASES = [
+  'Tali otomatis menarik jemuran ke atap tertutup.',
+  'Amankan pakaian keluarga dari tetesan air pertama.',
+  'Otomatisasi katrol jemuran sub-detik tanpa cemas.',
+];
+
+function useHeroTypewriter(phrases: string[], typingSpeed = 65, deletingSpeed = 35, pause = 2400) {
+  const [phraseIdx, setPhraseIdx] = useState(0);
+  const [subIdx, setSubIdx] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = phrases[phraseIdx];
+
+    if (!isDeleting && subIdx === current.length) {
+      const timeout = setTimeout(() => setIsDeleting(true), pause);
+      return () => clearTimeout(timeout);
+    }
+
+    if (isDeleting && subIdx === 0) {
+      setIsDeleting(false);
+      setPhraseIdx((prev) => (prev + 1) % phrases.length);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setSubIdx((prev) => prev + (isDeleting ? -1 : 1));
+    }, isDeleting ? deletingSpeed : typingSpeed);
+
+    return () => clearTimeout(timeout);
+  }, [subIdx, isDeleting, phraseIdx, phrases, typingSpeed, deletingSpeed, pause]);
+
+  return phrases[phraseIdx].substring(0, subIdx);
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -47,30 +82,55 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   theme,
   onToggleTheme,
 }) => {
-  // Interactive Simulation State
+  // Simulation State: false = kering (area luar), true = hujan (tali menarik ke atap tertutup)
   const [previewWet, setPreviewWet] = useState(false);
   const [hasScrolledIntoMetrics, setHasScrolledIntoMetrics] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
-  // Interactive AI Sandbox Slider
+  // Interactive AI Sandbox Slider (Kelembapan Udara)
   const [aiSandboxHum, setAiSandboxHum] = useState(55);
 
-  // References for Scroll Intersection Observer
+  // Ref for scroll intersection observer
   const metricsSectionRef = useRef<HTMLDivElement>(null);
 
-  // Animated Counter Values
+  // Animated Telemetry Counters
   const [displayServo, setDisplayServo] = useState(0);
   const [displayAdc, setDisplayAdc] = useState(0);
   const [displayHum, setDisplayHum] = useState(0);
   const [displayLatency, setDisplayLatency] = useState(0);
 
-  // Target values depending on wet/dry simulation
+  // Target values based on wet / dry state
   const targetServo = previewWet ? 90 : 0;
   const targetAdc = previewWet ? 1420 : 3850;
   const targetHum = previewWet ? 88 : 12;
   const targetLatency = 3.8;
 
-  // 1. Scroll-trigger Intersection Observer
+  // Hero typewriter hook
+  const typedText = useHeroTypewriter(TYPING_PHRASES);
+
+  // 1. Lenis Smooth Scrolling for Landing Page
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      syncTouch: false,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
+  // 2. Intersection Observer for Telemetry Counters
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -90,12 +150,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // 2. High-performance Count-up Animation Effect on scroll or simulation toggle
+  // 3. Count-up Animation on Scroll or Simulation Toggle
   useEffect(() => {
     if (!hasScrolledIntoMetrics) return;
 
     let startTimestamp: number | null = null;
-    const duration = 1600; // ms
+    const duration = 1600;
 
     const startServo = displayServo;
     const startAdc = displayAdc === 0 ? (previewWet ? 3850 : 0) : displayAdc;
@@ -108,13 +168,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       if (!startTimestamp) startTimestamp = timestamp;
       const elapsed = timestamp - startTimestamp;
       const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easeOutExpo(progress);
+      const eased = easeOutExpo(progress);
 
-      setDisplayServo(Math.round(startServo + (targetServo - startServo) * easedProgress));
-      setDisplayAdc(Math.round(startAdc + (targetAdc - startAdc) * easedProgress));
-      setDisplayHum(Math.round(startHum + (targetHum - startHum) * easedProgress));
+      setDisplayServo(Math.round(startServo + (targetServo - startServo) * eased));
+      setDisplayAdc(Math.round(startAdc + (targetAdc - startAdc) * eased));
+      setDisplayHum(Math.round(startHum + (targetHum - startHum) * eased));
       setDisplayLatency(
-        parseFloat((startLatency + (targetLatency - startLatency) * easedProgress).toFixed(1))
+        parseFloat((startLatency + (targetLatency - startLatency) * eased).toFixed(1))
       );
 
       if (progress < 1) {
@@ -123,7 +183,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     };
 
     animationFrameId = requestAnimationFrame(step);
-
     return () => cancelAnimationFrame(animationFrameId);
   }, [hasScrolledIntoMetrics, previewWet]);
 
@@ -135,44 +194,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const aiScore = Math.max(5, 100 - aiProb);
   const aiStatus =
     aiProb > 70
-      ? { label: 'ANGKAT SEGERA', color: 'text-rose-500', desc: 'Awan mendung tebal mendekat' }
+      ? { label: 'Tarik Jemuran ke Atap', color: 'text-rose-500', desc: 'Indikasi hujan lebat mendekat' }
       : aiProb > 40
-      ? { label: 'WASPADA JEMUR', color: 'text-amber-500', desc: 'Fluktuasi kelembapan terdeteksi' }
-      : { label: 'AMAN JEMUR', color: 'text-emerald-500', desc: 'Kondisi mikroklimat cerah & stabil' };
+      ? { label: 'Waspada Jemuran', color: 'text-amber-500', desc: 'Peningkatan kelembapan udara terdeteksi' }
+      : { label: 'Aman Dijemur di Luar', color: 'text-emerald-500', desc: 'Sinar matahari optimal & stabil' };
 
   return (
     <div className="min-h-screen bg-latar text-teks-utama flex flex-col selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
-      {/* Background Ambient Glow Gradients */}
+      {/* Moving Ethereal Blue Gradient Ambient Backdrop (Halus, Tipis & Tidak Mencolok) */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1200px] h-[480px] sm:h-[620px] bg-gradient-to-b from-indigo-500/15 via-blue-500/8 to-transparent blur-3xl pointer-events-none -z-10"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[1250px] h-[550px] sm:h-[680px] bg-gradient-to-r from-blue-600/8 via-cyan-500/5 to-indigo-600/8 blur-3xl pointer-events-none -z-10 animate-subtle-gradient"
         aria-hidden="true"
       />
       <div
-        className="absolute top-[800px] right-[-10%] w-[500px] h-[500px] bg-cyan-500/8 rounded-full blur-3xl pointer-events-none -z-10"
+        className="absolute top-[850px] right-[-8%] w-[420px] h-[420px] bg-cyan-500/5 rounded-full blur-3xl pointer-events-none -z-10"
         aria-hidden="true"
       />
 
-      {/* 1. Clean Responsive Navbar */}
+      {/* 1. Clean Responsive Navbar (Shadcn Minimalist Style) */}
       <header className="sticky top-0 z-40 w-full border-b bg-kartu/85 backdrop-blur-md border-garis">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-3">
           {/* Logo & Brand */}
-          <Link to="/" className="flex items-center gap-3 min-w-0 group">
+          <Link to="/" className="flex items-center gap-2.5 min-w-0 group">
             <img
               src="/favicon.svg?v=2"
               alt="Rintik Logo"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md shrink-0 group-hover:scale-105 transition-transform"
+              className="w-8 h-8 rounded-xl shadow-xs shrink-0 group-hover:scale-105 transition-transform"
             />
             <div className="flex flex-col min-w-0">
               <span className="font-heading font-black text-base sm:text-lg tracking-tight text-teks-utama leading-tight truncate">
                 Rintik
               </span>
               <span className="text-[10px] text-teks-sekunder font-medium hidden xs:block truncate">
-                IoT Jemuran Otomatis & Presisi Cuaca
+                IoT Rel Tali Jemuran Otomatis
               </span>
             </div>
           </Link>
 
-          {/* Right Navigation & Actions */}
+          {/* Right Action Controls */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onToggleTheme}
@@ -211,28 +270,47 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="pt-10 sm:pt-16 pb-10 sm:pb-14 px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-5 sm:space-y-6">
-        {/* Live Firmware & Network Beacon Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[11px] sm:text-xs font-semibold text-indigo-600 dark:text-indigo-400 shadow-xs animate-in fade-in slide-in-from-top-2 duration-500">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>ESP32 Firmware v2.4 • Ingesti Sensor Realtime Sub-Detik</span>
-        </div>
-
-        {/* Headline */}
-        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.12]">
+      {/* 2. Hero Section with Typing Animation & Handcrafted Underline Highlight */}
+      <section className="pt-12 sm:pt-20 pb-12 sm:pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-6">
+        {/* Main Headline */}
+        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.15]">
           Pantau Hujan Realtime.{' '}
-          <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
-            Amankan Jemuran Otomatis.
+          <span className="block mt-1 sm:mt-2">
+            Tali Otomatis Tarik{' '}
+            <span className="relative inline-block whitespace-nowrap">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
+                Jemuran Otomatis
+              </span>
+              {/* Harmonized Underline Highlight with Gentle Blue Glow */}
+              <svg
+                className="absolute left-0 -bottom-1.5 w-full h-3.5 text-blue-500/40 dark:text-cyan-400/40 pointer-events-none"
+                viewBox="0 0 100 20"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M0 14 Q 50 2, 100 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>{' '}
+            ke Bawah Atap.
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-xs xs:text-sm sm:text-base lg:text-lg text-teks-sekunder max-w-2xl mx-auto leading-relaxed">
-          Sistem IoT presisi tinggi yang menggerakkan motor servo kanopi seketika tetesan air pertama terdeteksi di plat sensor. Lindungi pakaian keluarga tanpa rasa cemas, kapan pun dan di mana pun.
+        {/* Dynamic Typewriter Tagline */}
+        <div className="h-10 sm:h-8 flex items-center justify-center">
+          <p className="text-xs xs:text-sm sm:text-base text-teks-sekunder font-mono font-medium max-w-2xl mx-auto leading-relaxed flex items-center justify-center">
+            <span>{typedText}</span>
+            <span className="inline-block w-2 h-4 sm:h-5 ml-1 bg-blue-500 dark:bg-cyan-400 animate-pulse rounded-xs" />
+          </p>
+        </div>
+
+        {/* Subtitle Explaining the Rope/Pulley Hardware */}
+        <p className="text-xs xs:text-sm sm:text-base text-teks-sekunder max-w-2xl mx-auto leading-relaxed">
+          Sistem mikrokontroler ESP32 menggerakkan tali katrol rel jemuran seketika plat sensor mendeteksi tetesan air pertama, memindahkan pakaian dari area terik luar langsung ke bawah naungan atap tertutup.
         </p>
 
         {/* Action Buttons */}
@@ -270,143 +348,175 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 3. Interactive Live Hardware Console & Telemetry Section */}
+      {/* 3. Interactive Hardware Stage: Tali Katrol Rel Jemuran ke Atap Tertutup */}
       <section
         ref={metricsSectionRef}
         className="py-6 sm:py-10 px-4 sm:px-6 max-w-4xl mx-auto w-full"
       >
         <div className="p-5 sm:p-7 rounded-2xl sm:rounded-3xl bg-kartu border border-garis shadow-2xl backdrop-blur-xl relative space-y-5 text-left transition-all">
-          {/* Hardware Header Bar */}
+          {/* Hardware Header Bar (No Badges) */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-garis/60 pb-3 sm:pb-4">
             <div className="flex items-center gap-3 min-w-0">
-              <span className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-500 shrink-0">
+              <span className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-500 shrink-0">
                 <Cpu className="w-5 h-5" />
               </span>
               <div className="min-w-0">
-                <h3 className="font-bold text-sm sm:text-base text-teks-utama flex items-center gap-2 truncate">
-                  <span>Konsol Telemetri Hardware ESP32</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    <Radio className="w-2.5 h-2.5 animate-pulse" />
-                    LIVE
-                  </span>
+                <h3 className="font-bold text-sm sm:text-base text-teks-utama truncate">
+                  Konsol Telemetri Hardware ESP32
                 </h3>
                 <p className="text-[11px] sm:text-xs text-teks-sekunder font-mono truncate">
-                  Mikrokontroler ESP32-WROOM • Motor Servo MG996R • Sensor FC-37
+                  Sistem Rel Tali Katrol ESP32-WROOM • Motor Penggerak • Sensor FC-37
                 </p>
               </div>
             </div>
 
-            <Badge variant={previewWet ? 'hujan' : 'kering'} dot className="shrink-0 text-xs px-3 py-1 font-bold">
-              {previewWet ? 'Status: Terdeteksi Hujan 🌧️' : 'Status: Cuaca Kering ☀️'}
-            </Badge>
+            <div className="text-right">
+              <span className="text-xs font-bold font-mono text-teks-utama block">
+                {previewWet ? 'Kondisi: Terdeteksi Hujan' : 'Kondisi: Cuaca Kering'}
+              </span>
+              <span className="text-[10px] text-teks-sekunder font-mono">
+                {previewWet ? 'Tali Bergeser ke Atap' : 'Jemuran di Area Luar'}
+              </span>
+            </div>
           </div>
 
-          {/* Interactive Visual Stage: Clothesline & Canopy Simulation */}
+          {/* Physical Stage: Rope Pulley & Sheltered Roof Simulator */}
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-kartu-muted to-kartu border border-garis relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              {/* Visual SVG Stage */}
-              <div className="relative w-full sm:w-3/5 h-36 sm:h-44 rounded-xl bg-latar/80 border border-garis/80 flex items-center justify-center overflow-hidden p-3 shadow-inner">
-                {/* Weather Sky Element */}
-                {previewWet ? (
-                  <div className="absolute top-2 left-4 flex items-center gap-1.5 text-xs font-semibold text-cyan-500 animate-pulse">
-                    <CloudRain className="w-5 h-5 text-cyan-400" />
-                    <span>Hujan Deras Terdeteksi!</span>
+              {/* Visual Rope & Clothesline Simulator */}
+              <div className="relative w-full sm:w-3/5 h-44 sm:h-48 rounded-xl bg-latar border border-garis flex flex-col justify-between overflow-hidden p-3 shadow-inner">
+                {/* Stage Roof and Sky Layout */}
+                <div className="absolute inset-0 flex">
+                  {/* Left Half: Area Atap Tertutup (Sheltered Terrace Roof) */}
+                  <div className="w-1/2 h-full bg-slate-800/15 dark:bg-slate-900/60 border-r-2 border-dashed border-garis relative flex flex-col justify-start p-2">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-teks-sekunder">
+                      <Umbrella className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Area Atap Tertutup</span>
+                    </div>
+                    {/* Architectural roof shelter beam */}
+                    <div className="w-full h-2.5 bg-slate-700/40 rounded-sm mt-1" />
+                    <span className="text-[9px] text-teks-sekunder font-mono mt-1">
+                      (Tempat Teduh Kering)
+                    </span>
                   </div>
-                ) : (
-                  <div className="absolute top-2 left-4 flex items-center gap-1.5 text-xs font-semibold text-amber-500">
-                    <Sun className="w-5 h-5 text-amber-500 animate-spin" style={{ animationDuration: '24s' }} />
-                    <span>Terik Matahari • Aman Jemur</span>
-                  </div>
-                )}
 
-                {/* Animated Rain Particles (When Wet) */}
-                {previewWet && (
-                  <div className="absolute inset-0 pointer-events-none flex justify-around opacity-60">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((drop) => (
-                      <span
-                        key={drop}
-                        className="w-0.5 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-full animate-bounce"
-                        style={{
-                          height: `${12 + (drop % 3) * 8}px`,
-                          animationDuration: `${0.6 + (drop % 4) * 0.15}s`,
-                          animationDelay: `${drop * 0.1}s`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
+                  {/* Right Half: Area Luar Terbuka (Open Outdoors) */}
+                  <div className="w-1/2 h-full relative p-2 flex flex-col items-end">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-teks-sekunder">
+                      <span>Area Luar Terbuka</span>
+                      <Sun className="w-3.5 h-3.5 text-amber-500" />
+                    </div>
+                    <span className="text-[9px] text-teks-sekunder font-mono mt-1">
+                      (Sinar Matahari Terik)
+                    </span>
 
-                {/* Motorized Canopy Graphic */}
-                <div
-                  className="absolute top-8 left-12 right-12 h-3.5 rounded-lg transition-all duration-700 ease-out shadow-lg flex items-center justify-between px-2"
-                  style={{
-                    backgroundColor: previewWet ? '#3b82f6' : '#94a3b8',
-                    transform: previewWet
-                      ? 'scaleX(1) translateY(0)'
-                      : 'scaleX(0.35) translateY(-4px)',
-                    transformOrigin: 'left center',
-                  }}
-                >
-                  <span className="text-[9px] font-mono font-bold text-white uppercase tracking-wider truncate">
-                    {previewWet ? 'Kanopi Menutup (90°)' : 'Kanopi Terbuka (0°)'}
+                    {/* Animated Rain Falling Exclusively Outdoors When Wet */}
+                    {previewWet && (
+                      <div className="absolute inset-0 pointer-events-none flex justify-around pl-4 opacity-75">
+                        {[1, 2, 3, 4, 5].map((drop) => (
+                          <span
+                            key={drop}
+                            className="w-0.5 bg-gradient-to-b from-cyan-400 to-blue-500 rounded-full animate-bounce"
+                            style={{
+                              height: `${14 + (drop % 3) * 8}px`,
+                              animationDuration: `${0.5 + (drop % 3) * 0.15}s`,
+                              animationDelay: `${drop * 0.1}s`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Pulley Rope Cable & Motor Pulley Gear */}
+                <div className="relative z-10 w-full mt-10">
+                  {/* Horizontal Clothesline Rope */}
+                  <div className="relative w-full h-1 bg-slate-500/50 rounded-full flex items-center justify-between">
+                    {/* Left Pulley Wheel (Atap) */}
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 border-slate-400 bg-slate-800 flex items-center justify-center -ml-1 transition-transform duration-700 ${
+                        previewWet ? 'rotate-180' : 'rotate-0'
+                      }`}
+                    >
+                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                    </div>
+
+                    {/* Right Pulley Wheel (Luar) */}
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 border-slate-400 bg-slate-800 flex items-center justify-center -mr-1 transition-transform duration-700 ${
+                        previewWet ? 'rotate-180' : 'rotate-0'
+                      }`}
+                    >
+                      <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Movable Clothes Rack Gliding on the Pulley Rope */}
+                  <div
+                    className="absolute top-[-4px] transition-all duration-700 ease-out flex flex-col items-center"
+                    style={{
+                      left: previewWet ? '14%' : '66%',
+                      transform: 'translateX(-50%)',
+                    }}
+                  >
+                    {/* Pulley Trolley Hanger */}
+                    <div className="w-4 h-3 bg-indigo-600 rounded-xs flex items-center justify-center shadow-xs">
+                      <Cable className="w-2.5 h-2.5 text-white" />
+                    </div>
+                    {/* Clothesline Bar */}
+                    <div className="w-16 h-1 bg-slate-600 dark:bg-slate-300 rounded-full my-0.5" />
+
+                    {/* Clean SVG Vector Clothes Hanging */}
+                    <div className="flex items-center gap-2 pt-1">
+                      {/* Item 1: Shirt SVG */}
+                      <svg
+                        className="w-5 h-6 text-indigo-500 dark:text-indigo-400 filter drop-shadow-xs"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M20.38 3.46l-4.22 1.41a2 2 0 0 1-1.31-.05L12 3.65l-2.85 1.17a2 2 0 0 1-1.31.05L3.62 3.46a1 1 0 0 0-1.28 1.13l1.1 5.51a1 1 0 0 0 .9.8l1.66.17V20a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8.93l1.66-.17a1 1 0 0 0 .9-.8l1.1-5.51a1 1 0 0 0-1.26-1.13z" />
+                      </svg>
+
+                      {/* Item 2: Pants SVG */}
+                      <svg
+                        className="w-4 h-6 text-cyan-600 dark:text-cyan-400 filter drop-shadow-xs"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M18 2H6a2 2 0 0 0-2 2v18l7-4 7 4V4a2 2 0 0 0-2-2z" />
+                      </svg>
+
+                      {/* Item 3: Towel SVG */}
+                      <svg
+                        className="w-4 h-5 text-amber-500 dark:text-amber-400 filter drop-shadow-xs"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <rect x="4" y="3" width="16" height="18" rx="2" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status Indicator at the Bottom */}
+                <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-teks-sekunder pt-2 border-t border-garis/50">
+                  <span className="flex items-center gap-1 font-semibold text-teks-utama">
+                    <Activity className="w-3 h-3 text-indigo-500" />
+                    Posisi Rel Tali: {previewWet ? '90° (Di Bawah Atap)' : '0° (Area Luar)'}
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-white/80 animate-ping" />
-                </div>
-
-                {/* Clothesline & Hanging Garments */}
-                <div className="relative z-10 w-4/5 pt-10 flex items-center justify-around border-t-2 border-dashed border-teks-sekunder/40">
-                  {/* Garment 1: T-Shirt */}
-                  <div
-                    className={`flex flex-col items-center transition-all duration-500 ${
-                      previewWet ? 'translate-y-1' : '-rotate-2'
-                    }`}
-                  >
-                    <div className="w-2.5 h-1.5 border-t-2 border-teks-sekunder rounded-t-full" />
-                    <div className="w-8 h-10 rounded-b-md bg-indigo-500/80 shadow-xs flex items-center justify-center text-[10px] text-white font-black">
-                      👕
-                    </div>
-                  </div>
-
-                  {/* Garment 2: Shorts / Towel */}
-                  <div
-                    className={`flex flex-col items-center transition-all duration-500 ${
-                      previewWet ? 'translate-y-1' : 'rotate-2'
-                    }`}
-                  >
-                    <div className="w-2.5 h-1.5 border-t-2 border-teks-sekunder rounded-t-full" />
-                    <div className="w-7 h-9 rounded-b-md bg-cyan-500/80 shadow-xs flex items-center justify-center text-[10px] text-white font-black">
-                      🩳
-                    </div>
-                  </div>
-
-                  {/* Garment 3: Shirt */}
-                  <div
-                    className={`flex flex-col items-center transition-all duration-500 ${
-                      previewWet ? 'translate-y-1' : '-rotate-1'
-                    }`}
-                  >
-                    <div className="w-2.5 h-1.5 border-t-2 border-teks-sekunder rounded-t-full" />
-                    <div className="w-8 h-11 rounded-b-md bg-amber-500/80 shadow-xs flex items-center justify-center text-[10px] text-white font-black">
-                      👔
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mechanical Servo Indicator Badge */}
-                <div className="absolute bottom-2 right-3 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-kartu/90 border border-garis text-[10px] font-mono text-teks-sekunder shadow-xs">
-                  <Activity className="w-3 h-3 text-indigo-500" />
-                  <span>Sudut Servo: {displayServo}°</span>
+                  <span>{previewWet ? 'Pakaian Aman Terlindungi' : 'Menjemur di Terik Sinar'}</span>
                 </div>
               </div>
 
-              {/* Interactive Simulation Controls */}
+              {/* Simulation Interactive Controls */}
               <div className="w-full sm:w-2/5 space-y-3">
                 <div className="space-y-1">
                   <span className="font-bold text-xs sm:text-sm text-teks-utama block">
-                    Uji Coba Respon Otomatis:
+                    Uji Respon Tali Katrol:
                   </span>
                   <p className="text-[11px] text-teks-sekunder leading-relaxed">
-                    Klik tombol di bawah untuk menyimulasikan deteksi tetesan air dan perhatikan pergerakan angka telemetri di bawah.
+                    Klik tombol untuk menyimulasikan sensor saat hujan turun. Tali katrol motor seketika menggeser jemuran ke area atap tertutup.
                   </p>
                 </div>
 
@@ -420,7 +530,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     {previewWet ? (
                       <>
                         <Sun className="w-4 h-4" />
-                        <span>Keringkan Sensor (Simulasi Selesai)</span>
+                        <span>Keringkan Sensor (Tarik ke Luar)</span>
                       </>
                     ) : (
                       <>
@@ -431,15 +541,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </Button>
 
                   <div className="flex items-center justify-between text-[11px] text-teks-sekunder px-1">
-                    <span>Waktu Respon Servo:</span>
-                    <span className="font-mono font-bold text-emerald-500">&lt; 420ms</span>
+                    <span>Kecepatan Tarik Tali:</span>
+                    <span className="font-mono font-bold text-emerald-500">&lt; 450ms</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 4 Animated Telemetry Cards (Animasi Meningkat Pas di-Scroll) */}
+          {/* 4 Animated Telemetry Cards on Scroll (Zero Slop, Pure Precision) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {/* Card 1: Status Servo */}
             <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-kartu-muted border border-garis/60 hover:border-indigo-500/40 transition-all space-y-2 shadow-xs group">
@@ -447,7 +557,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-[11px] sm:text-xs text-teks-sekunder font-medium block truncate">
                   Status Servo
                 </span>
-                <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0 group-hover:scale-110 transition-transform">
+                <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
                   <Activity className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -456,7 +566,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   {displayServo}°
                 </p>
                 <p className="text-[11px] sm:text-xs font-bold text-indigo-500 truncate mt-0.5">
-                  {previewWet ? '(Tertutup)' : '(Jemur)'}
+                  {previewWet ? '(Di Bawah Atap)' : '(Jemur)'}
                 </p>
               </div>
               <div className="w-full bg-garis/60 h-1.5 rounded-full overflow-hidden">
@@ -473,7 +583,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-[11px] sm:text-xs text-teks-sekunder font-medium block truncate">
                   ADC Sensor Air
                 </span>
-                <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0 group-hover:scale-110 transition-transform">
+                <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
                   <Cpu className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -499,7 +609,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-[11px] sm:text-xs text-teks-sekunder font-medium block truncate">
                   Kelembapan Air
                 </span>
-                <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0 group-hover:scale-110 transition-transform">
+                <span className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
                   <Droplets className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -525,7 +635,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <span className="text-[11px] sm:text-xs text-teks-sekunder font-medium block truncate">
                   WebSocket Latency
                 </span>
-                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0 group-hover:scale-110 transition-transform">
+                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
                   <Wifi className="w-3.5 h-3.5" />
                 </span>
               </div>
@@ -549,22 +659,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 4. Interactive AI Rain Prediction & Drying Score Sandbox Showcase */}
+      {/* 4. Interactive AI Rain Prediction & Drying Score Sandbox */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8">
         <div className="text-center space-y-2">
-          <Badge variant="sukses" className="text-[10px] uppercase font-bold tracking-wider">
-            Fitur Cerdas AI Engine
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
             Prediksi Hujan & Rekomendasi Jemur Berbasis AI
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-lg mx-auto">
-            Bukan sekadar sensor reaktif — algoritma AI Rintik menganalisis laju perubahan mikroklimat sebelum tetesan air pertama turun ke tanah.
+            Algoritma AI Rintik memantau gradien laju perubahan mikroklimat sebelum tetesan air pertama turun.
           </p>
         </div>
 
         <div className="p-6 sm:p-8 rounded-2xl sm:rounded-3xl bg-kartu border border-garis shadow-lg grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-          {/* Interactive AI Gauge Visualizer */}
+          {/* AI Circular Gauge */}
           <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-kartu-muted border border-garis/70 text-center space-y-4">
             <div className="relative w-36 h-36 flex items-center justify-center">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
@@ -654,7 +761,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-3 rounded-xl bg-kartu-muted border border-garis/60">
                 <span className="text-[10px] text-teks-sekunder block">Estimasi Waktu Kering</span>
                 <span className="text-base font-bold font-mono text-teks-utama">
-                  {aiProb > 70 ? 'Tidak Disarankan' : `~${(1.2 + (100 - aiScore) * 0.03).toFixed(1)} Jam`}
+                  {aiProb > 70 ? 'Tarik ke Atap' : `~${(1.2 + (100 - aiScore) * 0.03).toFixed(1)} Jam`}
                 </span>
               </div>
             </div>
@@ -662,82 +769,73 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
-      {/* 5. How It Works (Alur Kerja Cerdas 3 Langkah) */}
+      {/* 5. How It Works (Alur Kerja 3 Langkah Presisi) */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-6xl mx-auto space-y-8 border-t border-garis">
         <div className="text-center space-y-2">
-          <Badge variant="kering" className="text-[10px] uppercase font-bold tracking-wider">
-            Otomatisasi Tanpa Ribet
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
-            Bagaimana Rintik Mengamankan Jemuran Anda?
+            Alur Otomatisasi Rel Tali Jemuran
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-lg mx-auto">
-            Hanya 3 langkah presisi dari sensor analog hingga pakaian keluarga Anda terlindungi aman.
+            Hanya 3 langkah presisi dari sensor analog hingga jemuran pakaian aman berada di bawah naungan atap.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Step 1 */}
           <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-4 shadow-xs relative">
             <span className="text-3xl font-black font-mono text-indigo-500/20 absolute top-5 right-5">
               01
             </span>
-            <div className="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
               <Droplets className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-base text-teks-utama font-heading">
               1. Deteksi Tetesan Pertama
             </h3>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Plat sensor FC-37 berlapis nikel anti-oksidasi mendeteksi konduktivitas listrik seketika butiran air gerimis menyentuh permukaan.
+              Plat sensor FC-37 mendeteksi konduktivitas listrik seketika butiran air gerimis menyentuh lempeng sensor di luar ruangan.
             </p>
           </div>
 
-          {/* Step 2 */}
           <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-4 shadow-xs relative">
             <span className="text-3xl font-black font-mono text-blue-500/20 absolute top-5 right-5">
               02
             </span>
-            <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
               <Zap className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-base text-teks-utama font-heading">
-              2. Respon Motor Seketika
+              2. Tali Menarik ke Atap
             </h3>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Mikrokontroler ESP32 langsung memutar motor servo 90° menutup kanopi dalam kurun waktu kurang dari 500ms — bahkan tanpa koneksi internet.
+              Mikrokontroler ESP32 langsung menggerakkan motor penarik tali rel, memindahkan jemuran ke tempat teduh di bawah atap tertutup dalam &lt;500ms.
             </p>
           </div>
 
-          {/* Step 3 */}
           <div className="p-6 rounded-2xl sm:rounded-3xl bg-kartu border border-garis space-y-4 shadow-xs relative">
             <span className="text-3xl font-black font-mono text-emerald-500/20 absolute top-5 right-5">
               03
             </span>
-            <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
               <BellRing className="w-5 h-5" />
             </div>
             <h3 className="font-bold text-base text-teks-utama font-heading">
-              3. Notifikasi WebSocket & Telegram
+              3. Notifikasi WebSocket & Bot
             </h3>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Data telemetri disiarkan realtime via WebSocket ke dashboard dan bot Telegram Anda menerima pesan darurat instan.
+              Status telemetri terbarui realtime di dashboard dan bot Telegram mengirimkan pesan darurat instan ke ponsel Anda.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 6. Hardware Anatomy & Tech Specs Bento Grid */}
+      {/* 6. Hardware Bento Grid (Shadcn Minimalist) */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-6xl mx-auto space-y-8 border-t border-garis">
         <div className="text-center space-y-2">
-          <Badge variant="kering" className="text-[10px] uppercase font-bold tracking-wider">
-            Spesifikasi Komponen
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
-            Hardware & Infrastruktur Berkualitas Industri
+            Hardware & Infrastruktur Berkualitas
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-lg mx-auto">
-            Dirancang tangguh menghadapi panas terik dan hujan lebat tanpa henti.
+            Komponen andal yang tahan terhadap perubahan cuaca panas terik maupun hujan deras.
           </p>
         </div>
 
@@ -748,7 +846,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </span>
             <h4 className="font-bold text-sm text-teks-utama">ESP32 Dual-Core 240MHz</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Pemrosesan firmware bare-metal yang super cepat, konsumsi daya rendah, dan modul WiFi internal berdaya jangkau tinggi.
+              Eksekusi firmware lokal instan dengan konsumsi daya rendah dan konektivitas WiFi jarak jauh yang stabil.
             </p>
           </div>
 
@@ -756,9 +854,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="p-2 rounded-xl bg-blue-500/10 text-blue-500 inline-block">
               <Server className="w-5 h-5" />
             </span>
-            <h4 className="font-bold text-sm text-teks-utama">Backend Golang VPS</h4>
+            <h4 className="font-bold text-sm text-teks-utama">Backend Golang Cloud</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Arsitektur server Golang yang ringan (&lt;30MB RAM) dengan koneksi WebSocket persisten untuk komunikasi data tanpa polling.
+              Server Golang efisien (&lt;30MB RAM) dengan koneksi WebSocket persisten untuk komunikasi data tanpa jeda polling.
             </p>
           </div>
 
@@ -766,9 +864,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500 inline-block">
               <CloudSun className="w-5 h-5" />
             </span>
-            <h4 className="font-bold text-sm text-teks-utama">Integrasi Cuaca BMKG</h4>
+            <h4 className="font-bold text-sm text-teks-utama">Prakiraan Cuaca BMKG</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Sinkronisasi data resmi cuaca BMKG Republik Indonesia hingga ke tingkat desa dan kelurahan secara periodik.
+              Sinkronisasi data resmi cuaca BMKG Republik Indonesia hingga tingkat kelurahan secara otomatis.
             </p>
           </div>
 
@@ -776,9 +874,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 inline-block">
               <Shield className="w-5 h-5" />
             </span>
-            <h4 className="font-bold text-sm text-teks-utama">Isolasi Multi-Tenant</h4>
+            <h4 className="font-bold text-sm text-teks-utama">Isolasi Akun Multi-Tenant</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Data sensor dan kontrol motor dienkripsi dan diisolasi ketat per ID pengguna. Tidak ada kebocoran antar akun.
+              Data sensor dan kontrol rel tali terenkripsi serta diisolasi ketat per ID pengguna.
             </p>
           </div>
 
@@ -788,7 +886,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </span>
             <h4 className="font-bold text-sm text-teks-utama">Alarm Looping & Bot Telegram</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Bunyi alarm synthesizer darurat yang berputar tanpa henti sampai dimatikan, plus pengiriman alert otomatis ke bot Telegram Anda.
+              Nada dering sirine looping persisten dan notifikasi darurat terhubung ke Telegram Bot.
             </p>
           </div>
 
@@ -798,74 +896,82 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </span>
             <h4 className="font-bold text-sm text-teks-utama">Progressive Web App (PWA)</h4>
             <p className="text-xs text-teks-sekunder leading-relaxed">
-              Bisa diinstal sebagai aplikasi layar utama HP Android maupun iPhone dengan performa native dan tampilan fullscreen.
+              Dapat diinstal langsung ke layar utama Android maupun iOS dengan tampilan fullscreen.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 7. Interactive Frequently Asked Questions (FAQ) */}
+      {/* 7. Silky-Smooth FAQ Accordion with CSS Grid Transition */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto space-y-8 border-t border-garis">
         <div className="text-center space-y-2">
-          <Badge variant="kering" className="text-[10px] uppercase font-bold tracking-wider">
-            Tanya Jawab
-          </Badge>
           <h2 className="text-2xl sm:text-3xl font-black font-heading tracking-tight text-teks-utama">
             Pertanyaan yang Sering Diajukan
           </h2>
           <p className="text-xs sm:text-sm text-teks-sekunder max-w-md mx-auto">
-            Semua hal yang perlu Anda ketahui mengenai sistem IoT Rintik.
+            Informasi lengkap seputar operasional hardware dan sistem IoT Rintik.
           </p>
         </div>
 
         <div className="space-y-3">
           {[
             {
-              q: 'Apakah motor kanopi tetap bisa menutup jika koneksi internet terputus?',
-              a: 'Ya, 100% bisa! Mikrokontroler ESP32 menjalankan logika lokal langsung pada hardware. Seketika sensor mendeteksi air, servo langsung bergerak menutup kanopi secara mekanik tanpa memerlukan koneksi internet.',
+              q: 'Bagaimana cara kerja tali katrol jemuran saat hujan turun?',
+              a: 'Ketika lempeng sensor FC-37 mendeteksi tetesan air hujan pertama, mikrokontroler ESP32 langsung mengaktifkan motor untuk menarik tali katrol. Tali tersebut menggeser rel jemuran pakaian masuk ke area atap tertutup (tempat teduh) secara otomatis dalam waktu kurang dari 500ms.',
             },
             {
-              q: 'Berapa daya listrik yang dibutuhkan alat ini?',
-              a: 'Sangat hemat energi. Sistem berjalan menggunakan suplai adaptor 5V USB (seperti charger HP standar) dengan daya rata-rata di bawah 2 Watt, atau bahkan dapat ditenagai menggunakan powerbank cadangan.',
+              q: 'Apakah jemuran tetap bisa tertarik ke atap jika WiFi/internet terputus?',
+              a: 'Ya, 100% aman! Logika penarikan tali jemuran berjalan langsung di dalam firmware ESP32 tanpa memerlukan koneksi cloud. Begitu sensor basah, jemuran langsung ditarik ke bawah atap.',
             },
             {
-              q: 'Apakah ada biaya langganan bulanan untuk memantau jemuran?',
-              a: 'Tidak ada biaya langganan. Platform Rintik dapat digunakan secara gratis untuk memantau telemetri perangkat dan menerima notifikasi bot Telegram.',
+              q: 'Berapa kebutuhan daya listrik untuk alat jemuran ini?',
+              a: 'Sistem dirancang hemat energi menggunakan adaptor 5V USB (seperti charger HP standar) dengan konsumsi daya rata-rata di bawah 2 Watt, atau dapat ditenagai menggunakan powerbank cadangan.',
             },
             {
-              q: 'Bagaimana cara menambahkan perangkat ESP32 ke akun saya?',
-              a: 'Setelah mendaftar akun, buka menu "Kelola Perangkat" lalu klik "Tambah Perangkat". Masukkan ID unik ESP32 dan tentukan batas sensitivitas hujan sesuai keinginan Anda.',
+              q: 'Apakah ada biaya langganan bulanan?',
+              a: 'Tidak ada biaya langganan. Platform Rintik dapat digunakan secara gratis untuk memantau telemetri perangkat dan menerima notifikasi peringatan hujan.',
             },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl bg-kartu border border-garis overflow-hidden transition-all shadow-xs"
-            >
-              <button
-                type="button"
-                onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
-                className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm text-teks-utama hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+          ].map((item, idx) => {
+            const isOpen = activeFaq === idx;
+            return (
+              <div
+                key={idx}
+                className="rounded-2xl bg-kartu border border-garis overflow-hidden transition-all shadow-xs"
               >
-                <span>{item.q}</span>
-                <ChevronDown
-                  className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
-                    activeFaq === idx ? 'rotate-180 text-indigo-500' : 'text-teks-sekunder'
+                <button
+                  type="button"
+                  onClick={() => setActiveFaq(isOpen ? null : idx)}
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm text-teks-utama hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                >
+                  <span>{item.q}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 transition-transform duration-300 ease-out ${
+                      isOpen ? 'rotate-180 text-indigo-500' : 'text-teks-sekunder'
+                    }`}
+                  />
+                </button>
+
+                {/* Silky-Smooth Height Transition via CSS Grid */}
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                    isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
                   }`}
-                />
-              </button>
-              {activeFaq === idx && (
-                <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-teks-sekunder leading-relaxed border-t border-garis/50 pt-3 animate-in fade-in duration-200">
-                  {item.a}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 sm:px-5 sm:pb-5 text-xs text-teks-sekunder leading-relaxed border-t border-garis/50 pt-3">
+                      {item.a}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       </section>
 
       {/* 8. Bottom Call to Action */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 max-w-4xl mx-auto text-center">
-        <div className="p-7 sm:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-blue-600/15 via-indigo-600/10 to-cyan-600/15 border border-indigo-500/25 space-y-4 sm:space-y-5">
+        <div className="p-7 sm:p-10 rounded-2xl sm:rounded-3xl bg-gradient-to-tr from-blue-600/10 via-indigo-600/10 to-cyan-600/10 border border-indigo-500/20 space-y-4 sm:space-y-5">
           <h2 className="text-xl sm:text-3xl font-black font-heading text-teks-utama">
             Siap Mengamankan Jemuran Anda?
           </h2>

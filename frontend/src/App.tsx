@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useTransition } from 'react';
+import React, { useState, useEffect, useRef, useTransition, useCallback } from 'react';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import { NavTab, BottomNav } from './components/Layout/BottomNav';
@@ -68,12 +68,12 @@ export const App: React.FC = () => {
     }
   });
 
-  const handleSplashComplete = () => {
+  const handleSplashComplete = useCallback(() => {
     try {
       sessionStorage.setItem('rintik_splash_seen', 'true');
     } catch {}
     setShowSplash(false);
-  };
+  }, []);
 
   // Helper function to resolve activeTab from URL path (REQ-FE-05)
   const getActiveTabFromPath = (path: string): NavTab => {
@@ -922,7 +922,7 @@ export const App: React.FC = () => {
     }
   }, [effectiveWet]);
 
-  // Custom Scrollbar Colors according to Theme & Weather Condition
+  // Custom Scrollbar Colors according to Theme, Route, & Weather Condition
   useEffect(() => {
     const root = document.documentElement;
     const isDark =
@@ -930,7 +930,27 @@ export const App: React.FC = () => {
       (settings.tema === 'system' &&
         window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    if (activeTab === 'dashboard') {
+    const isLandingOrAuth =
+      !session ||
+      normalizedPath === '/' ||
+      normalizedPath === '/landing' ||
+      normalizedPath === '/auth' ||
+      normalizedPath === '/login' ||
+      normalizedPath === '/register' ||
+      normalizedPath === '/terms' ||
+      normalizedPath === '/privacy';
+
+    if (isLandingOrAuth) {
+      if (isDark) {
+        root.style.setProperty('--scrollbar-track', '#070b14');
+        root.style.setProperty('--scrollbar-thumb', '#1e293b');
+        root.style.setProperty('--scrollbar-thumb-hover', '#334155');
+      } else {
+        root.style.setProperty('--scrollbar-track', '#f8fafc');
+        root.style.setProperty('--scrollbar-thumb', '#cbd5e1');
+        root.style.setProperty('--scrollbar-thumb-hover', '#94a3b8');
+      }
+    } else if (activeTab === 'dashboard') {
       if (activeCondition === 'cerah') {
         root.style.setProperty('--scrollbar-track', '#fef3c7');
         root.style.setProperty('--scrollbar-thumb', '#f59e0b');
@@ -960,7 +980,7 @@ export const App: React.FC = () => {
         root.style.setProperty('--scrollbar-thumb-hover', '#64748b');
       }
     }
-  }, [activeTab, activeCondition, settings.tema]);
+  }, [activeTab, activeCondition, settings.tema, session, normalizedPath]);
 
   // 1. Dedicated Standalone 404 Page (No Sidebar, No Header)
   if (!isValidAppRoute) {

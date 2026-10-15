@@ -316,3 +316,22 @@ header.sticky {
   }
 }
 
+/* Ethereal subtle gradient flow for Hero ambient backdrop */
+@keyframes subtleGradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-subtle-gradient {
+  background-size: 200% 200%;
+  animation: subtleGradientFlow 22s ease-in-out infinite;
+}
+
+
