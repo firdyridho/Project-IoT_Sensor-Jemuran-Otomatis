@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-tema="dark"], [data-tema="dark"] *));
 
 @layer base {
   :root {
@@ -23,7 +24,8 @@
     --color-fokus: #2563eb;
   }
 
-  [data-tema="dark"] {
+  [data-tema="dark"],
+  .dark {
     --color-latar: #0f172a;
     --color-kartu: #1e293b;
     --color-kartu-muted: #182234;

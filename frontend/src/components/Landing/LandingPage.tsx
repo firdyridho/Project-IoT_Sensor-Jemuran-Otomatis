@@ -233,14 +233,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               onClick={onToggleTheme}
               className="min-h-9 min-w-9 p-2 rounded-xl text-teks-sekunder hover:text-teks-utama hover:bg-kartu-muted border border-transparent hover:border-garis transition-all flex items-center justify-center cursor-pointer"
               aria-label="Ganti tema"
-              title="Ganti Tema"
+              title={`Mode Tema: ${theme === 'dark' ? 'Gelap' : theme === 'light' ? 'Terang' : 'Sistem (Otomatis)'}`}
             >
               {theme === 'dark' ? (
                 <Moon className="w-4 h-4 text-cyan-400" />
               ) : theme === 'light' ? (
                 <Sun className="w-4 h-4 text-amber-500" />
               ) : (
-                <Laptop className="w-4 h-4" />
+                <Laptop className="w-4 h-4 text-blue-500 dark:text-blue-400" />
               )}
             </button>
 
@@ -268,30 +268,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
       {/* 2. Hero Section with Typing Animation & Handcrafted Underline Highlight */}
       <section className="pt-12 sm:pt-20 pb-12 sm:pb-16 px-4 sm:px-6 max-w-5xl mx-auto text-center space-y-6">
-        {/* Main Headline */}
-        <h1 className="text-3xl xs:text-4xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.12]">
-          Pantau Hujan Realtime.{' '}
-          <span className="relative inline-block">
-            <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
-              {typedHeroText}
+        {/* Main Headline: Baris 1 "Pantau Hujan Realtime." dan Baris 2 "Amankan Jemuran Otomatis." */}
+        <h1 className="text-2xl xs:text-3xl sm:text-5xl lg:text-6xl font-black font-heading tracking-tight text-teks-utama max-w-4xl mx-auto leading-[1.2] sm:leading-[1.15]">
+          <span className="block">Pantau Hujan Realtime.</span>
+          <span className="block mt-1 sm:mt-2 min-h-[1.22em]">
+            <span className="relative inline-block">
+              <span className="bg-gradient-to-r from-blue-500 via-indigo-500 to-cyan-500 bg-clip-text text-transparent">
+                {typedHeroText || '\u00A0'}
+              </span>
+              <span className="inline-block w-[3px] h-[0.8em] bg-cyan-400 ml-1.5 align-middle animate-pulse rounded-full" />
+              {/* Harmonized Underline Highlight with Gentle Blue Glow */}
+              <svg
+                className={`absolute left-0 -bottom-1.5 w-full h-3.5 text-blue-500/40 dark:text-cyan-400/40 pointer-events-none transition-opacity duration-300 ${
+                  typedHeroText.includes('Jemuran') ? 'opacity-100' : 'opacity-0'
+                }`}
+                viewBox="0 0 100 20"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M0 14 Q 50 2, 100 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                />
+              </svg>
             </span>
-            <span className="inline-block w-[3px] h-[0.8em] bg-cyan-400 ml-1.5 align-middle animate-pulse rounded-full" />
-            {/* Harmonized Underline Highlight with Gentle Blue Glow */}
-            <svg
-              className={`absolute left-0 -bottom-1.5 w-full h-3.5 text-blue-500/40 dark:text-cyan-400/40 pointer-events-none transition-opacity duration-300 ${
-                typedHeroText.includes('Jemuran') ? 'opacity-100' : 'opacity-0'
-              }`}
-              viewBox="0 0 100 20"
-              preserveAspectRatio="none"
-            >
-              <path
-                d="M0 14 Q 50 2, 100 12"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3.5"
-                strokeLinecap="round"
-              />
-            </svg>
           </span>
         </h1>
 

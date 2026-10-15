@@ -216,19 +216,10 @@ export const App: React.FC = () => {
   const prevWetRef = useRef<boolean>(false);
 
   // ---------------------------------------------------------------------------
-  // Theme Manager (Dashboard menggunakan tema atmosferik gelap saat aktif, landing & halaman lain mematuhi tema pilihan)
+  // Theme Manager (Landing, Dashboard & seluruh halaman mematuhi tema: light, dark, system)
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    const isDashboardPage = Boolean(session) && activeTab === 'dashboard' && (normalizedPath === '/' || normalizedPath === '/dashboard');
-
     const applyTheme = () => {
-      // Khusus Dashboard atmosferik saat login aktif
-      if (isDashboardPage) {
-        document.documentElement.dataset.tema = 'dark';
-        document.documentElement.classList.add('dark');
-        return;
-      }
-
       const mode = settings.tema;
       let effective = mode;
       if (mode === 'system') {
@@ -252,7 +243,7 @@ export const App: React.FC = () => {
     };
     media.addEventListener('change', listener);
     return () => media.removeEventListener('change', listener);
-  }, [settings.tema, activeTab, session, normalizedPath]);
+  }, [settings.tema]);
 
   // Smooth Scrolling with Lenis
   useEffect(() => {
@@ -1111,6 +1102,8 @@ export const App: React.FC = () => {
           isAudioMuted={isAudioMuted}
           onToggleAudio={handleToggleAudio}
           onOpenSettings={() => navigate('/settings')}
+          theme={settings.tema}
+          onToggleTheme={handleToggleTheme}
         />
 
         {/* Content Area with pb-24 for mobile bottom navigation clearance */}
