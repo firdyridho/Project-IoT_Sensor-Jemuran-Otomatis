@@ -31,7 +31,8 @@ import { SplashScreen } from './components/Common/SplashScreen';
 import { LegalView } from './components/Legal/LegalView';
 import { SettingsView } from './components/Settings/SettingsView';
 import { PersistentRainAlarmModal } from './components/Alert/PersistentRainAlarmModal';
-import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType } from './utils/audioAlarm';
+import { AudioAlarmService, ALARM_TONE_OPTIONS, AlarmToneType, cacheCustomAudio } from './utils/audioAlarm';
+import { BellOff } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthService } from './services/auth';
 import { AuthSession } from './types/auth';
@@ -115,6 +116,18 @@ export const App: React.FC = () => {
   );
   const [settings, setSettings] = useState(() => StorageService.getSettings());
   const [isPersistentAlarmActive, setIsPersistentAlarmActive] = useState(false);
+  const [isAlarmMutedByUser, setIsAlarmMutedByUser] = useState(false);
+
+  // Cross-device custom alarm sync on login / session restoration (REQ-FE-16)
+  useEffect(() => {
+    if (session?.user?.customAlarmUrl) {
+      localStorage.setItem('rintik.alarm.custom_url', session.user.customAlarmUrl);
+      cacheCustomAudio(session.user.customAlarmUrl).catch(() => {});
+    }
+    if (session?.user?.alarmTone) {
+      localStorage.setItem('rintik.alarm.tone', session.user.alarmTone);
+    }
+  }, [session?.user?.customAlarmUrl, session?.user?.alarmTone]);
 
   // Cross-tab & Service Worker alarm dismissal synchronization (REQ-FE-12)
   useEffect(() => {
@@ -463,6 +476,8 @@ export const App: React.FC = () => {
         timestamp: Date.now(),
       });
     } else if (ev.type === 'rain_stop') {
+      if (currentWet || (latestState?.rain?.wet ?? false)) return;
+      setIsAlarmMutedByUser(false);
       Notifications.addToast({
         id: 'toast-' + Date.now(),
         type: 'info',
@@ -815,28 +830,64 @@ export const App: React.FC = () => {
   const bmkgSlotNow = getCurrentBmkgSlot(weatherData);
   const bmkgDesc = bmkgSlotNow?.weather_desc?.toLowerCase() || '';
 
+  // REQ-FE-15: Pemisahan Cerah Berawan vs Mendung Tebal
   const bmkgCondition: WeatherCondition = /petir|badai|guntur/i.test(bmkgDesc)
     ? 'badai'
     : /hujan lebat|hujan sedang|hujan deras|hujan/i.test(bmkgDesc)
     ? 'hujan'
     : /gerimis/i.test(bmkgDesc)
     ? 'gerimis'
-    : /berawan|mendung|kabut/i.test(bmkgDesc)
+    : /cerah/i.test(bmkgDesc)
+    ? 'cerah'
+    : /berawan tebal|mendung/i.test(bmkgDesc)
     ? 'mendung'
     : 'cerah';
 
+  // LDR sensor optik hardware jika tersedia mendung: false (cahaya terang)
+  const isLdrBright =
+    (latestState as any)?.mendung === false || (latestReading as any)?.mendung === false;
+
+  // REQ-FE-17: Tingkat hujan terukur (Gerimis 20-50%, Hujan 51-80%, Badai >80%)
   const realCondition: WeatherCondition = currentWet
     ? currentPct > 80
       ? 'badai'
-      : 'hujan'
-    : currentPct > 30
+      : currentPct > 50
+      ? 'hujan'
+      : 'gerimis'
+    : isLdrBright
+    ? 'cerah'
+    : currentPct > 40
     ? 'mendung'
     : bmkgCondition;
 
   const activeCondition: WeatherCondition = realCondition;
-  const effectiveWet = currentWet || activeCondition === 'hujan' || activeCondition === 'badai' || activeCondition === 'gerimis';
-  const effectivePct = currentWet ? currentPct : activeCondition === 'badai' ? 95 : activeCondition === 'hujan' ? 75 : activeCondition === 'mendung' ? 35 : currentPct;
-  const effectiveRaw = currentWet ? currentRaw : activeCondition === 'badai' ? 600 : activeCondition === 'hujan' ? 1400 : activeCondition === 'mendung' ? 3100 : currentRaw;
+  const effectiveWet =
+    currentWet ||
+    activeCondition === 'hujan' ||
+    activeCondition === 'badai' ||
+    activeCondition === 'gerimis';
+  const effectivePct = currentWet
+    ? currentPct
+    : activeCondition === 'badai'
+    ? 95
+    : activeCondition === 'hujan'
+    ? 75
+    : activeCondition === 'gerimis'
+    ? 35
+    : activeCondition === 'mendung'
+    ? 30
+    : currentPct;
+  const effectiveRaw = currentWet
+    ? currentRaw
+    : activeCondition === 'badai'
+    ? 600
+    : activeCondition === 'hujan'
+    ? 1400
+    : activeCondition === 'gerimis'
+    ? 2400
+    : activeCondition === 'mendung'
+    ? 3100
+    : currentRaw;
 
   const currentStatus: 'kering' | 'hujan' | 'offline' = isDeviceOffline
     ? 'offline'
@@ -859,6 +910,13 @@ export const App: React.FC = () => {
       weatherAudio.play(activeCondition);
     }
   }, [activeCondition, isAudioMuted]);
+
+  // Reset muted state when rain finishes completely (REQ-FE-17)
+  useEffect(() => {
+    if (!effectiveWet) {
+      setIsAlarmMutedByUser(false);
+    }
+  }, [effectiveWet]);
 
   // Custom Scrollbar Colors according to Theme & Weather Condition
   useEffect(() => {
@@ -920,6 +978,8 @@ export const App: React.FC = () => {
         <LegalView
           initialTab={normalizedPath === '/privacy' ? 'privacy' : 'terms'}
           onBack={() => navigate(session ? '/dashboard' : '/')}
+          theme={settings.tema}
+          onToggleTheme={handleToggleTheme}
         />
       </div>
     );
@@ -1062,6 +1122,39 @@ export const App: React.FC = () => {
                     Pembaruan: {secondsAgo < 5 ? 'Baru saja' : `${secondsAgo} dtk lalu`}
                   </span>
                 </div>
+
+                {/* Banner Peringatan: Alarm Diheningkan tapi Sensor Masih Basah (REQ-FE-17) */}
+                {isAlarmMutedByUser && effectiveWet && (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-950 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="p-2 rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+                        <BellOff className="w-5 h-5" />
+                      </span>
+                      <div className="text-xs space-y-0.5 min-w-0">
+                        <span className="font-bold block text-sm truncate">
+                          🔇 Alarm Suara Diheningkan — Sensor Masih Basah ({effectivePct}%)
+                        </span>
+                        <span className="text-[11px] opacity-90 block">
+                          Kanopi jemuran tetap terlindungi aman di dalam hingga permukaan sensor benar-benar kering.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAlarmMutedByUser(false);
+                        setIsPersistentAlarmActive(true);
+                        const tone = (localStorage.getItem('rintik.alarm.tone') || 'emergency_siren') as AlarmToneType;
+                        const vol = Number(localStorage.getItem('rintik.alarm.vol') || '0.8');
+                        const customUrl = localStorage.getItem('rintik.alarm.custom_url') || undefined;
+                        AudioAlarmService.startPersistentAlarm(tone, vol, customUrl);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shrink-0 shadow-xs cursor-pointer transition-colors"
+                    >
+                      Bunyikan Lagi
+                    </button>
+                  </div>
+                )}
 
                 {/* 1. Card Jemuran ESP32 Utama (Icon Cuaca di Tengah, Celcius di Samping, Info Cuaca & Motor di Bawah) */}
                 <HeroStatusCard
@@ -1272,6 +1365,9 @@ export const App: React.FC = () => {
         onDismiss={() => {
           setIsPersistentAlarmActive(false);
           AudioAlarmService.dismissAlarm();
+          if (effectiveWet) {
+            setIsAlarmMutedByUser(true);
+          }
         }}
         deviceName={activeDevice.nama}
         rainPercentage={effectivePct}

@@ -177,11 +177,21 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Integrasi endpoint multipart form `POST /api/user/custom-alarm` dan penyimpanan preferensi URL ke `PUT /api/user/profile`.
   * Implementasi caching offline menggunakan Web Cache Storage API (`rintik-custom-tones-v1`) melalui helper `cacheCustomAudio`, menjamin alarm kustom tetap berbunyi saat perangkat offline di tengah cuaca ekstrem.
   * Integrasi pemutaran looping persisten pada `App.tsx` & `audioAlarm.ts` dengan fallback otomatis ke `emergency_siren` bila pemutaran berkas audio kustom mengalami kegagalan.
-* [x] **FE-21: Penyatuan Notifikasi Peringatan Hujan ke Telegram Bot & Deprekasi Web Push Browser (REQ-FE-14)**:
-  * Pembersihan antarmuka dari fitur aktivasi Web Push browser (menghapus tombol lonceng izin push di Header, kartu push VAPID di `DeviceView.tsx`, serta toggle push di `SettingsView.tsx`).
-  * Penyatuan saluran peringatan darurat eksternal 100% ke Telegram Bot (`@Rintik_Iot_Bot`), didukung Quick Action Bar integrasi Telegram di bagian atas Pengaturan Akun dan Tab Preferensi.
-  * Pembersihan event listener push Google FCM pada Service Worker `sw.js` tanpa mengorbankan caching offline aset statis (`rintik-v2`) dan berkas audio nada dering kustom (`rintik-custom-tones-v1`).
-  * Pemeliharaan arsitektur frontend yang bersih tanpa mengubah berkas backend apa pun, berhasil lulus validasi build Vite & TypeScript.
+* [x] **FE-22: Migrasi Halaman Legal Mandiri (Ketentuan Layanan & Kebijakan Privasi) Tanpa Popup (REQ-FE-15)**:
+  * Mengeliminasi modal popup legal dialog (`LegalModal.tsx`) dan mengalihkannya menjadi halaman mandiri berdedikasi penuh (`/terms` dan `/privacy`) via `LegalView.tsx`.
+  * Memperbaiki kendala scrolling dokumen pada browser mobile/touchpad dengan memanfaatkan native window scroll dokumen secara leluasa tanpa batasan wadah modal tertutup.
+  * Menambahkan top navigation bar lengkap dengan logo Rintik, tombol kembali ke halaman sebelumnya, tab switcher rute dinamis antara Ketentuan Layanan dan Kebijakan Privasi, tombol cetak dokumen/PDF (`window.print()`), dan toggle tema adaptif (Dark/Light).
+  * Mengganti seluruh trigger popup di formulir pendaftaran akun dan footer aplikasi (`LandingPage.tsx` dan `AuthPage.tsx`) dengan tautan SPA langsung (`<Link to="/terms">` dan `<Link to="/privacy">`).
+* [x] **FE-23: Redesain Landing Page Interaktif & Animasi Counter Meningkat saat Di-scroll (REQ-FE-15)**:
+  * Pembuatan efek animasi angka bertingkat (*count-up ticker animation*) berbasis `requestAnimationFrame` dan kurva perlambatan eksponensial (`easeOutExpo`) yang dipicu saat bagian metrik telemetri memasuki layar viewport (`IntersectionObserver`).
+  * Implementasi 4 kartu telemetri realtime dengan angka yang meningkat mulus hingga nilai target:
+    1. **Status Servo**: Bergerak meningkat/menyesuaikan dari 0° (Jemur) ke 90° (Tertutup).
+    2. **ADC Sensor Air**: Meningkat tajam dari 0 hingga 3850 ADC (kondisi kering) atau 1420 ADC (kondisi basah).
+    3. **Kelembapan Air**: Meningkat dari 0% hingga 12% Kering atau 88% Basah.
+    4. **WebSocket Latency**: Animasi latensi sub-detik menampilkan 3.8ms Sub-4ms dengan indikator ping hidup.
+  * Penambahan panggung visual simulasi fisik kanopi & jemuran interaktif (*Interactive Clothesline & Canopy Simulator*): animasi terik matahari, jemuran bergoyang, dan penutupan kanopi otomatis seketika tombol simulasi hujan ditekan.
+  * Penambahan sandbox interaktif model AI (*Interactive AI Rain Prediction & Drying Score Sandbox*) dengan slider simulasi kelembapan udara untuk menguji kalkulasi probabilitas hujan secara langsung.
+  * Penambahan bento grid spesifikasi hardware industri (ESP32 240MHz, sensor FC-37, motor servo torsi tinggi) dan accordion FAQ interaktif.
 
 ---
 

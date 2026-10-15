@@ -18,10 +18,9 @@ import {
   Laptop,
 } from 'lucide-react';
 import { Button } from '../Common/Button';
-import { LegalModal } from '../Common/LegalModal';
-import { LegalTab } from '../Legal/LegalView';
 import { AuthService } from '../../services/auth';
 import { AuthSession } from '../../types/auth';
+import { Link } from 'react-router-dom';
 
 interface AuthPageProps {
   initialMode?: 'login' | 'register';
@@ -45,7 +44,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -388,21 +386,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 {mode === 'register' && (
                   <p className="text-[11px] text-teks-sekunder text-center pt-1.5 leading-relaxed">
                     Dengan mendaftar, Anda menyetujui{' '}
-                    <button
-                      type="button"
-                      onClick={() => setLegalTab('terms')}
+                    <Link
+                      to="/terms"
                       className="text-blue-500 hover:underline font-semibold"
                     >
                       Ketentuan Layanan
-                    </button>{' '}
+                    </Link>{' '}
                     &{' '}
-                    <button
-                      type="button"
-                      onClick={() => setLegalTab('privacy')}
+                    <Link
+                      to="/privacy"
                       className="text-blue-500 hover:underline font-semibold"
                     >
                       Kebijakan Privasi
-                    </button>{' '}
+                    </Link>{' '}
                     Rintik.
                   </p>
                 )}
@@ -439,31 +435,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       {/* Footer with Legal Links (REQ-FE-10) */}
       <footer className="py-5 text-center text-xs text-teks-sekunder border-t border-garis/60 space-y-2">
         <div className="flex flex-wrap items-center justify-center gap-3 font-semibold text-[11px]">
-          <button
-            type="button"
-            onClick={() => setLegalTab('terms')}
-            className="hover:text-blue-500 transition-colors cursor-pointer"
+          <Link
+            to="/terms"
+            className="hover:text-blue-500 transition-colors"
           >
             Ketentuan Layanan
-          </button>
+          </Link>
           <span className="opacity-40">•</span>
-          <button
-            type="button"
-            onClick={() => setLegalTab('privacy')}
-            className="hover:text-blue-500 transition-colors cursor-pointer"
+          <Link
+            to="/privacy"
+            className="hover:text-blue-500 transition-colors"
           >
             Kebijakan Privasi
-          </button>
+          </Link>
         </div>
         <p>© 2026 Rintik • Platform IoT Sensor Jemuran Otomatis Realtime</p>
       </footer>
-
-      {/* Legal Modal Dialog */}
-      <LegalModal
-        isOpen={legalTab !== null}
-        initialTab={legalTab || 'terms'}
-        onClose={() => setLegalTab(null)}
-      />
     </div>
   );
 };

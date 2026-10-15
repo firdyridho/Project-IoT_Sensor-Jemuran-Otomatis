@@ -40,91 +40,89 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-FE-15: Penyesuaian Inferensi Cuaca 'Mendung' (Pemisahan Cerah Berawan vs Mendung Tebal & Konsumsi Data LDR Hardware)**
-  * Tanggal Diminta: 2026-10-15
-  * Diminta Oleh: Backend Engineer (sesuai investigasi Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/App.tsx` (evaluasi `bmkgCondition` dan `realCondition` di baris 900-925)
-    * `frontend/src/components/Dashboard/HeroStatusCard.tsx` & `DailyForecastCards.tsx`
-  * Spesifikasi & Instruksi Kerja Frontend:
-    1. **Masalah Tampilan 'Mendung Mulu'**:
-       * Saat ini, saat sensor hujan fisik sedang kering, frontend mengonversi data BMKG menggunakan regex `/berawan|mendung|kabut/i.test(bmkgDesc) ? 'mendung' : 'cerah'`.
-       * Data BMKG Indonesia (terutama wilayah Banten/Jawa) hampir 90% waktu mengembalikan deskripsi *"Berawan"* atau *"Cerah Berawan"*.
-       * Akibatnya, kondisi *"Cerah Berawan"* (yang sebenarnya terang benderang dengan sedikit awan) terpaksa berubah menjadi status visual `'mendung'` (awan gelap pekat).
-    2. **Solusi Perbaikan di Sisi Klien**:
-       * Pisahkan kondisi: jika `bmkgDesc` mengandung *"cerah"* (misal *"Cerah Berawan"*), tetapkan kondisi sebagai `'cerah'`.
-       * Status `'mendung'` hanya digunakan jika deskripsi BMKG secara eksplisit berbunyi *"Berawan Tebal"* atau *"Mendung"*.
-       * Jika telemetri hardware dari WebSocket memiliki flag `mendung: false` (dari sensor LDR yang mendeteksi cahaya terang di atas ambang ADC), dahulukan sensor optik lokal tersebut agar tampilan dashboard akurat mencerminkan kondisi lapangan jemuran.
-* [ ] **REQ-FE-16: Perbaikan Sinkronisasi Nada Dering Kustom & Preferensi Pengguna Antar-Perangkat (Cross-Device Account Sync)**
-  * Tanggal Diminta: 2026-10-15
-  * Diminta Oleh: Backend Engineer (sesuai laporan Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/services/auth.ts` (fungsi `login()` baris 83-92 dan `register()` baris 160-170)
-    * `frontend/src/components/Settings/SettingsView.tsx`
-    * `frontend/src/App.tsx` (sinkronisasi preferensi akun saat sesi aktif)
-    * `frontend/src/components/Dashboard/TelemetryGrid.tsx` (penghapusan/penyembunyian card DHT22 & Baterai karena hardware tidak memakainya)
-  * Masalah & Investigasi:
-    1. **Hilangnya Nada Dering Kustom Saat Ganti Perangkat**:
-       * Backend sudah menyimpan `customAlarmUrl` dan `alarmTone = "custom"` di database (`users` dan `user_settings`) dan mengirimkannya secara utuh pada respon `POST /api/auth/login`.
-       * Namun pada `frontend/src/services/auth.ts`, saat membuat objek `session.user`, frontend hanya menyalin `{ id, name, username, createdAt }`, sedangkan field `customAlarmUrl`, `alarmTone`, `telegramChatId`, dan `theme` **terbuang/tidak disalin**.
-       * Akibatnya saat login di perangkat baru (misal ganti HP atau laptop), perangkat baru tidak mengetahui URL nada dering kustom dan fallback ke default.
-    2. **Pembersihan Telemetri DHT22 & Baterai**:
-       * Project Owner mengonfirmasi bahwa hardware jemuran **tidak menggunakan sensor DHT22 (suhu/kelembapan) maupun modul baterai** (ESP32 ditenagai langsung via kabel USB).
-       * Frontend diminta untuk menyembunyikan atau merapikan kartu Suhu Udara, Kelembapan, dan Daya Baterai pada Dashboard agar antarmuka bersih dan tidak membingungkan pengguna dengan label "DHT22 tidak terpasang".
-  * Solusi untuk Frontend:
-    1. Lengkapi pemetaan `session.user` di `auth.ts`:
-       ```typescript
-       const session: AuthSession = {
-         user: {
-           id: data.user.id,
-           name: data.user.name,
-           username: data.user.username,
-           telegramChatId: data.user.telegramChatId,
-           alarmTone: data.user.alarmTone,
-           customAlarmUrl: data.user.customAlarmUrl,
-           theme: data.user.theme,
-           createdAt: data.user.createdAt,
-         },
-         token: data.token,
-         rememberMe,
-       };
-       ```
-    2. Saat sesi pengguna dimuat di `App.tsx` atau `SettingsView.tsx`, jika `session.user.customAlarmUrl` ada, simpan ke `localStorage.setItem('rintik.alarm.custom_url', ...)` dan trigger `cacheCustomAudio()` agar berkas audio kustom langsung aktif dan tercache di perangkat baru tersebut.
-    3. Rapikan `TelemetryGrid.tsx` agar fokus pada status basah/kering, ADC hujan, sinyal WiFi (RSSI), dan status motor kanopi jemuran.
-  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md)
-  * Status: Siap Dikerjakan oleh Frontend
-
-* [ ] **REQ-FE-17: Pemisahan Status "Alarm Audio Dimatikan" dengan "Status Fisik Sensor Masih Basah" & Visualisasi Tingkat Hujan (Gerimis / Hujan / Badai)**
-  * Tanggal Diminta: 2026-10-15
-  * Diminta Oleh: Backend Engineer (sesuai evaluasi Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx`
-    * `frontend/src/App.tsx` (handler `onDismiss` modal alarm & floating banner status)
-    * `frontend/src/components/Dashboard/HeroStatusCard.tsx` (indikator level cuaca: Gerimis, Hujan, Badai)
-  * Masalah & Investigasi UX:
-    1. **Persepsi "Mati Alarm = Hujan Reda"**:
-       * Saat alarm persisten hujan berbunyi dan modal popup raksasa muncul, pengguna menekan tombol *"MATIKAN ALARM"*.
-       * Begitu tombol ditekan, modal popup tertutup dan audio sirine berhenti. Pengguna secara psikologis mengira sistem menganggap cuaca sudah "reda".
-       * Padahal di lapangan, tetesan air masih ada di lempeng sensor fisik ESP32, kanopi jemuran masih diamankan di dalam, dan status telemetri `wet` masih `true`.
-    2. **Solusi Antarmuka yang Diinginkan**:
-       * **Banner / Badge "Alarm Diheningkan"**:
-         Ketika modal alarm ditutup (`onDismiss`) sementara sensor fisik masih mendeteksi basah (`effectiveWet === true`):
-         Tampilkan banner/badge informatif yang tenang di atas Dashboard:
-         *"🔇 Alarm Suara Diheningkan — Sensor Masih Basah (Kanopi Tetap Aman di Dalam)"*.
-         Sertakan tombol pintas kecil untuk membunyikan kembali suara alarm jika diinginkan.
-       * **Klasifikasi Tingkat Hujan Jelas**:
-         Tampilkan level hujan secara transparan berdasarkan persentase basah (`rainPercentage` / `effectivePct`):
-         - `20% - 50%`: **Gerimis** (*Drizzle*)
-         - `51% - 80%`: **Hujan Sedang / Deras** (*Rain*)
-         - `> 80%`: **Badai / Hujan Sangat Lebat** (*Heavy Storm*)
-       * **Jangan Mengeluarkan Toast "Reda" Prematur**:
-         Pastikan notifikasi/toast *"Hujan Telah Reda"* hanya muncul jika status `wet` dari telemetri perangkat benar-benar berubah menjadi `false` (yang kini telah dilatch dengan histeresis Schmitt Trigger pada firmware ESP32).
-  * Dokumen Rujukan: [PRD.md](PRD.md), [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md)
-  * Status: Siap Dikerjakan oleh Frontend
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-18: Halaman Mandiri Ketentuan Layanan & Kebijakan Privasi (Bebas Scroll Tanpa Popup) serta Redesain Landing Page Dinamis dengan Animasi Counter Meningkat saat Di-scroll**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Project Owner
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Legal/LegalView.tsx` (didesain ulang sebagai halaman penuh independen dengan header navigasi, tab switcher yang menyinkronkan rute `/terms` dan `/privacy`, tombol cetak dokumen/PDF, toggle tema, dan scrolling native dokumen tanpa kendala gestur)
+    * `frontend/src/components/Landing/LandingPage.tsx` (redesain landing page dengan panggung simulasi fisik kanopi jemuran, animasi counter meningkat saat di-scroll untuk Servo 0°, ADC 3850, Kelembapan 12%, dan Latency Sub-4ms, sandbox AI interaktif, accordion FAQ, dan tautan legal langsung)
+    * `frontend/src/components/Auth/AuthPage.tsx` (mengganti popup modal legal pada formulir registrasi dan footer dengan tautan SPA langsung `<Link to="/terms">` dan `<Link to="/privacy">`)
+    * `frontend/src/App.tsx` (pemberian props `theme` dan `onToggleTheme` pada rendering rute `/terms` dan `/privacy`)
+    * `frontend/src/components/Common/LegalModal.tsx` (didepresiasi dan dilepaskan dari seluruh alur aplikasi)
+  * Spesifikasi yang Terpenuhi:
+    1. **Eliminasi Popup Modal Legal**: Ketentuan Layanan dan Kebijakan Privasi kini dibuka sebagai halaman mandiri penuh. Masalah scroll tertahan teratasi secara menyeluruh karena menggunakan scrolling native browser yang mulus di ponsel pintar maupun komputer.
+    2. **Animasi Angka Counter Meningkat saat Di-scroll**: Ketika pengunjung menggulir ke bagian telemetri konsol hardware, angka secara dinamis meningkat (count-up) dari 0 menuju angka target (Servo 0° Jemur, ADC 3850, Kelembapan 12% Kering, Latensi 3.8ms Sub-4ms) menggunakan kurva easing eksponensial.
+    3. **Panggung Simulasi Interaktif & Sandbox AI**: Pengunjung dapat menyimulasikan tetesan hujan, melihat kanopi menutup dan jemuran terlindungi, serta menggeser slider kelembapan udara untuk melihat reaksi prediksi AI secara realtime.
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-17: Pemisahan Status "Alarm Audio Dimatikan" dengan "Status Fisik Sensor Masih Basah" & Visualisasi Tingkat Hujan (Gerimis / Hujan / Badai)**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai evaluasi Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Alert/PersistentRainAlarmModal.tsx`
+    * `frontend/src/App.tsx` (handler `onDismiss` modal alarm & floating banner status)
+    * `frontend/src/components/Dashboard/HeroStatusCard.tsx` (indikator level cuaca: Gerimis, Hujan, Badai)
+  * Spesifikasi yang Terpenuhi:
+    1. **Banner / Badge "Alarm Diheningkan"**: Ketika modal alarm ditutup (`onDismiss`) sementara sensor fisik masih mendeteksi basah (`effectiveWet === true`), dashboard menampilkan banner informatif tenang: *"🔇 Alarm Suara Diheningkan — Sensor Masih Basah (Kanopi Tetap Aman di Dalam)"* lengkap dengan tombol pintas *"Bunyikan Lagi"*.
+    2. **Klasifikasi Tingkat Hujan Jelas**: Visualisasi tingkat hujan terpisah secara akurat berdasarkan intensitas kebasahan:
+       - `20% - 50%`: **Gerimis** (*Drizzle*)
+       - `51% - 80%`: **Hujan Sedang / Deras** (*Rain*)
+       - `> 80%`: **Badai / Hujan Sangat Lebat** (*Heavy Storm*)
+    3. **Pencegahan Toast "Reda" Prematur**: Notifikasi toast *"Hujan Telah Reda"* hanya dipicu bila sensor benar-benar kering (`currentWet === false`).
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-16: Perbaikan Sinkronisasi Nada Dering Kustom & Preferensi Pengguna Antar-Perangkat (Cross-Device Account Sync)**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai laporan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/services/auth.ts` (fungsi `login()` dan `register()`)
+    * `frontend/src/App.tsx` (sinkronisasi audio kustom saat sesi aktif)
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx` (pembersihan kartu DHT22 & Baterai yang tidak dipakai hardware)
+  * Spesifikasi yang Terpenuhi:
+    1. Melengkapi pemetaan `session.user` di `auth.ts` dengan menyertakan `telegramChatId`, `alarmTone`, `customAlarmUrl`, dan `theme`.
+    2. Ketika sesi pengguna dimuat di `App.tsx`, `customAlarmUrl` otomatis disimpan ke `localStorage` dan di-cache via `cacheCustomAudio()` sehingga nada dering kustom langsung aktif saat login di gawai baru.
+    3. Merapikan `TelemetryGrid.tsx` agar fokus pada sensor aktual (ADC FC-37, Persentase Basah, Sinyal WiFi, Uptime/Daya USB, dan Firmware).
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-15: Penyesuaian Inferensi Cuaca 'Mendung' (Pemisahan Cerah Berawan vs Mendung Tebal & Konsumsi Data LDR Hardware)**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Backend Engineer (sesuai investigasi Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/App.tsx` (evaluasi `bmkgCondition` dan `realCondition`)
+    * `frontend/src/components/Dashboard/HeroStatusCard.tsx`
+  * Spesifikasi yang Terpenuhi:
+    1. Memisahkan kondisi: jika `bmkgDesc` mengandung kata *"cerah"* (misal *"Cerah Berawan"*), visual ditetapkan sebagai `'cerah'` (terik matahari bersahabat).
+    2. Status `'mendung'` hanya digunakan jika BMKG secara eksplisit menyatakan *"Berawan Tebal"* atau *"Mendung"*.
+    3. Jika telemetri hardware memiliki flag `mendung: false` (sensor LDR mendeteksi cahaya terang di atas ambang ADC), sensor optik lokal diprioritaskan.
+  * Status: [x] SELESAI
+  * Tanggal Selesai: 2026-10-15
+  * Diminta Oleh: Project Owner
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Legal/LegalView.tsx` (didesain ulang sebagai halaman penuh independen dengan header navigasi, tab switcher yang menyinkronkan rute `/terms` dan `/privacy`, tombol cetak dokumen/PDF, toggle tema, dan scrolling native dokumen tanpa kendala gestur)
+    * `frontend/src/components/Landing/LandingPage.tsx` (redesain landing page dengan panggung simulasi fisik kanopi jemuran, animasi counter meningkat saat di-scroll untuk Servo 0°, ADC 3850, Kelembapan 12%, dan Latency Sub-4ms, sandbox AI interaktif, accordion FAQ, dan tautan legal langsung)
+    * `frontend/src/components/Auth/AuthPage.tsx` (mengganti popup modal legal pada formulir registrasi dan footer dengan tautan SPA langsung `<Link to="/terms">` dan `<Link to="/privacy">`)
+    * `frontend/src/App.tsx` (pemberian props `theme` dan `onToggleTheme` pada rendering rute `/terms` dan `/privacy`)
+    * `frontend/src/components/Common/LegalModal.tsx` (didepresiasi dan dilepaskan dari seluruh alur aplikasi)
+  * Spesifikasi yang Terpenuhi:
+    1. **Eliminasi Popup Modal Legal**: Ketentuan Layanan dan Kebijakan Privasi kini dibuka sebagai halaman mandiri penuh. Masalah scroll tertahan teratasi secara menyeluruh karena menggunakan scrolling native browser yang mulus di ponsel pintar maupun komputer.
+    2. **Animasi Angka Counter Meningkat saat Di-scroll**: Ketika pengunjung menggulir ke bagian telemetri konsol hardware, angka secara dinamis meningkat (count-up) dari 0 menuju angka target (Servo 0° Jemur, ADC 3850, Kelembapan 12% Kering, Latensi 3.8ms Sub-4ms) menggunakan kurva easing eksponensial.
+    3. **Panggung Simulasi Interaktif & Sandbox AI**: Pengunjung dapat menyimulasikan tetesan hujan, melihat kanopi menutup dan jemuran terlindungi, serta menggeser slider kelembapan udara untuk melihat reaksi prediksi AI secara realtime.
+  * Status: [x] SELESAI
 
 * [x] **REQ-FE-14: Penghapusan Fitur Web Push Browser (Google VAPID) & Penyatuan Notifikasi 100% ke Telegram Bot**
   * Tanggal Diminta: 2026-10-14

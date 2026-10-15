@@ -8,6 +8,7 @@ import {
   Activity,
   Cpu,
   Clock,
+  Zap,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 
@@ -58,6 +59,9 @@ export const TelemetryGrid: React.FC<TelemetryGridProps> = ({
     return 'Lemah';
   };
 
+  const hasDht = tempC != null || hum != null;
+  const hasBattery = vbat != null || batteryPct != null;
+
   return (
     <section aria-label="Telemetri Perangkat" className="space-y-3">
       <div className="flex items-center justify-between">
@@ -72,68 +76,43 @@ export const TelemetryGrid: React.FC<TelemetryGridProps> = ({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* 1. Suhu Lingkungan */}
+        {/* 1. Analog ADC Raw (Sensor FC-37) */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Suhu Udara</span>
-            <Thermometer className="w-4 h-4 text-orange-500" />
+            <span className="text-xs font-medium">ADC Sensor Hujan (FC-37)</span>
+            <Activity className="w-4 h-4 text-cyan-500" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
-              {tempC != null ? `${tempC}°C` : '—'}
+            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono">
+              {raw != null ? raw : '—'}
             </div>
             <p className="text-[11px] text-teks-sekunder mt-0.5">
-              {tempC != null ? 'Sensor DHT22' : 'DHT22 tidak terpasang'}
+              Rentang 0 (Basah) – 4095 (Kering)
             </p>
           </div>
         </Card>
 
-        {/* 2. Kelembapan Lingkungan */}
+        {/* 2. Persentase Basah (Normalisasi & Schmitt Trigger Histeresis) */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Kelembapan</span>
-            <Droplets className="w-4 h-4 text-cyan-500" />
+            <span className="text-xs font-medium">Tingkat Kebasahan</span>
+            <Droplets className="w-4 h-4 text-blue-500" />
           </div>
           <div className="mt-2">
-            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
-              {hum != null ? `${hum}%` : '—'}
+            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono">
+              {pct != null ? `${pct}%` : '—'}
             </div>
             <p className="text-[11px] text-teks-sekunder mt-0.5">
-              {hum != null ? 'Kelembapan relatif' : 'DHT22 tidak terpasang'}
+              Normalisasi Histeresis Latch
             </p>
           </div>
         </Card>
 
-        {/* 3. Baterai & Daya */}
+        {/* 3. Sinyal WiFi (RSSI) */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Daya Baterai</span>
-            {charging ? (
-              <BatteryCharging className="w-4 h-4 text-green-500" />
-            ) : (
-              <Battery className="w-4 h-4 text-blue-500" />
-            )}
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight flex items-baseline gap-1.5">
-              <span>{batteryPct != null ? `${batteryPct}%` : '—'}</span>
-              {vbat != null && (
-                <span className="text-xs font-medium text-teks-sekunder">
-                  ({vbat.toFixed(2)}V)
-                </span>
-              )}
-            </div>
-            <p className="text-[11px] text-teks-sekunder mt-0.5">
-              {charging ? 'Sedang Mengisi' : vbat != null ? 'Baterai Li-ion' : 'Sumber USB Langsung'}
-            </p>
-          </div>
-        </Card>
-
-        {/* 4. Sinyal WiFi */}
-        <Card className="flex flex-col justify-between">
-          <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Sinyal WiFi</span>
-            <Wifi className="w-4 h-4 text-blue-500" />
+            <span className="text-xs font-medium">Sinyal WiFi ESP32</span>
+            <Wifi className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="mt-2">
             <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
@@ -145,66 +124,97 @@ export const TelemetryGrid: React.FC<TelemetryGridProps> = ({
           </div>
         </Card>
 
-        {/* 5. Analog ADC Raw */}
+        {/* 4. Suplai Daya & Uptime ESP32 */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Analog Raw (ADC)</span>
-            <Activity className="w-4 h-4 text-cyan-500" />
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono">
-              {raw != null ? raw : '—'}
-            </div>
-            <p className="text-[11px] text-teks-sekunder mt-0.5">
-              Rentang ADC 0 – 4095
-            </p>
-          </div>
-        </Card>
-
-        {/* 6. Persentase Basah */}
-        <Card className="flex flex-col justify-between">
-          <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Tingkat Basah</span>
-            <Droplets className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono">
-              {pct != null ? `${pct}%` : '—'}
-            </div>
-            <p className="text-[11px] text-teks-sekunder mt-0.5">
-              Hasil normalisasi & EMA
-            </p>
-          </div>
-        </Card>
-
-        {/* 7. Uptime Perangkat */}
-        <Card className="flex flex-col justify-between">
-          <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Uptime ESP32</span>
-            <Clock className="w-4 h-4 text-purple-500" />
+            <span className="text-xs font-medium">Suplai Daya & Uptime</span>
+            <Zap className="w-4 h-4 text-amber-500" />
           </div>
           <div className="mt-2">
             <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
               {formatUptime(uptimeS)}
             </div>
             <p className="text-[11px] text-teks-sekunder mt-0.5">
-              Sejak boot terakhir
+              Adaptor USB 5V Aktif
             </p>
           </div>
         </Card>
 
+        {/* 5. Opsional jika terpasang: Suhu Udara (DHT22) */}
+        {hasDht && tempC != null && (
+          <Card className="flex flex-col justify-between">
+            <div className="flex items-center justify-between text-teks-sekunder">
+              <span className="text-xs font-medium">Suhu Udara</span>
+              <Thermometer className="w-4 h-4 text-orange-500" />
+            </div>
+            <div className="mt-2">
+              <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
+                {tempC}°C
+              </div>
+              <p className="text-[11px] text-teks-sekunder mt-0.5">
+                Sensor Suhu
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* 6. Opsional jika terpasang: Kelembapan Lingkungan (DHT22) */}
+        {hasDht && hum != null && (
+          <Card className="flex flex-col justify-between">
+            <div className="flex items-center justify-between text-teks-sekunder">
+              <span className="text-xs font-medium">Kelembapan Udara</span>
+              <Droplets className="w-4 h-4 text-cyan-500" />
+            </div>
+            <div className="mt-2">
+              <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight">
+                {hum}%
+              </div>
+              <p className="text-[11px] text-teks-sekunder mt-0.5">
+                Kelembapan Relatif (RH)
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {/* 7. Opsional jika terpasang: Baterai Tambahan */}
+        {hasBattery && (
+          <Card className="flex flex-col justify-between">
+            <div className="flex items-center justify-between text-teks-sekunder">
+              <span className="text-xs font-medium">Baterai Cadangan</span>
+              {charging ? (
+                <BatteryCharging className="w-4 h-4 text-green-500" />
+              ) : (
+                <Battery className="w-4 h-4 text-blue-500" />
+              )}
+            </div>
+            <div className="mt-2">
+              <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight flex items-baseline gap-1.5">
+                <span>{batteryPct != null ? `${batteryPct}%` : '—'}</span>
+                {vbat != null && (
+                  <span className="text-xs font-medium text-teks-sekunder">
+                    ({vbat.toFixed(2)}V)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-teks-sekunder mt-0.5">
+                {charging ? 'Sedang Mengisi' : 'Modul Eksternal'}
+              </p>
+            </div>
+          </Card>
+        )}
+
         {/* 8. Firmware & Sistem */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
-            <span className="text-xs font-medium">Firmware</span>
-            <Cpu className="w-4 h-4 text-emerald-500" />
+            <span className="text-xs font-medium">Firmware Hardware</span>
+            <Cpu className="w-4 h-4 text-purple-500" />
           </div>
           <div className="mt-2">
             <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono">
-              {fwVersion ? `v${fwVersion}` : '—'}
+              {fwVersion ? `v${fwVersion}` : 'v2.4'}
             </div>
             <p className="text-[11px] text-teks-sekunder mt-0.5">
-              Protokol Payload v1
+              Hujan Sensor ESP32 Core
             </p>
           </div>
         </Card>
