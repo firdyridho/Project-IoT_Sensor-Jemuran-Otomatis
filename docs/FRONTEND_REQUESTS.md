@@ -40,6 +40,34 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
+* [ ] **REQ-FE-21: Pembersihan Desain Tampilan Pengaturan (`SettingsView.tsx`): Eliminasi Gradien 'AI Slop', Gunakan Warna Solid Minimalis, Bersihkan Shadow Tebal, dan Sempurnakan Kontras Tema Gelap/Terang**
+  * Tanggal Diminta: 2026-10-17
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Settings/SettingsView.tsx` (tampilan menu Pengaturan Akun & Preferensi)
+    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx` (indikator kekuatan kata sandi)
+  * Latar Belakang & Keluhan Desain:
+    * Tampilan halaman Pengaturan saat ini dinilai terlalu banyak menggunakan efek gradien murah bergaya *"AI slop"* (seperti `bg-gradient-to-r from-cyan-500 to-blue-600`, tombol bergradien neon, shadow berwarna mencolok `shadow-cyan-600/25`, dan border glow berlebihan) yang membuat antarmuka terasa tidak profesional dan melelahkan di mata.
+    * Hal ini melanggar pedoman resmi [`.agents/rules/ui-mobile-first/SKILL.md`](../.agents/rules/ui-mobile-first/SKILL.md) Prinsip 2 (*"Satu aksen. Warna cerah hanya untuk status dan aksi utama. Sisanya netral"*) dan Prinsip 4 (*"Tanpa dekorasi berlebih. Hindari gradien besar, bayangan tebal, dan ikon dekoratif yang tidak membawa informasi"*).
+  * Spesifikasi & Instruksi Perbaikan Desain UI/UX:
+    1. **Eliminasi Seluruh Tombol & Bar Bergradien (No More AI-Slop Gradients)**:
+       * Hapus seluruh kelas `bg-gradient-to-r` pada tombol simpan, tombol aksi, dan progress bar (`from-cyan-500 to-blue-600`, `from-blue-600 to-cyan-600`, `from-cyan-500 to-indigo-500`).
+       * Ganti dengan warna **solid yang bersih dan tegas**:
+         - Tombol Utama / Simpan: `bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors` (atau token biru status standar `#2563eb`).
+         - Tombol Sekunder / Ghost: `bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700`.
+       * Hilangkan bayangan warna-warni tebal (`shadow-lg shadow-cyan-600/25`, `shadow-blue-900/20`), ganti dengan elevasi halus standar (`shadow-xs` atau `shadow-sm`).
+    2. **Harmonisasi Adaptif Tema Terang dan Gelap (Bukan Hardcoded Gelap)**:
+       * Bersihkan kelas latar belakang statis yang memaksa warna hitam/gelap (`bg-slate-900/80` yang kaku saat tema terang dipilih).
+       * Terapkan adaptasi dinamis:
+         - Mode Terang: Latar kartu bersih `bg-white border-slate-200 text-slate-900`, input `bg-slate-50 border-slate-300 text-slate-900`.
+         - Mode Gelap: Latar kartu `dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100`, input `dark:bg-slate-950 dark:border-slate-800 dark:text-slate-100`.
+       * Pastikan rasio kontras teks memenuhi syarat WCAG minimal **4.5:1** di kedua tema.
+    3. **Navigasi Tab Samping & Header yang Tenang & Profesional**:
+       * Tab aktif di sidebar kiri (`profile`, `password`, `telegram`, `preferences`) diubah menjadi gaya flat clean (misal `bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60 font-semibold`) tanpa glow neon yang mencolok.
+       * Badge header disederhanakan agar bernuansa enterprise-grade dashboard, bukan mockup generator.
+  * Dokumen Rujukan: [`.agents/rules/ui-mobile-first/SKILL.md`](../.agents/rules/ui-mobile-first/SKILL.md), [`API_CONTRACT_AGREEMENT.md`](API_CONTRACT_AGREEMENT.md)
+  * Status: Siap Dikerjakan oleh Frontend
+
 * [ ] **REQ-FE-20: Tampilan Status Pergerakan Motor Stepper Realtime (`motor_status: moving`) & Visualisasi Sensor Cahaya LDR pada Dashboard**
   * Tanggal Diminta: 2026-10-15
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
