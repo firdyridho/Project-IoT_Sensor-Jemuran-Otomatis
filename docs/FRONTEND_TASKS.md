@@ -192,6 +192,16 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Penambahan panggung visual simulasi fisik kanopi & jemuran interaktif (*Interactive Clothesline & Canopy Simulator*): animasi terik matahari, jemuran bergoyang, dan penutupan kanopi otomatis seketika tombol simulasi hujan ditekan.
   * Penambahan sandbox interaktif model AI (*Interactive AI Rain Prediction & Drying Score Sandbox*) dengan slider simulasi kelembapan udara untuk menguji kalkulasi probabilitas hujan secara langsung.
   * Penambahan bento grid spesifikasi hardware industri (ESP32 240MHz, sensor FC-37, motor servo torsi tinggi) dan accordion FAQ interaktif.
+* [x] **FE-24: Tampilan Status Pergerakan Motor Stepper Realtime & Visualisasi Sensor Cahaya LDR (REQ-FE-20)**:
+  * Integrasi listener event WebSocket `type: 'motor'` di `api.ts` dan pembaruan state reaktif di `App.tsx` dengan filter isolasi perangkat aktif (multi-tenancy).
+  * Indikator visual animasi gear berputar dan teks status dinamis (*"⚙️ Motor Sedang Menarik Jemuran Masuk..."* / *"⚙️ Motor Sedang Membentangkan Jemuran ke Luar..."*) pada `ClotheslineMotorCard.tsx`.
+  * Penonaktifan interaktif tombol manual ("Tarik ke Atap" dan "Bentangkan ke Luar") saat motor sedang bergerak untuk mencegah tabrakan pulsa stepper.
+  * Kartu Sensor Cahaya (LDR) pada `TelemetryGrid.tsx` menampilkan nilai ADC 0 - 4095 dan label status "Terang" / "Mendung" sesuai output OLED ESP32.
+* [x] **FE-25: Pembersihan Desain Tampilan Pengaturan (Anti-Slop Gradients, Solid Minimalis & Harmonisasi Tema) (REQ-FE-21)**:
+  * Menghapus semua gradien *AI slop* (`from-cyan-500 to-blue-600`, dsb.) dan bayangan tebal berwarna neon di `SettingsView.tsx`.
+  * Menggunakan palet solid minimalis modern: tombol utama `bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs`, tombol sekunder netral `bg-slate-100 dark:bg-slate-800`.
+  * Harmonisasi adaptif penuh tema gelap dan terang: latar kartu `bg-white dark:bg-slate-900/80`, input `bg-slate-50 border-slate-300 dark:bg-slate-950 dark:border-slate-800`, dan kontras teks WCAG >= 4.5:1.
+  * Perataan styling tab sidebar kiri ke flat clean border styling dan pembersihan `PasswordStrengthMeter.tsx`.
 
 ---
 

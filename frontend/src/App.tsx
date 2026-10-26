@@ -421,6 +421,20 @@ export const App: React.FC = () => {
     }
 
     setLatestState(state);
+    if ((state as any).motor) {
+      const motor = (state as any).motor;
+      setDevices((prev) =>
+        prev.map((d) =>
+          d.deviceId === state.deviceId
+            ? {
+                ...d,
+                motorPosition: motor.position || d.motorPosition,
+                motorStatus: motor.status || d.motorStatus,
+              }
+            : d
+        )
+      );
+    }
     if (state.status === 'offline') {
       setLastSeenTs(0);
     } else {
@@ -596,6 +610,23 @@ export const App: React.FC = () => {
       closeWs = BackendService.connectWebSocket(settings.backendUrl, {
         onTelemetry: (telemetry) => handleIngestTelemetry(telemetry),
         onState: (state) => handleIngestState(state),
+        onMotor: (motorData) => {
+          const currentDeviceId = activeDeviceRef.current.deviceId;
+          if (motorData.deviceId && currentDeviceId && motorData.deviceId !== currentDeviceId) {
+            return;
+          }
+          setDevices((prev) =>
+            prev.map((d) =>
+              d.deviceId === motorData.deviceId
+                ? {
+                    ...d,
+                    motorPosition: (motorData.position as any) || d.motorPosition,
+                    motorStatus: (motorData.status as any) || d.motorStatus,
+                  }
+                : d
+            )
+          );
+        },
         onEvent: (ev) => handleIngestEvent(ev),
         onForecastAlert: (alert) => {
           Notifications.addToast({
@@ -1212,9 +1243,18 @@ export const App: React.FC = () => {
                   condition={activeCondition}
                   backendUrl={settings.backendUrl}
                   deviceId={activeDevice.deviceId}
-                  currentMotorPos={activeDevice.motorPosition as 'extended' | 'sheltered'}
+                  currentMotorPos={activeDevice.motorPosition}
+                  motorStatus={activeDevice.motorStatus}
                   onCommandMotor={async (action) => {
                     if (!settings.backendUrl) return false;
+                    // Optimistic moving state
+                    setDevices((prev) =>
+                      prev.map((d) =>
+                        d.deviceId === activeDevice.deviceId
+                          ? { ...d, motorStatus: 'moving' }
+                          : d
+                      )
+                    );
                     const ok = await BackendService.commandMotor(
                       settings.backendUrl,
                       activeDevice.deviceId,
@@ -1229,6 +1269,14 @@ export const App: React.FC = () => {
                                 motorPosition: action === 'retract' ? 'sheltered' : 'extended',
                                 motorStatus: 'idle',
                               }
+                            : d
+                        )
+                      );
+                    } else {
+                      setDevices((prev) =>
+                        prev.map((d) =>
+                          d.deviceId === activeDevice.deviceId
+                            ? { ...d, motorStatus: 'idle' }
                             : d
                         )
                       );
@@ -1264,6 +1312,8 @@ export const App: React.FC = () => {
                 <TelemetryGrid
                   raw={effectiveRaw}
                   pct={effectivePct}
+                  ldrRaw={latestReading?.ldrRaw ?? (latestState as any)?.ldrRaw ?? null}
+                  isMendung={latestReading?.mendung ?? (latestState as any)?.mendung ?? null}
                   tempC={latestState?.env?.tempC ?? latestReading?.suhuC ?? null}
                   hum={latestState?.env?.hum ?? latestReading?.lembapPct ?? null}
                   vbat={latestState?.power?.vbat ?? latestReading?.bateraiV ?? null}

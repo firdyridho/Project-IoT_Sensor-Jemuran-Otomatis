@@ -9,12 +9,15 @@ import {
   Cpu,
   Clock,
   Zap,
+  Sun,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 
 interface TelemetryGridProps {
   raw: number | null;
   pct: number | null;
+  ldrRaw?: number | null;
+  isMendung?: boolean | null;
   tempC: number | null;
   hum: number | null;
   vbat: number | null;
@@ -29,6 +32,8 @@ interface TelemetryGridProps {
 export const TelemetryGrid: React.FC<TelemetryGridProps> = ({
   raw,
   pct,
+  ldrRaw,
+  isMendung,
   tempC,
   hum,
   vbat,
@@ -108,7 +113,34 @@ export const TelemetryGrid: React.FC<TelemetryGridProps> = ({
           </div>
         </Card>
 
-        {/* 3. Sinyal WiFi (RSSI) */}
+        {/* 3. Sensor Cahaya LDR Hardware (REQ-FE-20) */}
+        <Card className="flex flex-col justify-between">
+          <div className="flex items-center justify-between text-teks-sekunder">
+            <span className="text-xs font-medium">Sensor Cahaya (LDR)</span>
+            <Sun className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="mt-2">
+            <div className="text-2xl md:text-3xl font-extrabold text-teks-utama tracking-tight font-mono flex items-baseline justify-between">
+              <span>{ldrRaw != null ? ldrRaw : '—'}</span>
+              {isMendung != null && (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isMendung
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                  }`}
+                >
+                  {isMendung ? 'Mendung' : 'Terang'}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-teks-sekunder mt-0.5">
+              ADC Optik 0 (Terik) – 4095 (Gelap)
+            </p>
+          </div>
+        </Card>
+
+        {/* 4. Sinyal WiFi (RSSI) */}
         <Card className="flex flex-col justify-between">
           <div className="flex items-center justify-between text-teks-sekunder">
             <span className="text-xs font-medium">Sinyal WiFi ESP32</span>

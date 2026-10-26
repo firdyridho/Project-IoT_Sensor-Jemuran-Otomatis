@@ -66,58 +66,43 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
   * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md), [API.md](API.md)
   * Status: Siap Dikerjakan oleh Frontend
 
-* [ ] **REQ-FE-21: Pembersihan Desain Tampilan Pengaturan (`SettingsView.tsx`): Eliminasi Gradien 'AI Slop', Gunakan Warna Solid Minimalis, Bersihkan Shadow Tebal, dan Sempurnakan Kontras Tema Gelap/Terang**
-  * Tanggal Diminta: 2026-10-17
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/components/Settings/SettingsView.tsx` (tampilan menu Pengaturan Akun & Preferensi)
-    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx` (indikator kekuatan kata sandi)
-  * Latar Belakang & Keluhan Desain:
-    * Tampilan halaman Pengaturan saat ini dinilai terlalu banyak menggunakan efek gradien murah bergaya *"AI slop"* (seperti `bg-gradient-to-r from-cyan-500 to-blue-600`, tombol bergradien neon, shadow berwarna mencolok `shadow-cyan-600/25`, dan border glow berlebihan) yang membuat antarmuka terasa tidak profesional dan melelahkan di mata.
-    * Hal ini melanggar pedoman resmi [`.agents/rules/ui-mobile-first/SKILL.md`](../.agents/rules/ui-mobile-first/SKILL.md) Prinsip 2 (*"Satu aksen. Warna cerah hanya untuk status dan aksi utama. Sisanya netral"*) dan Prinsip 4 (*"Tanpa dekorasi berlebih. Hindari gradien besar, bayangan tebal, dan ikon dekoratif yang tidak membawa informasi"*).
-  * Spesifikasi & Instruksi Perbaikan Desain UI/UX:
-    1. **Eliminasi Seluruh Tombol & Bar Bergradien (No More AI-Slop Gradients)**:
-       * Hapus seluruh kelas `bg-gradient-to-r` pada tombol simpan, tombol aksi, dan progress bar (`from-cyan-500 to-blue-600`, `from-blue-600 to-cyan-600`, `from-cyan-500 to-indigo-500`).
-       * Ganti dengan warna **solid yang bersih dan tegas**:
-         - Tombol Utama / Simpan: `bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors` (atau token biru status standar `#2563eb`).
-         - Tombol Sekunder / Ghost: `bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700`.
-       * Hilangkan bayangan warna-warni tebal (`shadow-lg shadow-cyan-600/25`, `shadow-blue-900/20`), ganti dengan elevasi halus standar (`shadow-xs` atau `shadow-sm`).
-    2. **Harmonisasi Adaptif Tema Terang dan Gelap (Bukan Hardcoded Gelap)**:
-       * Bersihkan kelas latar belakang statis yang memaksa warna hitam/gelap (`bg-slate-900/80` yang kaku saat tema terang dipilih).
-       * Terapkan adaptasi dinamis:
-         - Mode Terang: Latar kartu bersih `bg-white border-slate-200 text-slate-900`, input `bg-slate-50 border-slate-300 text-slate-900`.
-         - Mode Gelap: Latar kartu `dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100`, input `dark:bg-slate-950 dark:border-slate-800 dark:text-slate-100`.
-       * Pastikan rasio kontras teks memenuhi syarat WCAG minimal **4.5:1** di kedua tema.
-    3. **Navigasi Tab Samping & Header yang Tenang & Profesional**:
-       * Tab aktif di sidebar kiri (`profile`, `password`, `telegram`, `preferences`) diubah menjadi gaya flat clean (misal `bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60 font-semibold`) tanpa glow neon yang mencolok.
-       * Badge header disederhanakan agar bernuansa enterprise-grade dashboard, bukan mockup generator.
-  * Dokumen Rujukan: [`.agents/rules/ui-mobile-first/SKILL.md`](../.agents/rules/ui-mobile-first/SKILL.md), [`API_CONTRACT_AGREEMENT.md`](API_CONTRACT_AGREEMENT.md)
-  * Status: Siap Dikerjakan oleh Frontend
-
-* [ ] **REQ-FE-20: Tampilan Status Pergerakan Motor Stepper Realtime (`motor_status: moving`) & Visualisasi Sensor Cahaya LDR pada Dashboard**
-  * Tanggal Diminta: 2026-10-15
-  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
-  * Target Komponen & Berkas Terkait:
-    * `frontend/src/components/Dashboard/ClotheslineMotorCard.tsx` (tampilan status pergerakan motor stepper secara visual saat sedang aktif berjalan)
-    * `frontend/src/components/Dashboard/TelemetryGrid.tsx` atau `SensorADCCard.tsx` (kartu/badge nilai sensor optik LDR)
-    * `frontend/src/App.tsx` (meneruskan `activeDevice.motorStatus` dan `latestReading.ldrRaw` ke komponen dashboard terkait)
-  * Spesifikasi & Instruksi Kerja Frontend:
-    1. **Indikator Animasi Motor Sedang Bergerak**:
-       * Firmware ESP32 dan Backend kini menyiarkan status pergerakan motor secara realtime setiap 1 detik:
-         `motor_status: "moving"` dengan `posisi: "menarik"` atau `"mendorong"`.
-       * Pada `ClotheslineMotorCard.tsx`, tampilkan indikator visual dinamis saat motor sedang bergerak:
-         - Jika `motorStatus === 'moving'` dan posisi adalah menarik: Tampilkan badge animasi/spinner gear: *"⚙️ Motor Sedang Menarik Jemuran Masuk..."*.
-         - Jika `motorStatus === 'moving'` dan posisi adalah mendorong: Tampilkan badge animasi: *"⚙️ Motor Sedang Membentangkan Jemuran ke Luar..."*.
-         - Tombol kontrol manual dinonaktifkan (*disabled/loading*) saat motor sedang aktif melangkah agar terhindar dari konflik perintah ganda.
-    2. **Kartu / Indikator Nilai Sensor Cahaya LDR**:
-       * WebSocket dan REST telemetri kini sudah menyediakan field `ldrRaw` (nilai ADC LDR 0-4095) dan `mendung` (`boolean`).
-       * Tampilkan informasi intensitas cahaya pada `TelemetryGrid.tsx` (misalnya menambahkan kartu *"Sensor Cahaya (LDR)"* dengan nilai ADC mentah dan label status *"Terang"* / *"Mendung"*), sehingga pengguna dapat memantau angka sensor cahaya di website persis seperti yang tertampil di layar OLED ESP32.
-  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md)
-  * Status: Siap Dikerjakan oleh Frontend
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-FE-21: Pembersihan Desain Tampilan Pengaturan (`SettingsView.tsx`): Eliminasi Gradien 'AI Slop', Gunakan Warna Solid Minimalis, Bersihkan Shadow Tebal, dan Sempurnakan Kontras Tema Gelap/Terang**
+  * Tanggal Diminta: 2026-10-17
+  * Tanggal Selesai: 2026-10-26
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Settings/SettingsView.tsx` (tampilan menu Pengaturan Akun & Preferensi)
+    * `frontend/src/components/Settings/PasswordStrengthMeter.tsx` (indikator kekuatan kata sandi)
+  * Spesifikasi yang Terpenuhi:
+    1. **Eliminasi Gradien & Penggunaan Warna Solid**: Menghapus seluruh kelas gradien `bg-gradient-to-r` pada tombol simpan, tombol aksi, dan bar progress (`from-cyan-500 to-blue-600`, `from-blue-600 to-cyan-600`, `from-cyan-500 to-indigo-500`). Digantikan dengan warna solid minimalis (`bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs`).
+    2. **Harmonisasi Dual-Mode (Light & Dark Theme)**: Mengganti background gelap statis (`bg-slate-900/80`) dengan token adaptif (`bg-white border-slate-200 text-slate-900 dark:bg-slate-900/80 dark:border-slate-800 dark:text-white`). Form input menggunakan `bg-slate-50 border-slate-300 text-slate-900 focus:bg-white dark:bg-slate-950 dark:border-slate-800 dark:text-slate-100`.
+    3. **Navigasi Flat Clean**: Tab sidebar dibersihkan dari shadow neon tebal dan menggunakan aksen border tenang (`bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800/60`).
+    4. **Password Strength Meter**: Track bar diperbarui menjadi `bg-slate-200 dark:bg-slate-700/60`, checklist aturan memenuhi kontras WCAG >= 4.5:1.
+  * Status: [x] SELESAI
+
+* [x] **REQ-FE-20: Tampilan Status Pergerakan Motor Stepper Realtime (`motor_status: moving`) & Visualisasi Sensor Cahaya LDR pada Dashboard**
+  * Tanggal Diminta: 2026-10-15
+  * Tanggal Selesai: 2026-10-26
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Diselesaikan Oleh: Frontend Developer
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Dashboard/ClotheslineMotorCard.tsx`
+    * `frontend/src/components/Dashboard/TelemetryGrid.tsx`
+    * `frontend/src/App.tsx`
+    * `frontend/src/services/api.ts`
+  * Spesifikasi yang Terpenuhi:
+    1. **Indikator Realtime Motor Stepper Bergerak**: Menampilkan animasi spinner gear bergerak dan banner status dinamis (*"⚙️ Motor Sedang Menarik Jemuran Masuk..."* atau *"⚙️ Motor Sedang Membentangkan Jemuran ke Luar..."*) saat `motorStatus === 'moving'`.
+    2. **Proteksi Kontrol Manual**: Tombol manual ("Tarik ke Atap" dan "Bentangkan ke Luar") otomatis dinonaktifkan (disabled) saat motor sedang melangkah untuk mencegah instruksi ganda yang dapat merusak mekanik motor stepper.
+    3. **Kartu Sensor Cahaya LDR**: Menambahkan kartu "Sensor Cahaya (LDR)" pada `TelemetryGrid.tsx` yang menampilkan nilai mentah ADC LDR (0 - 4095) beserta badge status "Terang" / "Mendung", identik dengan tampilan layar OLED ESP32.
+    4. **WebSocket Listener**: Menambahkan callback `onMotor` pada `api.ts` dan menghubungkan penerimaan event WebSocket `type: 'motor'` ke state perangkat di `App.tsx` dengan filter multi-tenancy.
+  * Status: [x] SELESAI
+
 
 * [x] **REQ-FE-19: Inferensi Cuaca Mendung Realtime dari Sensor Optik LDR Hardware & Toleransi Status Offline saat Motor Kanopi Bergerak**
   * Tanggal Diminta: 2026-10-15

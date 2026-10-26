@@ -299,6 +299,7 @@ export const BackendService = {
     callbacks: {
       onTelemetry?: (data: TelemetryPayload) => void;
       onState?: (data: StatePayload) => void;
+      onMotor?: (data: { deviceId: string; position: 'sheltered' | 'extended' | string; status: 'idle' | 'moving'; lastMovedTs?: number }) => void;
       onEvent?: (data: EventPayload) => void;
       onForecastAlert?: (data: import('../types/ai').RainForecastAlertPayload) => void;
       onStatusChange?: (connected: boolean) => void;
@@ -330,6 +331,8 @@ export const BackendService = {
               callbacks.onTelemetry?.(msg.payload);
             } else if (msg.type === 'state') {
               callbacks.onState?.(msg.payload);
+            } else if (msg.type === 'motor') {
+              callbacks.onMotor?.(msg.payload || msg);
             } else if (msg.type === 'event') {
               callbacks.onEvent?.(msg.payload);
             } else if (msg.type === 'rain_forecast_alert' || msg.alert === 'rain_forecast_alert') {

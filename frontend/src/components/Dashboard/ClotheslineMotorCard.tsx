@@ -28,7 +28,8 @@ interface ClotheslineMotorCardProps {
   condition: MotorWeatherCondition;
   backendUrl?: string;
   deviceId?: string;
-  currentMotorPos?: 'extended' | 'sheltered';
+  currentMotorPos?: 'extended' | 'sheltered' | 'menarik' | 'mendorong' | string;
+  motorStatus?: 'idle' | 'moving';
   onCommandMotor?: (action: 'retract' | 'extend') => Promise<boolean>;
 }
 
@@ -38,6 +39,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
   backendUrl,
   deviceId,
   currentMotorPos,
+  motorStatus = 'idle',
   onCommandMotor,
 }) => {
   const isCerah = condition === 'cerah';
@@ -47,15 +49,27 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
   // State Mode: Otomatis (mengikuti sensor) vs Manual (kontrol tombol pengguna)
   const [controlMode, setControlMode] = useState<'auto' | 'manual'>('auto');
   const [manualPos, setManualPos] = useState<'extended' | 'sheltered'>(
-    currentMotorPos || (isWeatherProtected ? 'sheltered' : 'extended')
+    currentMotorPos === 'sheltered' || currentMotorPos === 'menarik' || isWeatherProtected
+      ? 'sheltered'
+      : 'extended'
   );
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastActionNote, setLastActionNote] = useState<string>('');
 
+  const isMoving = motorStatus === 'moving' || isProcessing;
+  const isMovingInward =
+    currentMotorPos === 'menarik' ||
+    (isMoving && manualPos === 'sheltered') ||
+    (isMoving && controlMode === 'auto' && isWeatherProtected);
+
   // Sinkronkan posisi manual saat pertama kali menerima prop dari server jika ada
   useEffect(() => {
     if (currentMotorPos && controlMode === 'auto') {
-      setManualPos(currentMotorPos);
+      if (currentMotorPos === 'sheltered' || currentMotorPos === 'menarik') {
+        setManualPos('sheltered');
+      } else if (currentMotorPos === 'extended' || currentMotorPos === 'mendorong') {
+        setManualPos('extended');
+      }
     }
   }, [currentMotorPos, controlMode]);
 
@@ -207,17 +221,24 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             </button>
           </div>
 
-          {/* Safety Status Badge */}
+          {/* Safety & Motor Movement Status Badge */}
           <div
             className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold transition-all duration-500 shadow-xs ${
-              isSheltered
+              isMoving
+                ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30 animate-pulse'
+                : isSheltered
                 ? isCerah ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-emerald-400 text-slate-950 border-emerald-300'
                 : isMendung
                 ? isCerah ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-amber-400 text-slate-950 border-amber-300'
                 : isCerah ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-slate-950 text-amber-300 border-slate-800'
             }`}
           >
-            {isSheltered ? (
+            {isMoving ? (
+              <>
+                <Cog className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
+                <span>{isMovingInward ? 'MOTOR MENARIK MASUK...' : 'MOTOR MEMBENTANGKAN...'}</span>
+              </>
+            ) : isSheltered ? (
               <>
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 <span>JEMURAN AMAN (TEDUH)</span>
@@ -373,6 +394,23 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             : 'bg-slate-900/40 border-slate-800/40'
         }`}
       >
+        {/* REQ-FE-20: Indikator Animasi Motor Sedang Bergerak Realtime */}
+        {isMoving && (
+          <div className="mb-3.5 p-3 rounded-xl border flex items-center gap-3 bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300">
+            <Cog className="w-5 h-5 animate-spin shrink-0 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1">
+              <span className="font-extrabold text-xs sm:text-sm block">
+                {isMovingInward
+                  ? '⚙️ Motor Sedang Menarik Jemuran Masuk...'
+                  : '⚙️ Motor Sedang Membentangkan Jemuran ke Luar...'}
+              </span>
+              <span className="text-[11px] opacity-80 block">
+                Motor stepper ESP32 sedang aktif melangkah. Tombol kendali dinonaktifkan sementara untuk mencegah konflik perintah ganda.
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center items-start gap-1.5 sm:gap-2">
@@ -432,19 +470,21 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
           <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
             <button
               type="button"
-              disabled={isProcessing || (controlMode === 'manual' && isSheltered)}
+              disabled={isMoving || (controlMode === 'manual' && isSheltered)}
               onClick={() => {
                 if (controlMode === 'auto') setControlMode('manual');
                 handleManualAction('retract');
               }}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
                 isSheltered
                   ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 cursor-not-allowed opacity-75'
-                  : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/20 active:scale-95'
+                  : isMoving
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95'
               }`}
             >
-              {isProcessing && manualPos === 'sheltered' ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {isMoving && isMovingInward ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
               ) : (
                 <Umbrella className="w-4 h-4" />
               )}
@@ -453,18 +493,20 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
 
             <button
               type="button"
-              disabled={isProcessing || (controlMode === 'manual' && !isSheltered)}
+              disabled={isMoving || (controlMode === 'manual' && !isSheltered)}
               onClick={() => {
                 if (controlMode === 'auto') setControlMode('manual');
                 handleManualAction('extend');
               }}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
                 !isSheltered
                   ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 cursor-not-allowed opacity-75'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-amber-500/20 active:scale-95'
+                  : isMoving
+                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                  : 'bg-amber-500 hover:bg-amber-600 text-slate-950 active:scale-95'
               }`}
             >
-              {isProcessing && manualPos === 'extended' ? (
+              {isMoving && !isMovingInward ? (
                 <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
               ) : (
                 <Sun className="w-4 h-4" />

@@ -73,23 +73,23 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
       {/* Strength Bar */}
       <div className="space-y-1">
         <div className="flex items-center justify-between text-xs font-semibold">
-          <span className="text-slate-400 flex items-center gap-1.5">
+          <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
             {evalResult.level === 'strong' ? (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
             ) : evalResult.level === 'medium' ? (
-              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <Shield className="w-3.5 h-3.5 text-amber-500" />
             ) : (
-              <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
+              <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
             )}
             Kekuatan Kata Sandi:
           </span>
           <span
             className={`font-bold uppercase tracking-wider text-[11px] ${
               evalResult.level === 'strong'
-                ? 'text-emerald-400'
+                ? 'text-emerald-600 dark:text-emerald-400'
                 : evalResult.level === 'medium'
-                ? 'text-amber-400'
-                : 'text-red-400'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-red-600 dark:text-red-400'
             }`}
           >
             {evalResult.label}
@@ -99,22 +99,22 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
         <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
           <div
             className={`rounded-full transition-all duration-300 ${
-              evalResult.score >= 1 ? evalResult.barColor : 'bg-slate-700/60'
+              evalResult.score >= 1 ? evalResult.barColor : 'bg-slate-200 dark:bg-slate-700/60'
             }`}
           />
           <div
             className={`rounded-full transition-all duration-300 ${
-              evalResult.score >= 2 ? evalResult.barColor : 'bg-slate-700/60'
+              evalResult.score >= 2 ? evalResult.barColor : 'bg-slate-200 dark:bg-slate-700/60'
             }`}
           />
           <div
             className={`rounded-full transition-all duration-300 ${
-              evalResult.score >= 3 ? evalResult.barColor : 'bg-slate-700/60'
+              evalResult.score >= 3 ? evalResult.barColor : 'bg-slate-200 dark:bg-slate-700/60'
             }`}
           />
           <div
             className={`rounded-full transition-all duration-300 ${
-              evalResult.score >= 4 ? evalResult.barColor : 'bg-slate-700/60'
+              evalResult.score >= 4 ? evalResult.barColor : 'bg-slate-200 dark:bg-slate-700/60'
             }`}
           />
         </div>
@@ -124,13 +124,15 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
         <div
           className={`flex items-center gap-1.5 transition-colors ${
-            evalResult.hasMinLen ? 'text-emerald-400' : 'text-slate-400'
+            evalResult.hasMinLen
+              ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+              : 'text-slate-500 dark:text-slate-400'
           }`}
         >
           {evalResult.hasMinLen ? (
             <Check className="w-3.5 h-3.5 shrink-0" />
           ) : (
-            <X className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+            <X className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
           )}
           <span>Minimal 8 karakter</span>
         </div>
@@ -138,14 +140,14 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
         <div
           className={`flex items-center gap-1.5 transition-colors ${
             evalResult.hasLetter && evalResult.hasDigit
-              ? 'text-emerald-400'
-              : 'text-slate-400'
+              ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+              : 'text-slate-500 dark:text-slate-400'
           }`}
         >
           {evalResult.hasLetter && evalResult.hasDigit ? (
             <Check className="w-3.5 h-3.5 shrink-0" />
           ) : (
-            <X className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+            <X className="w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
           )}
           <span>Kombinasi huruf & angka</span>
         </div>
@@ -153,13 +155,15 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({
         {confirmPassword !== undefined && confirmPassword.length > 0 && (
           <div
             className={`flex items-center gap-1.5 transition-colors sm:col-span-2 ${
-              evalResult.isMatch ? 'text-emerald-400' : 'text-red-400'
+              evalResult.isMatch
+                ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+                : 'text-red-600 dark:text-red-400 font-medium'
             }`}
           >
             {evalResult.isMatch ? (
               <Check className="w-3.5 h-3.5 shrink-0" />
             ) : (
-              <X className="w-3.5 h-3.5 shrink-0 text-red-400" />
+              <X className="w-3.5 h-3.5 shrink-0 text-red-500" />
             )}
             <span>
               {evalResult.isMatch
