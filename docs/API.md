@@ -246,20 +246,24 @@ Seluruh tanggapan sukses menggunakan kode HTTP standar (200 OK, 201 Created). Ta
     ```
 
 * **POST `/api/devices/:id/motor/command`**
-  * Keterangan: Mengirim perintah manual gerak motor (menarik ke dalam atau mendorong ke luar).
+  * Keterangan: Mengirim perintah manual kontrol motor (menarik ke dalam, mendorong ke luar, atau berhenti seketika).
   * Request Body:
     ```json
     {
-      "action": "retract"
+      "action": "stop"
     }
     ```
-    *Nilai `action`: `retract` (menarik ke tempat teduh) atau `extend` (mendorong ke luar untuk menjemur).*
+    *Nilai `action`: `retract` (menarik ke tempat teduh), `extend` (mendorong ke luar untuk menjemur), atau `stop` (berhenti manual seketika).*
   * Respon `200 OK`:
     ```json
     {
-      "message": "Perintah motor berhasil dikirim",
-      "action": "retract",
-      "position": "sheltered"
+      "status": "success",
+      "deviceId": "hs-24e1796dc9a1",
+      "action": "stop",
+      "position": "sheltered",
+      "motorStatus": "idle",
+      "lastMovedTs": 1791782340572,
+      "message": "Perintah berhenti (stop) motor jemuran berhasil dikirim"
     }
     ```
 

@@ -40,6 +40,32 @@ Jika backend telah menyelesaikan endpoint baru, algoritma baru, atau WebSocket e
 
 ## Daftar Permintaan Aktif (Inbox)
 
+* [ ] **REQ-FE-22: Tombol Berhenti Darurat / Manual (Stop Motor) pada Kartu Kendali Rel Jemuran (`ClotheslineMotorCard.tsx`)**
+  * Tanggal Diminta: 2026-10-26
+  * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)
+  * Target Komponen & Berkas Terkait:
+    * `frontend/src/components/Dashboard/ClotheslineMotorCard.tsx` (kartu kendali rel motor jemuran)
+    * `frontend/src/services/api.ts` atau fungsi pemanggil `commandMotor` (mendukung parameter/aksi `'stop'`)
+  * Latar Belakang & Kebutuhan Fitur:
+    * Backend kini telah menyediakan endpoint resmi `POST /api/devices/:id/motor/command` dengan payload `{ "action": "stop" }` (atau `"berhenti"`).
+    * Di sisi perangkat keras (ESP32), motor stepper kini mendukung sistem rem instan dan limit switch ganda (masuk & keluar). Pengguna memerlukan tombol darurat di antarmuka website/PWA untuk menghentikan motor kapan saja secara manual saat rel sedang meluncur (misalnya jika ada jemuran tersangkut atau pengguna ingin menghentikan posisi jemuran di tengah rel).
+  * Spesifikasi & Instruksi Kerja Frontend:
+    1. **Penambahan Tombol Berhenti Manual ("Berhenti" / "Stop Motor")**:
+       * Di panel tombol kontrol `ClotheslineMotorCard.tsx` (di samping atau di antara tombol "Tarik Masuk" dan "Bentangkan Keluar"), tambahkan tombol aksi dengan label: **"Berhenti"** atau **"Stop"** (menggunakan ikon Lucide `Square` atau `CircleStop` / `OctagonX`).
+       * Styling tombol:
+         - Sesuai prinsip pedoman [`.agents/rules/ui-mobile-first/SKILL.md`](../.agents/rules/ui-mobile-first/SKILL.md), gunakan warna solid tegas tanpa gradien AI-slop:
+           `bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-semibold rounded-xl transition-colors` (atau varian merah/amber solid).
+       * Aksi Klik:
+         - Mengirim request `POST /api/devices/:id/motor/command` dengan payload JSON: `{ "action": "stop" }`.
+       * State & Interaktivitas Tombol:
+         - Tombol Berhenti sangat berguna terutama ketika `motorStatus === 'moving'`, dan dapat di-klik untuk menghentikan laju motor seketika.
+         - Berikan feedback loading atau toast/banner saat tombol diklik.
+    2. **Sinkronisasi WebSocket State**:
+       * Backend akan menyiarkan event WebSocket tipe `motor` dengan payload `{ "deviceId": devId, "status": "idle", "action": "stop" }` serta event log `motor_stop`.
+       * Komponen kartu harus langsung memperbarui indikator motor menjadi idle/diam.
+  * Dokumen Rujukan: [API_CONTRACT_AGREEMENT.md](API_CONTRACT_AGREEMENT.md), [PRD.md](PRD.md), [API.md](API.md)
+  * Status: Siap Dikerjakan oleh Frontend
+
 * [ ] **REQ-FE-21: Pembersihan Desain Tampilan Pengaturan (`SettingsView.tsx`): Eliminasi Gradien 'AI Slop', Gunakan Warna Solid Minimalis, Bersihkan Shadow Tebal, dan Sempurnakan Kontras Tema Gelap/Terang**
   * Tanggal Diminta: 2026-10-17
   * Diminta Oleh: Backend Engineer (sesuai arahan Project Owner)

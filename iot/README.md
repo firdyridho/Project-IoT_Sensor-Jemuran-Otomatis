@@ -30,13 +30,16 @@ Dokumen ini menjelaskan rancangan perangkat keras, diagram pengkabelan (pinout),
 | **GPIO 34** (ADC1_CH6) | Sensor Cahaya LDR | **AO** (Analog Out) | Pembacaan intensitas cahaya (ADC > 2500 = Mendung) |
 | **GPIO 18** | Driver Stepper A4988 / DRV8825 | **STEP** | Pulsa langkah rotasi motor stepper jemuran |
 | **GPIO 19** | Driver Stepper A4988 / DRV8825 | **DIR** | Arah putaran motor (LOW = Masuk, HIGH = Keluar) |
+| **GPIO 25** | Limit Switch Luar | **NO** (COM ke GND) | Saklar pembatas fisik jemuran di area luar (otomatis rem saat tersentuh) |
+| **GPIO 26** | Limit Switch Dalam | **NO** (COM ke GND) | Saklar pembatas fisik jemuran di area kanopi teduh (otomatis rem saat tersentuh) |
 | **GPIO 21** | Layar OLED SSD1306 | **SDA** | Jalur data I2C komunikasi layar display |
 | **GPIO 22** | Layar OLED SSD1306 | **SCL** | Jalur clock I2C komunikasi layar display |
 | **5V / VIN** | Modul Sensor & Layar | **VCC** | Catu daya modul 5V |
 | **GND** | Semua Komponen | **GND** | Common ground bersama catu daya eksternal |
 
-> **PENTING TENTANG CATU DAYA MOTOR STEPPER**:
-> Driver stepper A4988 memerlukan suplai daya motor tersendiri (VMOT 12V 2A) dengan kapasitor elko 100uF terpasang paralel pada pin VMOT dan GND untuk mencegah lonjakan tegangan merusak driver. Pastikan seluruh jalur Ground (GND) dari ESP32 dan adaptor dihubungkan bersama (Common Ground).
+> **PENTING TENTANG CATU DAYA MOTOR STEPPER & LIMIT SWITCH**:
+> 1. Driver stepper A4988 memerlukan suplai daya motor tersendiri (VMOT 12V 2A) dengan kapasitor elko 100uF terpasang paralel pada pin VMOT dan GND untuk mencegah lonjakan tegangan merusak driver. Pastikan seluruh jalur Ground (GND) dari ESP32 dan adaptor dihubungkan bersama (Common Ground).
+> 2. Limit Switch Luar (GPIO 25) dan Dalam (GPIO 26) menggunakan mode `INPUT_PULLUP` internal ESP32. Hubungkan pin COM saklar ke GND, dan pin NO (Normally Open) ke pin GPIO terkait. Saat tuas rel menyentuh switch, pin terbaca LOW dan motor seketika direm (auto-stop).
 
 ---
 
@@ -44,26 +47,24 @@ Dokumen ini menjelaskan rancangan perangkat keras, diagram pengkabelan (pinout),
 
 1. **Kondisi Normal (Cerah / Berawan)**:
    * Sensor hujan bernilai ADC tinggi (> 3000), persentase basah < ambang batas (default 60%).
-   * Posisi motor servo: **0 derajat (Jemuran Terbuka)**.
-   * ESP32 mengirim paket telemetri setiap 5 detik ke broker MQTT VPS (`hujansensor/{deviceId}/telemetry`).
+   * Jemuran berada di area terbuka (dibentangkan hingga menyentuh Limit Switch Luar GPIO 25).
+   * ESP32 mengirim paket telemetri setiap 2 detik ke broker MQTT VPS (`hujansensor/{deviceId}/telemetry` dan `{deviceId}/data`).
 
 2. **Kondisi Hujan Terdeteksi**:
-   * Tetesan air mengenai pelat konduktif, nilai ADC turun drastis, persentase basah mencapai atau melebihi ambang batas (`rainPct >= rainThreshold`).
-   * Buzzer berbunyi 2 kali secara instan.
-   * Motor servo berputar ke sudut **90 derajat (Jemuran Tertutup)**.
-   * ESP32 mengirim paket event darurat (`HUJAN_TERDETEKSI`) ke topik `hujansensor/{deviceId}/event`.
+   * Tetesan air mengenai pelat konduktif, nilai ADC turun drastis (ADC < 2300, `rainPct >= rainThreshold`).
+   * Motor stepper berputar menarik jemuran ke dalam area kanopi teduh sampai tuas menekan **Limit Switch Dalam (GPIO 26)**, lalu motor otomatis berhenti seketika.
+   * ESP32 mengirim paket event darurat (`HUJAN_TERDETEKSI`) ke topik `hujansensor/{deviceId}/event` dan memicu notifikasi bot Telegram.
 
 3. **Kondisi Hujan Reda (Histeresis & Debounce)**:
-   * Ketika hujan berhenti dan air mulai mengering, persentase turun ke bawah `rainThreshold - 5%`.
-   * Sistem menghitung timer stabil selama **12 detik berturut-turut** untuk memastikan tidak ada rintik susulan.
-   * Setelah 12 detik stabil kering, servo kembali ke **0 derajat (Jemuran Dibuka Kembali)**.
+   * Ketika hujan berhenti dan air mengering (ADC > 3000), sistem menghitung timer stabil selama **20 detik berturut-turut** untuk memastikan tidak ada rintik susulan.
+   * Setelah 20 detik stabil kering, stepper mendorong jemuran kembali ke area luar sampai menyentuh **Limit Switch Luar (GPIO 25)**, lalu otomatis berhenti.
    * ESP32 mempublikasikan event `HUJAN_BERHENTI`.
 
-4. **Kendali Jarak Jauh (Manual Override)**:
-   * Dashboard web dapat mengirim pesan ke topik `hujansensor/{deviceId}/cmd`:
-     * `{"cmd":"BUKA"}`: Membuka jemuran secara manual.
-     * `{"cmd":"TUTUP"}`: Menutup jemuran secara manual.
-     * `{"cmd":"SET_THRESHOLD","value":75}`: Mengubah sensitivitas tanpa perlu flash ulang firmware.
+4. **Kendali Jarak Jauh (Manual Override & Tombol Stop)**:
+   * Dashboard web/app dapat mengirim pesan ke topik `{deviceId}/control` atau `hujansensor/{deviceId}/cmd`:
+     * `tarik` / `{"cmd":"tarik"}`: Menarik jemuran masuk ke area teduh (berhenti saat kena Limit Switch Dalam).
+     * `dorong` / `{"cmd":"dorong"}`: Mendorong jemuran keluar ke area jemur (berhenti saat kena Limit Switch Luar).
+     * `stop` / `{"cmd":"stop"}`: **Berhenti Manual Seketika**. Mematikan putaran motor di posisi mana pun tanpa menunggu mentok switch.
 
 ---
 

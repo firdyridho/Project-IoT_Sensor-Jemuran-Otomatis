@@ -191,18 +191,31 @@ Dokumen ini adalah panduan kerja khusus **Backend Engineer**. Seluruh arsitektur
 
 ---
 
-### Fase 7: Pembersihan Web Push & Audit Legal Konsen [BACKLOG]
+### Fase 7: Pembersihan Web Push & Audit Legal Konsen [SELESAI]
 
-* [ ] **BE-23: Endpoint Unsubscribe Web Push Notification (REQ-BE-10)**:
+* [x] **BE-23: Endpoint Unsubscribe Web Push Notification (REQ-BE-10)**:
   * **Tujuan**: Memungkinkan peramban menghapus data langganan Web Push dari tabel `web_push_subscriptions` saat pengguna menonaktifkan notifikasi di antarmuka frontend.
   * **Endpoint**: `POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`
   * **Payload**: `{ "endpoint": "https://fcm.googleapis.com/..." }`
-  * **Status**: Menunggu Pengerjaan oleh Backend Engineer.
+  * **Status**: Selesai dan lulus pengujian `TestWebPushUnsubscribe`.
 
-* [ ] **BE-24: Kolom Audit Persetujuan Ketentuan Layanan & Privasi (REQ-BE-11)**:
+* [x] **BE-24: Kolom Audit Persetujuan Ketentuan Layanan & Privasi (REQ-BE-11)**:
   * **Tujuan**: Menyimpan bukti waktu persetujuan pengguna terhadap Ketentuan Layanan & Kebijakan Privasi Rintik (REQ-FE-10).
-  * **Implementasi**: Menambahkan field `terms_accepted_at` (nullable time.Time) pada model `models.User` yang otomatis terisi `time.Now()` saat `POST /api/auth/register`.
-  * **Status**: Menunggu Pengerjaan oleh Backend Engineer.
+  * **Implementasi**: Menambahkan field `terms_accepted_at` (nullable time.Time) pada model `models.User` yang otomatis terisi `time.Now()` saat `POST /api/auth/register` dan endpoint `POST /api/user/accept-terms`.
+  * **Status**: Selesai dan lulus pengujian `TestTermsAuditAcceptance`.
+
+---
+
+### Fase 8: Kendali Fisik Motor IoT, Dual Limit Switch & Aksi Berhenti Manual [SELESAI]
+
+* [x] **BE-25: Dukungan Limit Switch Ganda (Masuk & Keluar) & Tombol Berhenti Manual Motor (Stop Action)**:
+  * **Tujuan**: Memungkinkan motor stepper otomatis berhenti saat menyentuh limit switch dalam (kanopi) maupun limit switch luar (terbuka), serta menyediakan perintah berhenti darurat secara manual (`action: "stop"`).
+  * **Implementasi**:
+    * Handler `CommandMotor` di `backend/handlers/motor.go` kini mendukung `action: "stop"` (dan alias `"berhenti"`), mengupdate status motor menjadi `idle`, memicu broadcast WebSocket event `motor` dan `motor_stop`.
+    * Hook `MotorCommandHandler` di `backend/mqtt/subscriber.go` meneruskan perintah `"stop"` ke topik `{device_id}/control` dan payload JSON `{"cmd":"stop"}` ke `hujansensor/{device_id}/cmd`.
+    * Unit testing `TestMotorEndpoints` di `backend/api_test.go` memverifikasi aksi `stop` dan `berhenti`.
+    * Firmware ESP32 `iot/hujan_esp32.ino` dikonfigurasi dengan `PIN_LIMIT_DALAM` (GPIO 26) dan `PIN_LIMIT_LUAR` (GPIO 25), sistem rem instan saat switch tersentuh, serta penerimaan perintah berhenti manual seketika.
+  * **Status**: Selesai dan lulus pengujian backend (PASS). Permintaan antarmuka UI telah diteruskan ke `docs/FRONTEND_REQUESTS.md` (REQ-FE-22).
 
 ---
 
@@ -212,5 +225,5 @@ Bila Anda telah selesai membuat salah satu endpoint backend:
 1. Uji endpoint secara lokal atau di staging dengan cURL / Postman.
 2. Centang task di atas dari `[ ]` menjadi `[x]`.
 3. Sampaikan kepada asisten AI atau developer frontend:
-   > *"Endpoint BE-19 s/d BE-22 (/api/user/settings, /api/auth/profile, /api/auth/password, DELETE /api/devices/:id/telemetry, /api/notifications/vapid-key) sudah aktif di backend. Tolong buatkan tampilan antarmuka di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md."*
+   > *"Endpoint BE-25 (`POST /api/devices/:id/motor/command` dengan action: "stop") sudah aktif di backend dan firmware ESP32 sudah mendukung limit switch masuk/keluar + rem darurat. Tolong buatkan tombol stop manual di frontend sesuai kontrak di docs/FRONTEND_REQUESTS.md (REQ-FE-22)."*
 

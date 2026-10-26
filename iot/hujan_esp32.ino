@@ -36,14 +36,18 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 const int stepPin = 18;
 const int dirPin  = 19;
 
-// Pin Limit Switch Luar (COM ke GND, NO ke GPIO 25)
-#define PIN_LIMIT_LUAR 25
+// Pin Limit Switch Luar & Dalam (COM ke GND, NO ke GPIO 25 & 26 dengan internal PULLUP)
+#define PIN_LIMIT_LUAR  25 // Switch pembatas ujung luar (posisi jemur/terbuka)
+#define PIN_LIMIT_DALAM 26 // Switch pembatas ujung dalam (posisi kanopi/teduh)
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
 // Status Posisi Jemuran (false = Di Luar/Jemur, true = Di Dalam/Teduh)
 bool jemuranDiDalam = false;
+
+// Flag Berhenti Darurat / Manual dari Web
+volatile bool stopManualDiminta = false;
 
 // Status Hujan Aktif dengan Latch Hysteresis (Schmitt Trigger)
 // Mencegah status 'reda' prematur saat lempeng sensor masih basah/lembab
@@ -136,15 +140,38 @@ void kirimDataTelemetri(String posisiMotor, String motorStatus) {
 
 // Fungsi menggerakkan stepper dengan pengiriman telemetri realtime berkelanjutan
 void gerakkanJemuran(bool tarikMasuk, String sumber) {
+  stopManualDiminta = false; // Reset flag stop manual sebelum mulai bergerak
+
   if (tarikMasuk && !jemuranDiDalam) {
+    // Cek apakah switch pembatas dalam sudah tertekan (posisi sudah di kanopi)
+    if (digitalRead(PIN_LIMIT_DALAM) == LOW) {
+      Serial.println("Jemuran sudah berada di batas dalam (Limit Switch Dalam aktif).");
+      jemuranDiDalam = true;
+      kirimDataTelemetri("didalam", "idle");
+      return;
+    }
+
     Serial.println("Menarik jemuran masuk (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Menarik Masuk", false);
 
     // Putar ke arah jemuran masuk (LOW)
     digitalWrite(dirPin, LOW);
     
-    // Bergerak dengan hitungan langkah sampai mentok ke pembatas dalam
-    for (int i = 0; i < 3000; i++) {
+    // Bergerak sampai menyentuh limit switch dalam (maksimal 6000 langkah sebagai failsafe)
+    for (int i = 0; i < 6000; i++) {
+      // 1. Cek limit switch di ujung dalam: jika tersentuh tuasnya (LOW), rem seketika!
+      if (digitalRead(PIN_LIMIT_DALAM) == LOW) {
+        Serial.println("Limit switch dalam tersentuh! Posisi kanopi teduh tercapai.");
+        break;
+      }
+
+      // 2. Cek apakah ada perintah berhenti (STOP) manual dari Web / App
+      if (stopManualDiminta) {
+        Serial.println("Motor dihentikan seketika oleh perintah STOP dari Web!");
+        stopManualDiminta = false;
+        break;
+      }
+
       digitalWrite(stepPin, HIGH);
       delayMicroseconds(1000);
       digitalWrite(stepPin, LOW);
@@ -160,22 +187,40 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       yield();
     }
 
-    jemuranDiDalam = true;
-    Serial.println("Selesai: Jemuran sekarang di dalam.");
-    kirimDataTelemetri("didalam", "idle");
+    // Jika limit switch dalam tersentuh, tandai posisi telah aman di dalam
+    if (digitalRead(PIN_LIMIT_DALAM) == LOW) {
+      jemuranDiDalam = true;
+    }
+    Serial.println("Selesai menarik. Posisi jemuran: " + String(jemuranDiDalam ? "Di Dalam" : "Dihentikan / Sebagian"));
+    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "menarik", "idle");
   } 
   else if (!tarikMasuk && jemuranDiDalam) {
+    // Cek apakah switch pembatas luar sudah tertekan (posisi sudah di luar)
+    if (digitalRead(PIN_LIMIT_LUAR) == LOW) {
+      Serial.println("Jemuran sudah berada di batas luar (Limit Switch Luar aktif).");
+      jemuranDiDalam = false;
+      kirimDataTelemetri("diluar", "idle");
+      return;
+    }
+
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Dorong Keluar", false);
 
     // Putar ke arah jemuran keluar (HIGH)
     digitalWrite(dirPin, HIGH);
     
-    // Beri batas langkah maksimal (akan berhenti otomatis saat menyentuh limit switch)
+    // Beri batas langkah maksimal (akan berhenti otomatis saat menyentuh limit switch luar)
     for (int i = 0; i < 6000; i++) {
-      // Cek limit switch di ujung luar: jika tersentuh tuasnya, langsung rem
+      // 1. Cek limit switch di ujung luar: jika tersentuh tuasnya (LOW), rem seketika!
       if (digitalRead(PIN_LIMIT_LUAR) == LOW) {
         Serial.println("Limit switch luar tersentuh! Posisi jemur tercapai.");
+        break;
+      }
+
+      // 2. Cek apakah ada perintah berhenti (STOP) manual dari Web / App
+      if (stopManualDiminta) {
+        Serial.println("Motor dihentikan seketika oleh perintah STOP dari Web!");
+        stopManualDiminta = false;
         break;
       }
 
@@ -199,9 +244,12 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       yield();
     }
 
-    jemuranDiDalam = false;
-    Serial.println("Selesai: Jemuran sekarang di luar.");
-    kirimDataTelemetri("diluar", "idle");
+    // Jika limit switch luar tersentuh, tandai posisi berada di luar
+    if (digitalRead(PIN_LIMIT_LUAR) == LOW) {
+      jemuranDiDalam = false;
+    }
+    Serial.println("Selesai mendorong. Posisi jemuran: " + String(jemuranDiDalam ? "Di Dalam" : "Di Luar"));
+    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
   }
 }
 
@@ -218,9 +266,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.println(pesan);
 
   pesan.toLowerCase();
-  if (pesan.indexOf("tarik") >= 0 || pesan.indexOf("masuk") >= 0 || pesan.indexOf("retract") >= 0 || pesan.indexOf("in") >= 0 || pesan.indexOf("tutup") >= 0 || pesan == "1") {
+  // 1. Perintah Berhenti Manual (STOP)
+  if (pesan.indexOf("stop") >= 0 || pesan.indexOf("berhenti") >= 0 || pesan.indexOf("halt") >= 0 || pesan == "2") {
+    stopManualDiminta = true;
+    Serial.println("Perintah STOP diterima dari Web/App! Menghentikan pergerakan motor...");
+    updateOLED("STOP!", "Manual Stop", 0, "Berhenti", false);
+    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
+  }
+  // 2. Perintah Tarik Masuk
+  else if (pesan.indexOf("tarik") >= 0 || pesan.indexOf("masuk") >= 0 || pesan.indexOf("retract") >= 0 || pesan.indexOf("in") >= 0 || pesan.indexOf("tutup") >= 0 || pesan == "1") {
     gerakkanJemuran(true, "Tombol Web");
   } 
+  // 3. Perintah Dorong Keluar
   else if (pesan.indexOf("dorong") >= 0 || pesan.indexOf("keluar") >= 0 || pesan.indexOf("extend") >= 0 || pesan.indexOf("out") >= 0 || pesan.indexOf("buka") >= 0 || pesan == "0") {
     int adcHujan = analogRead(PIN_HUJAN);
     if (!statusHujanAktif && adcHujan >= AMBANG_KERING_KELUAR) {
@@ -269,8 +326,18 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
 
-  // Setup Pin Limit Switch
+  // Setup Pin Limit Switch Luar & Dalam
   pinMode(PIN_LIMIT_LUAR, INPUT_PULLUP);
+  pinMode(PIN_LIMIT_DALAM, INPUT_PULLUP);
+
+  // Inisialisasi status posisi awal berdasarkan kondisi limit switch fisik
+  if (digitalRead(PIN_LIMIT_DALAM) == LOW) {
+    jemuranDiDalam = true;
+    Serial.println("Posisi awal fisik terdeteksi: Di Dalam Kanopi (Limit Switch Dalam aktif)");
+  } else if (digitalRead(PIN_LIMIT_LUAR) == LOW) {
+    jemuranDiDalam = false;
+    Serial.println("Posisi awal fisik terdeteksi: Di Luar Terbuka (Limit Switch Luar aktif)");
+  }
 
   // Inisialisasi Layar OLED
   Wire.begin(21, 22);
