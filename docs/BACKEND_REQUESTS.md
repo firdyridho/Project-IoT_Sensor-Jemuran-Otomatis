@@ -42,23 +42,22 @@ Jika frontend membutuhkan endpoint baru, modifikasi parameter data, atau fungsi 
 
 ## Daftar Permintaan Aktif (Inbox)
 
-* [ ] **REQ-BE-12: Parsing `motor_status` ("moving" / "idle") dan Posisi Dinamis ("menarik" / "mendorong") dari ESP32 MQTT Topic `+/data` serta Penyiaran Realtime via WebSocket**
-  * Tanggal Diminta: 2026-10-26
-  * Diminta Oleh: Frontend Team
-  * Latar Belakang / Kebutuhan UI:
-    * Pada firmware ESP32 (`iot/hujan_esp32.ino`), fungsi `kirimDataTelemetri("menarik", "moving")` dan `kirimDataTelemetri("mendorong", "moving")` dipanggil setiap 500 langkah saat motor stepper bergerak.
-    * Namun pada `backend/mqtt/subscriber.go` di fungsi `handleCustomData`, struct JSON hanya membaca `posisi` dan status motor di-hardcode `"idle"`, serta pemetaan `posisi` hanya mengenal `"didalam"` / `"sheltered"`, sementara `"menarik"` dan `"mendorong"` jatuh ke fallback default `"extended"`.
-    * Frontend telah mengimplementasikan komponen animasi gear bergerak dan penonaktifan tombol manual saat `motorStatus === 'moving'`, serta dukungan posisi `"menarik"` dan `"mendorong"`. Agar animasi dan status hardware tersinkronisasi 100% secara realtime dari fisik ke web, backend perlu mem-parse field `motor_status` dari payload MQTT `+/data` dan menyiarkannya via WebSocket `/ws`.
-  * Usulan Pembaruan di Backend:
-    1. Tambahkan `MotorStatus string \`json:"motor_status"\`` pada struct `handleCustomData` di `backend/mqtt/subscriber.go`.
-    2. Jika `data.MotorStatus == "moving"`, teruskan status motor tersebut dan sinkronkan `posisi` ("menarik" atau "mendorong") ke database / in-memory device cache.
-    3. Siarkan event WebSocket `{ "type": "motor", "deviceId": "...", "position": data.Posisi, "status": data.MotorStatus }` ke seluruh klien terhubung.
-  * Status: Menunggu Dikerjakan oleh Backend
-
+*Saat ini seluruh permintaan aktif telah selesai diimplementasikan.*
 
 ---
 
 ## Riwayat Permintaan Selesai (Archive)
+
+* [x] **REQ-BE-12: Parsing `motor_status` ("moving" / "idle") dan Posisi Dinamis ("menarik" / "mendorong") dari ESP32 MQTT Topic `+/data` serta Penyiaran Realtime via WebSocket**
+  * Tanggal Diminta: 2026-10-26
+  * Tanggal Selesai: 2026-10-26
+  * Diminta Oleh: Frontend Team
+  * Diselesaikan Oleh: Backend Engineer
+  * Implementasi:
+    1. Menambahkan field `MotorStatus string \`json:"motor_status"\`` pada struct `handleCustomData` di `backend/mqtt/subscriber.go`.
+    2. Mendukung pembacaan status gerak motor (`"moving"` vs `"idle"`) serta posisi dinamis (`"menarik"` dan `"mendorong"`).
+    3. Menyiarkan status motor ke WebSocket `/ws` (`"motor"`) dan memperbarui kolom `motor_status` di database MySQL & in-memory cache.
+  * Status: [x] SELESAI
 
 * [x] **REQ-BE-10: Endpoint Unsubscribe Web Push Notification (`POST /api/notifications/unsubscribe` atau `DELETE /api/notifications/subscribe`)**
   * Tanggal Diminta: 2026-10-14

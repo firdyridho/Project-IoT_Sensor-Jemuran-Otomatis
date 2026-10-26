@@ -372,13 +372,14 @@ func (s *MqttSubscriber) triggerTelegramAlert(ev models.EventPayload) {
 // handleCustomData memproses format data telemetri bawaan dari kode ESP32 user (+/data)
 func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	var data struct {
-		DeviceID   string `json:"device_id"`
-		ADCHujan   int    `json:"adc_hujan"`
-		ADCLdr     int    `json:"adc_ldr"`
-		Hujan      bool   `json:"hujan"`
-		Mendung    bool   `json:"mendung"`
-		Peringatan bool   `json:"peringatan"`
-		Posisi     string `json:"posisi"`
+		DeviceID    string `json:"device_id"`
+		ADCHujan    int    `json:"adc_hujan"`
+		ADCLdr      int    `json:"adc_ldr"`
+		Hujan       bool   `json:"hujan"`
+		Mendung     bool   `json:"mendung"`
+		Peringatan  bool   `json:"peringatan"`
+		Posisi      string `json:"posisi"`
+		MotorStatus string `json:"motor_status"`
 	}
 	if err := json.Unmarshal(raw, &data); err != nil {
 		log.Printf("[MQTT] Gagal parse JSON custom data dari %s: %v", topic, err)
@@ -408,9 +409,16 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 		pct = 70
 	}
 
+	motorStatus := strings.ToLower(strings.TrimSpace(data.MotorStatus))
+	if motorStatus != "moving" {
+		motorStatus = "idle"
+	}
+
 	motorPos := "extended"
 	if data.Posisi == "didalam" || data.Posisi == "sheltered" {
 		motorPos = "sheltered"
+	} else if data.Posisi == "menarik" || data.Posisi == "mendorong" {
+		motorPos = data.Posisi
 	}
 
 	now := time.Now()
@@ -444,16 +452,16 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	}
 	database.DB.Create(&reading)
 
-	// 4. Update Status Device di Database
+	// 4. Update Status Device di Database (REQ-BE-12)
 	database.DB.Model(&models.Device{}).Where("id = ?", devID).Updates(map[string]interface{}{
 		"status":              "online",
 		"last_seen_at":        now,
 		"motor_position":      motorPos,
-		"motor_status":        "idle",
+		"motor_status":        motorStatus,
 		"motor_last_moved_at": now,
 	})
 
-	// 5. Siarkan ke WebSocket Frontend
+	// 5. Siarkan ke WebSocket Frontend (REQ-BE-12)
 	isMendung := data.Mendung
 	ldrVal := data.ADCLdr
 	ingestPayload := models.IngestPayload{
@@ -481,7 +489,7 @@ func (s *MqttSubscriber) handleCustomData(topic string, raw []byte) {
 	handlers.Hub.Broadcast("motor", gin.H{
 		"deviceId":    devID,
 		"position":    motorPos,
-		"status":      "idle",
+		"status":      motorStatus,
 		"lastMovedTs": nowMs,
 	})
 
