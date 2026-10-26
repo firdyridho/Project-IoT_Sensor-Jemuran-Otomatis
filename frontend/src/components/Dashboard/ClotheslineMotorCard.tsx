@@ -16,6 +16,7 @@ import {
   Loader2,
   SlidersHorizontal,
   Zap,
+  OctagonX,
 } from 'lucide-react';
 import { Card } from '../Common/Card';
 import { BackendService } from '../../services/api';
@@ -30,7 +31,7 @@ interface ClotheslineMotorCardProps {
   deviceId?: string;
   currentMotorPos?: 'extended' | 'sheltered' | 'menarik' | 'mendorong' | string;
   motorStatus?: 'idle' | 'moving';
-  onCommandMotor?: (action: 'retract' | 'extend') => Promise<boolean>;
+  onCommandMotor?: (action: 'retract' | 'extend' | 'stop') => Promise<boolean>;
 }
 
 export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
@@ -79,8 +80,8 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
       ? isWeatherProtected
       : manualPos === 'sheltered';
 
-  const handleManualAction = async (action: 'retract' | 'extend') => {
-    if (isProcessing) return;
+  const handleManualAction = async (action: 'retract' | 'extend' | 'stop') => {
+    if (isProcessing && action !== 'stop') return;
 
     // Safety check: jika mencoba bentangkan keluar saat sedang hujan lebat
     if (action === 'extend' && isRaining) {
@@ -91,8 +92,13 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
     }
 
     setIsProcessing(true);
-    const targetPos = action === 'retract' ? 'sheltered' : 'extended';
-    const actionLabel = action === 'retract' ? 'Tarik Masuk (Teduh)' : 'Bentangkan Keluar (Jemur)';
+    const targetPos = action === 'retract' ? 'sheltered' : action === 'extend' ? 'extended' : manualPos;
+    const actionLabel =
+      action === 'retract'
+        ? 'Tarik Masuk (Teduh)'
+        : action === 'extend'
+        ? 'Bentangkan Keluar (Jemur)'
+        : 'Hentikan Motor (Stop)';
 
     try {
       let success = false;
@@ -105,15 +111,17 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
         success = true;
       }
 
-      setManualPos(targetPos);
+      if (action !== 'stop') {
+        setManualPos(targetPos);
+      }
       setLastActionNote(
         `Berhasil: ${actionLabel} dikirim ke ESP32 (${new Date().toLocaleTimeString('id-ID')})`
       );
 
       Notifications.addToast({
         id: 'motor-cmd-' + Date.now(),
-        type: 'success',
-        title: 'Perintah Motor Terkirim',
+        type: action === 'stop' ? 'info' : 'success',
+        title: action === 'stop' ? 'Motor Dihentikan' : 'Perintah Motor Terkirim',
         message: `Instruksi ${actionLabel} berhasil disiarkan ke ESP32`,
         timestamp: Date.now(),
       });
@@ -122,7 +130,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
         id: 'motor-err-' + Date.now(),
         type: 'danger',
         title: 'Gagal Menggerakkan Motor',
-        message: err.message || 'Perintah gagal diproses',
+        message: err?.message || 'Perintah gagal diproses',
         timestamp: Date.now(),
       });
     } finally {
@@ -394,20 +402,31 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
             : 'bg-slate-900/40 border-slate-800/40'
         }`}
       >
-        {/* REQ-FE-20: Indikator Animasi Motor Sedang Bergerak Realtime */}
+        {/* REQ-FE-20 & REQ-FE-22: Indikator Animasi Motor Sedang Bergerak Realtime dengan Tombol Stop Cepat */}
         {isMoving && (
-          <div className="mb-3.5 p-3 rounded-xl border flex items-center gap-3 bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300">
-            <Cog className="w-5 h-5 animate-spin shrink-0 text-blue-600 dark:text-blue-400" />
-            <div className="flex-1">
-              <span className="font-extrabold text-xs sm:text-sm block">
-                {isMovingInward
-                  ? '⚙️ Motor Sedang Menarik Jemuran Masuk...'
-                  : '⚙️ Motor Sedang Membentangkan Jemuran ke Luar...'}
-              </span>
-              <span className="text-[11px] opacity-80 block">
-                Motor stepper ESP32 sedang aktif melangkah. Tombol kendali dinonaktifkan sementara untuk mencegah konflik perintah ganda.
-              </span>
+          <div className="mb-3.5 p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300">
+            <div className="flex items-center gap-3">
+              <Cog className="w-5 h-5 animate-spin shrink-0 text-blue-600 dark:text-blue-400" />
+              <div>
+                <span className="font-extrabold text-xs sm:text-sm block">
+                  {isMovingInward
+                    ? '⚙️ Motor Sedang Menarik Jemuran Masuk...'
+                    : '⚙️ Motor Sedang Membentangkan Jemuran ke Luar...'}
+                </span>
+                <span className="text-[11px] opacity-80 block">
+                  Motor stepper ESP32 sedang aktif melangkah. Tekan Stop Motor jika ingin berhenti seketika.
+                </span>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => handleManualAction('stop')}
+              className="self-end sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold shadow-xs transition-colors shrink-0"
+              title="Hentikan pergerakan motor sekarang"
+            >
+              <OctagonX className="w-3.5 h-3.5" />
+              <span>Hentikan Motor</span>
+            </button>
           </div>
         )}
 
@@ -467,7 +486,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
           </div>
 
           {/* Tombol-Tombol Kendali Manual */}
-          <div className="flex items-center gap-2 self-stretch sm:self-auto shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-stretch sm:self-auto shrink-0">
             <button
               type="button"
               disabled={isMoving || (controlMode === 'manual' && isSheltered)}
@@ -475,7 +494,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
                 if (controlMode === 'auto') setControlMode('manual');
                 handleManualAction('retract');
               }}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
                 isSheltered
                   ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 cursor-not-allowed opacity-75'
                   : isMoving
@@ -488,7 +507,24 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
               ) : (
                 <Umbrella className="w-4 h-4" />
               )}
-              <span>Tarik Masuk (Teduh)</span>
+              <span>Tarik Masuk</span>
+            </button>
+
+            {/* REQ-FE-22: Tombol Stop Motor Darurat / Manual */}
+            <button
+              type="button"
+              onClick={() => {
+                handleManualAction('stop');
+              }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
+                isMoving
+                  ? 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white animate-pulse active:scale-95'
+                  : 'bg-rose-600/15 hover:bg-rose-600/25 text-rose-700 dark:text-rose-300 border border-rose-500/30 active:scale-95'
+              }`}
+              title="Hentikan laju motor stepper secara manual / darurat"
+            >
+              <OctagonX className="w-4 h-4 shrink-0" />
+              <span>Stop Motor</span>
             </button>
 
             <button
@@ -498,7 +534,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
                 if (controlMode === 'auto') setControlMode('manual');
                 handleManualAction('extend');
               }}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-xs transition-colors ${
                 !isSheltered
                   ? 'bg-amber-600/30 text-amber-300 border border-amber-500/40 cursor-not-allowed opacity-75'
                   : isMoving
@@ -511,7 +547,7 @@ export const ClotheslineMotorCard: React.FC<ClotheslineMotorCardProps> = ({
               ) : (
                 <Sun className="w-4 h-4" />
               )}
-              <span>Bentangkan Keluar (Jemur)</span>
+              <span>Bentangkan</span>
             </button>
           </div>
         </div>

@@ -54,11 +54,12 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleAudio,
   onOpenSettings,
 }) => {
-  // Freezed (sticky) header colors matching theme and weather
+  // Freezed (sticky) header colors matching theme and weather (identik dengan Sidebar.tsx & BottomNav.tsx)
   let headerBgClass = '';
   let buttonBgClass = '';
   let selectBgClass = '';
   let borderClass = '';
+  let isDarkHeader = false;
 
   // Hitung apakah mode gelap aktif berdasarkan pengaturan pengguna atau preferensi sistem perangkat
   const isDark =
@@ -68,43 +69,46 @@ export const Header: React.FC<HeaderProps> = ({
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   if (isDashboard) {
-    if (isDark) {
-      // Dark Mode pada Dashboard
-      if (weatherCondition === 'badai') {
-        headerBgClass = 'bg-[#0f071f]/90 backdrop-blur-xl text-white shadow-xl';
-        borderClass = 'border-purple-900/60';
-        buttonBgClass = 'bg-white/10 hover:bg-white/20 text-purple-200 border-purple-500/30';
-        selectBgClass = 'bg-purple-950/70 text-white border-purple-800/40';
-      } else if (weatherCondition === 'hujan' || weatherCondition === 'gerimis') {
-        headerBgClass = 'bg-[#0b1329]/90 backdrop-blur-xl text-white shadow-xl';
-        borderClass = 'border-slate-800/80';
-        buttonBgClass = 'bg-white/10 hover:bg-white/20 text-cyan-200 border-white/15';
-        selectBgClass = 'bg-slate-900 text-white border-slate-700';
-      } else {
-        // Cerah / Mendung di Dark Mode: Selalu gelap elegan
-        headerBgClass = 'bg-slate-900/90 backdrop-blur-xl text-slate-100 shadow-md';
-        borderClass = 'border-slate-800';
-        buttonBgClass = 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-xs';
-        selectBgClass = 'bg-slate-900 text-slate-100 border-slate-700 shadow-xs font-bold';
-      }
+    if (weatherCondition === 'cerah') {
+      headerBgClass = 'bg-white/80 backdrop-blur-xl text-slate-900 shadow-xl';
+      borderClass = 'border-slate-200/80';
+      buttonBgClass = 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-200 shadow-xs';
+      selectBgClass = 'bg-slate-50/90 text-slate-900 border-slate-300 shadow-xs font-bold';
+      isDarkHeader = false;
+    } else if (weatherCondition === 'mendung') {
+      headerBgClass = 'bg-[#1e293b]/85 backdrop-blur-xl text-white shadow-2xl';
+      borderClass = 'border-slate-700/80';
+      buttonBgClass = 'bg-white/10 hover:bg-white/20 text-amber-200 border-amber-400/30 shadow-xs';
+      selectBgClass = 'bg-slate-800/90 text-white border-slate-600/80 shadow-xs font-bold';
+      isDarkHeader = true;
+    } else if (weatherCondition === 'badai') {
+      headerBgClass = 'bg-[#0f071f]/85 backdrop-blur-xl text-white shadow-2xl';
+      borderClass = 'border-purple-900/60';
+      buttonBgClass = 'bg-white/10 hover:bg-white/20 text-purple-200 border-purple-500/30 shadow-xs';
+      selectBgClass = 'bg-purple-950/70 text-white border-purple-800/40 shadow-xs font-bold';
+      isDarkHeader = true;
     } else {
-      // Light Mode pada Dashboard: Selalu cerah, terang, bersih, daylight dengan kontras teks tinggi
-      headerBgClass = 'bg-white/95 backdrop-blur-xl text-slate-900 shadow-sm';
-      borderClass = 'border-slate-200/90';
-      buttonBgClass = 'bg-slate-100 hover:bg-slate-200/90 text-slate-800 border-slate-200 shadow-xs';
-      selectBgClass = 'bg-white text-slate-900 border-slate-300 shadow-xs font-bold';
+      // Hujan & Gerimis
+      headerBgClass = 'bg-[#0b1329]/85 backdrop-blur-xl text-white shadow-2xl';
+      borderClass = 'border-slate-800/80';
+      buttonBgClass = 'bg-white/10 hover:bg-white/20 text-cyan-200 border-blue-400/40 shadow-xs';
+      selectBgClass = 'bg-slate-900/90 text-white border-slate-700 shadow-xs font-bold';
+      isDarkHeader = true;
     }
   } else {
+    // Di luar Dashboard: Sesuai preferensi tema pengguna (Dark / Light)
     if (isDark) {
-      headerBgClass = 'bg-slate-900/90 backdrop-blur-xl text-slate-100 shadow-md';
+      headerBgClass = 'bg-slate-900 text-slate-100 shadow-xl';
       borderClass = 'border-slate-800';
-      buttonBgClass = 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700';
-      selectBgClass = 'bg-slate-800 text-white border-slate-700';
+      buttonBgClass = 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 shadow-xs';
+      selectBgClass = 'bg-slate-800 text-white border-slate-700 shadow-xs font-bold';
+      isDarkHeader = true;
     } else {
-      headerBgClass = 'bg-white/95 backdrop-blur-xl text-slate-900 shadow-sm';
+      headerBgClass = 'bg-white text-slate-900 shadow-xl';
       borderClass = 'border-slate-200';
-      buttonBgClass = 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300';
-      selectBgClass = 'bg-slate-50 text-slate-900 border-slate-300';
+      buttonBgClass = 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300 shadow-xs';
+      selectBgClass = 'bg-slate-50 text-slate-900 border-slate-300 shadow-xs font-bold';
+      isDarkHeader = false;
     }
   }
 
@@ -135,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <option
                     key={d.deviceId}
                     value={d.deviceId}
-                    className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}
+                    className={isDarkHeader ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}
                   >
                     {d.nama}
                   </option>
@@ -144,12 +148,12 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <div className="flex items-center gap-2 min-w-0">
                 <span className={`font-heading font-bold text-sm sm:text-base truncate max-w-[140px] sm:max-w-none ${
-                  isDark ? 'text-slate-100' : 'text-slate-900'
+                  isDarkHeader ? 'text-slate-100' : 'text-slate-900'
                 }`}>
                   {activeDevice.nama}
                 </span>
                 <span className={`hidden sm:inline-block text-[11px] font-mono px-1.5 py-0.5 rounded border ${
-                  isDark ? 'text-slate-300 bg-black/20 border-white/10' : 'text-slate-600 bg-slate-100 border-slate-200'
+                  isDarkHeader ? 'text-slate-300 bg-black/20 border-white/10' : 'text-slate-600 bg-slate-100 border-slate-200'
                 }`}>
                   {activeDevice.deviceId}
                 </span>
@@ -290,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile-Only Row 2: Broker Connection Chip & Quick Action/Device Status (REQ-FE-07) */}
       <div className={`flex sm:hidden items-center justify-between px-3.5 py-1.5 border-t text-xs ${
-        isDark ? 'border-white/10 text-slate-300' : 'border-slate-200 text-slate-700'
+        isDarkHeader ? 'border-white/10 text-slate-300' : 'border-slate-200 text-slate-700'
       }`}>
         {/* Status Koneksi Broker (chip mini: ikon titik berdenyut hijau/merah + "Online/Offline") */}
         <div className="flex items-center gap-1.5">
@@ -320,7 +324,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right Info: Device ID badge */}
         {activeDevice.deviceId && (
           <span className={`text-[10px] font-mono truncate max-w-[120px] px-1.5 py-0.5 rounded border ${
-            isDark ? 'text-slate-300 bg-black/20 border-white/10' : 'text-slate-600 bg-slate-100 border-slate-200'
+            isDarkHeader ? 'text-slate-300 bg-black/20 border-white/10' : 'text-slate-600 bg-slate-100 border-slate-200'
           }`}>
             {activeDevice.deviceId}
           </span>

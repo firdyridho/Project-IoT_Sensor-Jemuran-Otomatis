@@ -202,6 +202,10 @@ Dokumen ini adalah panduan kerja khusus **Frontend & UI/UX Implementation**. Sel
   * Menggunakan palet solid minimalis modern: tombol utama `bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-xs`, tombol sekunder netral `bg-slate-100 dark:bg-slate-800`.
   * Harmonisasi adaptif penuh tema gelap dan terang: latar kartu `bg-white dark:bg-slate-900/80`, input `bg-slate-50 border-slate-300 dark:bg-slate-950 dark:border-slate-800`, dan kontras teks WCAG >= 4.5:1.
   * Perataan styling tab sidebar kiri ke flat clean border styling dan pembersihan `PasswordStrengthMeter.tsx`.
+* [x] **FE-26: Tombol Berhenti Darurat / Manual (Stop Motor) pada Kartu Kendali Rel Jemuran (REQ-FE-22)**:
+  * Dukungan aksi `stop` pada `BackendService.commandMotor` di `api.ts` dan handler optimis di `App.tsx`.
+  * Tombol solid *"Stop Motor"* dengan ikon `OctagonX` pada panel kendali `ClotheslineMotorCard.tsx` yang aktif dan berdenyut merah tegas saat motor sedang bergerak.
+  * Tombol pintas darurat *"Hentikan Motor"* pada banner animasi pergerakan motor di dashboard untuk rem seketika.
 
 ---
 
