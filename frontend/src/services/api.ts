@@ -278,7 +278,7 @@ export const BackendService = {
   async commandMotor(
     baseUrl: string,
     deviceId: string,
-    action: 'retract' | 'extend'
+    action: 'retract' | 'extend' | 'stop'
   ): Promise<boolean> {
     if (!baseUrl || !deviceId) return false;
     try {

@@ -1247,14 +1247,16 @@ export const App: React.FC = () => {
                   motorStatus={activeDevice.motorStatus}
                   onCommandMotor={async (action) => {
                     if (!settings.backendUrl) return false;
-                    // Optimistic moving state
-                    setDevices((prev) =>
-                      prev.map((d) =>
-                        d.deviceId === activeDevice.deviceId
-                          ? { ...d, motorStatus: 'moving' }
-                          : d
-                      )
-                    );
+                    if (action !== 'stop') {
+                      // Optimistic moving state untuk aksi gerak
+                      setDevices((prev) =>
+                        prev.map((d) =>
+                          d.deviceId === activeDevice.deviceId
+                            ? { ...d, motorStatus: 'moving' }
+                            : d
+                        )
+                      );
+                    }
                     const ok = await BackendService.commandMotor(
                       settings.backendUrl,
                       activeDevice.deviceId,
@@ -1266,8 +1268,12 @@ export const App: React.FC = () => {
                           d.deviceId === activeDevice.deviceId
                             ? {
                                 ...d,
-                                motorPosition: action === 'retract' ? 'sheltered' : 'extended',
-                                motorStatus: 'idle',
+                                ...(action === 'stop'
+                                  ? { motorStatus: 'idle' }
+                                  : {
+                                      motorPosition: action === 'retract' ? 'sheltered' : 'extended',
+                                      motorStatus: 'idle',
+                                    }),
                               }
                             : d
                         )
