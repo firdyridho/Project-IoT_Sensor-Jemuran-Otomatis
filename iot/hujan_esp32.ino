@@ -32,9 +32,16 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 #define PIN_HUJAN 33
 #define PIN_LDR   34
 
-// Pin Driver Motor Stepper (A4988 / DRV8825)
+// Pin Driver Motor (Stepper A4988 / DRV8825 atau Motor DC L298N)
+// - Mode Stepper: Pin 18 = STEP (pulsa), Pin 19 = DIR (arah putar)
+// - Mode Motor DC (L298N): Pin 18 = IN1, Pin 19 = IN2
 const int stepPin = 18;
 const int dirPin  = 19;
+
+// Pilih Tipe Driver Motor:
+// false = Driver Stepper A4988 / DRV8825 (Default)
+// true  = Driver Motor DC L298N / Relay 2-Channel (IN1 ke pin 18, IN2 ke pin 19)
+#define MOTOR_TIPE_DC_L298N false
 
 // Pin Limit Switch Luar & Dalam (COM ke GND, NO ke GPIO 25 & 26 dengan internal PULLUP)
 #define PIN_LIMIT_LUAR  25 // Switch pembatas ujung luar (posisi jemur/terbuka)
@@ -143,7 +150,7 @@ void kirimDataTelemetri(String posisiMotor, String motorStatus) {
   client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
 }
 
-// Fungsi menggerakkan stepper dengan pengiriman telemetri realtime berkelanjutan
+// Fungsi menggerakkan motor (Stepper atau DC L298N) dengan telemetri realtime
 void gerakkanJemuran(bool tarikMasuk, String sumber) {
   stopManualDiminta = false; // Reset flag stop manual sebelum mulai bergerak
 
@@ -159,10 +166,17 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
     Serial.println("Menarik jemuran masuk (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Menarik Masuk", false);
 
-    // Putar ke arah jemuran masuk (LOW)
-    digitalWrite(dirPin, LOW);
+    // Konfigurasi arah pergerakan motor
+    if (MOTOR_TIPE_DC_L298N) {
+      // Driver Motor DC (L298N): IN1 = HIGH, IN2 = LOW
+      digitalWrite(stepPin, HIGH);
+      digitalWrite(dirPin, LOW);
+    } else {
+      // Driver Stepper: DIR = LOW
+      digitalWrite(dirPin, LOW);
+    }
     
-    // Bergerak sampai menyentuh limit switch dalam (maksimal 6000 langkah sebagai failsafe)
+    // Bergerak sampai menyentuh limit switch dalam (maksimal 6000 iterasi)
     for (int i = 0; i < 6000; i++) {
       // 1. Cek limit switch di ujung dalam: jika tersentuh tuasnya, rem seketika!
       if (digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
@@ -177,12 +191,18 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
         break;
       }
 
-      digitalWrite(stepPin, HIGH);
-      delayMicroseconds(1000);
-      digitalWrite(stepPin, LOW);
-      delayMicroseconds(1000);
+      if (MOTOR_TIPE_DC_L298N) {
+        // Motor DC: biarkan berputar kontinu dengan jeda singkat untuk sampling
+        delay(2);
+      } else {
+        // Motor Stepper: pulsa langkah STEP
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(1000);
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(1000);
+      }
 
-      // Setiap 500 langkah (~1 detik): panggil loop MQTT & kirim telemetri lengkap realtime
+      // Setiap 500 iterasi (~1 detik): panggil loop MQTT & kirim telemetri lengkap realtime
       if (i % 500 == 0) {
         client.loop();
         kirimDataTelemetri("menarik", "moving");
@@ -190,6 +210,12 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
         client.loop();
       }
       yield();
+    }
+
+    // Matikan driver jika menggunakan Motor DC
+    if (MOTOR_TIPE_DC_L298N) {
+      digitalWrite(stepPin, LOW);
+      digitalWrite(dirPin, LOW);
     }
 
     // Jika limit switch dalam tersentuh, tandai posisi telah aman di dalam
@@ -211,10 +237,17 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Dorong Keluar", false);
 
-    // Putar ke arah jemuran keluar (HIGH)
-    digitalWrite(dirPin, HIGH);
+    // Konfigurasi arah pergerakan keluar
+    if (MOTOR_TIPE_DC_L298N) {
+      // Driver Motor DC (L298N): IN1 = LOW, IN2 = HIGH
+      digitalWrite(stepPin, LOW);
+      digitalWrite(dirPin, HIGH);
+    } else {
+      // Driver Stepper: DIR = HIGH
+      digitalWrite(dirPin, HIGH);
+    }
     
-    // Beri batas langkah maksimal (akan berhenti otomatis saat menyentuh limit switch luar)
+    // Beri batas pergerakan maksimal (akan berhenti otomatis saat menyentuh limit switch luar)
     for (int i = 0; i < 6000; i++) {
       // 1. Cek limit switch di ujung luar: jika tersentuh tuasnya, rem seketika!
       if (digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
@@ -229,25 +262,39 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
         break;
       }
 
-      digitalWrite(stepPin, HIGH);
-      delayMicroseconds(1000);
-      digitalWrite(stepPin, LOW);
-      delayMicroseconds(1000);
+      if (MOTOR_TIPE_DC_L298N) {
+        // Motor DC: biarkan berputar kontinu dengan jeda singkat untuk sampling
+        delay(2);
+      } else {
+        // Motor Stepper: pulsa langkah STEP
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(1000);
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(1000);
+      }
 
-      // Setiap 500 langkah (~1 detik): panggil loop MQTT & kirim telemetri lengkap
+      // Setiap 500 iterasi (~1 detik): panggil loop MQTT & kirim telemetri lengkap
       if (i % 500 == 0) {
         client.loop();
         kirimDataTelemetri("mendorong", "moving");
-        // Pengaman darurat: Jika mendadak hujan deras saat didorong keluar, langsung rem dan batalkan!
-        int adcHujan = analogRead(PIN_HUJAN);
-        if (adcHujan < 1400) {
-          Serial.println("DARURAT: Hujan deras terdeteksi saat jemuran didorong keluar! Berhenti mendorong.");
-          break;
+        // Pengaman darurat otomatis: Jika gerakan otomatis dan mendadak hujan deras saat didorong keluar, langsung rem dan batalkan!
+        if (sumber != "Tombol Web" && i > 0) {
+          int adcHujan = analogRead(PIN_HUJAN);
+          if (adcHujan < 1400) {
+            Serial.println("DARURAT: Hujan deras terdeteksi saat jemuran didorong keluar! Berhenti mendorong.");
+            break;
+          }
         }
       } else if (i % 50 == 0) {
         client.loop();
       }
       yield();
+    }
+
+    // Matikan driver jika menggunakan Motor DC
+    if (MOTOR_TIPE_DC_L298N) {
+      digitalWrite(stepPin, LOW);
+      digitalWrite(dirPin, LOW);
     }
 
     // Jika limit switch luar tersentuh, tandai posisi berada di luar
@@ -275,6 +322,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   // 1. Perintah Berhenti Manual (STOP)
   if (pesan.indexOf("stop") >= 0 || pesan.indexOf("berhenti") >= 0 || pesan.indexOf("halt") >= 0 || pesan == "2") {
     stopManualDiminta = true;
+    digitalWrite(stepPin, LOW);
+    digitalWrite(dirPin, LOW);
     Serial.println("Perintah STOP diterima dari Web/App! Menghentikan pergerakan motor...");
     updateOLED("STOP!", "Manual Stop", 0, "Berhenti", false);
     kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
