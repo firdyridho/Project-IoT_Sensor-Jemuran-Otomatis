@@ -150,23 +150,15 @@ void kirimDataTelemetri(String posisiMotor, String motorStatus) {
   client.publish(topic_telemetry_std.c_str(), stdPayload.c_str());
 }
 
-// Fungsi menggerakkan motor (Stepper atau DC L298N) dengan telemetri realtime
+// Fungsi menggerakkan motor (Stepper atau DC) dengan telemetri realtime
 void gerakkanJemuran(bool tarikMasuk, String sumber) {
   stopManualDiminta = false; // Reset flag stop manual sebelum mulai bergerak
 
   if (tarikMasuk) {
-    // 1. Cek apakah limit switch dalam sudah tertekan (posisi sudah mentok di kanopi dalam)
-    if (digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
-      Serial.println("Jemuran sudah berada di batas dalam (Limit Switch Dalam aktif). Tidak perlu menarik lagi.");
-      jemuranDiDalam = true;
-      kirimDataTelemetri("didalam", "idle");
-      return;
-    }
-
     Serial.println("Menarik jemuran masuk (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Menarik Masuk", false);
 
-    // Konfigurasi arah pergerakan motor
+    // Konfigurasi arah pergerakan motor masuk
     if (MOTOR_TIPE_DC_L298N) {
       // Driver Motor DC (L298N): IN1 = HIGH, IN2 = LOW
       digitalWrite(stepPin, HIGH);
@@ -179,7 +171,8 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
     // Bergerak sampai menyentuh limit switch dalam (maksimal 6000 iterasi)
     for (int i = 0; i < 6000; i++) {
       // 1. Cek limit switch di ujung dalam: jika tersentuh tuasnya, rem seketika!
-      if (digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
+      // (Beri toleransi 30 langkah awal agar tuas bisa bergerak lepas dari posisi sentuh)
+      if (i > 30 && digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
         Serial.println("Limit switch dalam tersentuh! Posisi kanopi teduh tercapai.");
         break;
       }
@@ -192,7 +185,7 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       }
 
       if (MOTOR_TIPE_DC_L298N) {
-        // Motor DC: biarkan berputar kontinu dengan jeda singkat untuk sampling
+        // Motor DC
         delay(2);
       } else {
         // Motor Stepper: pulsa langkah STEP
@@ -221,19 +214,13 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
     // Jika limit switch dalam tersentuh, tandai posisi telah aman di dalam
     if (digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
       jemuranDiDalam = true;
+    } else {
+      jemuranDiDalam = true; // Selesai menarik masuk
     }
     Serial.println("Selesai menarik. Posisi jemuran: " + String(jemuranDiDalam ? "Di Dalam" : "Dihentikan / Sebagian"));
-    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "menarik", "idle");
+    kirimDataTelemetri("didalam", "idle");
   } 
   else {
-    // 2. Cek apakah limit switch luar sudah tertekan (posisi sudah mentok di luar)
-    if (digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
-      Serial.println("Jemuran sudah berada di batas luar (Limit Switch Luar aktif). Tidak perlu mendorong lagi.");
-      jemuranDiDalam = false;
-      kirimDataTelemetri("diluar", "idle");
-      return;
-    }
-
     Serial.println("Mendorong jemuran keluar (" + sumber + ")...");
     updateOLED("Proses...", sumber, 0, "Dorong Keluar", false);
 
@@ -250,7 +237,8 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
     // Beri batas pergerakan maksimal (akan berhenti otomatis saat menyentuh limit switch luar)
     for (int i = 0; i < 6000; i++) {
       // 1. Cek limit switch di ujung luar: jika tersentuh tuasnya, rem seketika!
-      if (digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
+      // (Beri toleransi 30 langkah awal agar tuas bisa bergerak lepas dari posisi sentuh)
+      if (i > 30 && digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
         Serial.println("Limit switch luar tersentuh! Posisi jemur tercapai.");
         break;
       }
@@ -263,7 +251,7 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       }
 
       if (MOTOR_TIPE_DC_L298N) {
-        // Motor DC: biarkan berputar kontinu dengan jeda singkat untuk sampling
+        // Motor DC
         delay(2);
       } else {
         // Motor Stepper: pulsa langkah STEP
@@ -297,12 +285,14 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       digitalWrite(dirPin, LOW);
     }
 
-    // Jika limit switch luar tersentuh, tandai posisi berada di luar
+    // Tandai posisi berada di luar
     if (digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
       jemuranDiDalam = false;
+    } else {
+      jemuranDiDalam = false; // Selesai mendorong keluar
     }
     Serial.println("Selesai mendorong. Posisi jemuran: " + String(jemuranDiDalam ? "Di Dalam" : "Di Luar"));
-    kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
+    kirimDataTelemetri("diluar", "idle");
   }
 }
 
