@@ -52,6 +52,12 @@ const int dirPin  = 19;
 // HIGH = Saklar NC (Normally Closed) jika pin membaca LOW saat tidak ditekan
 #define LIMIT_SWITCH_PRESSED LOW
 
+// Otomasi Mendorong Keluar saat Kering:
+// false (Direkomendasikan): Motor TIDAK AKAN pernah jalan sendiri keluar saat kering.
+//                           Hanya keluar jika pengguna menekan tombol "Bentangkan" di Web.
+// true: Motor otomatis keluar sendiri jika cuaca kering stabil selama 20 detik.
+#define AUTO_KELUAR_SAAT_KERING false
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -60,6 +66,9 @@ bool jemuranDiDalam = false;
 
 // Flag Berhenti Darurat / Manual dari Web
 volatile bool stopManualDiminta = false;
+
+// Flag Kunci Posisi Manual (Mencegah motor jalan sendiri setelah distop atau menyentuh switch)
+bool manualHold = false;
 
 // Status Hujan Aktif dengan Latch Hysteresis (Schmitt Trigger)
 // Mencegah status 'reda' prematur saat lempeng sensor masih basah/lembab
@@ -174,12 +183,14 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       // (Beri toleransi 30 langkah awal agar tuas bisa bergerak lepas dari posisi sentuh)
       if (i > 30 && digitalRead(PIN_LIMIT_DALAM) == LIMIT_SWITCH_PRESSED) {
         Serial.println("Limit switch dalam tersentuh! Posisi kanopi teduh tercapai.");
+        manualHold = true; // Kunci posisi agar tidak jalan keluar sendiri
         break;
       }
 
       // 2. Cek apakah ada perintah berhenti (STOP) manual dari Web / App
       if (stopManualDiminta) {
         Serial.println("Motor dihentikan seketika oleh perintah STOP dari Web!");
+        manualHold = true; // Kunci posisi
         stopManualDiminta = false;
         break;
       }
@@ -240,12 +251,14 @@ void gerakkanJemuran(bool tarikMasuk, String sumber) {
       // (Beri toleransi 30 langkah awal agar tuas bisa bergerak lepas dari posisi sentuh)
       if (i > 30 && digitalRead(PIN_LIMIT_LUAR) == LIMIT_SWITCH_PRESSED) {
         Serial.println("Limit switch luar tersentuh! Posisi jemur tercapai.");
+        manualHold = true; // Kunci posisi
         break;
       }
 
       // 2. Cek apakah ada perintah berhenti (STOP) manual dari Web / App
       if (stopManualDiminta) {
         Serial.println("Motor dihentikan seketika oleh perintah STOP dari Web!");
+        manualHold = true; // Kunci posisi
         stopManualDiminta = false;
         break;
       }
@@ -312,18 +325,24 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   // 1. Perintah Berhenti Manual (STOP)
   if (pesan.indexOf("stop") >= 0 || pesan.indexOf("berhenti") >= 0 || pesan.indexOf("halt") >= 0 || pesan == "2") {
     stopManualDiminta = true;
+    manualHold = true; // Kunci posisi agar motor tidak jalan sendiri lagi
+    waktuMulaiKering = 0;
     digitalWrite(stepPin, LOW);
     digitalWrite(dirPin, LOW);
-    Serial.println("Perintah STOP diterima dari Web/App! Menghentikan pergerakan motor...");
+    Serial.println("Perintah STOP diterima dari Web/App! Menghentikan pergerakan motor & mengunci posisi...");
     updateOLED("STOP!", "Manual Stop", 0, "Berhenti", false);
     kirimDataTelemetri(jemuranDiDalam ? "didalam" : "diluar", "idle");
   }
   // 2. Perintah Tarik Masuk
   else if (pesan.indexOf("tarik") >= 0 || pesan.indexOf("masuk") >= 0 || pesan.indexOf("retract") >= 0 || pesan.indexOf("in") >= 0 || pesan.indexOf("tutup") >= 0 || pesan == "1") {
+    manualHold = false; // Reset kunci manual karena ada perintah baru
+    waktuMulaiKering = 0;
     gerakkanJemuran(true, "Tombol Web");
   } 
   // 3. Perintah Dorong Keluar (Manual override dari tombol Web)
   else if (pesan.indexOf("dorong") >= 0 || pesan.indexOf("keluar") >= 0 || pesan.indexOf("extend") >= 0 || pesan.indexOf("out") >= 0 || pesan.indexOf("buka") >= 0 || pesan == "0") {
+    manualHold = false; // Reset kunci manual karena ada perintah baru
+    waktuMulaiKering = 0;
     Serial.println("Perintah manual BUKA / DORONG KELUAR diterima dari Web/App.");
     gerakkanJemuran(false, "Tombol Web");
   }
@@ -459,15 +478,18 @@ void loop() {
     bool isBadai   = (statusHujanAktif && (rainPct > 80 || adcHujan < 1400));
     bool isMendung = (adcLdr > 2500);
 
-    // 4. LOGIKA OTOMATIS CERDAS MOTOR DENGAN TIMER DEBOUNCE
+    // 4. LOGIKA OTOMATIS CERDAS MOTOR DENGAN PENGAMAN MANUAL HOLD
     if (statusHujanAktif) {
       waktuMulaiKering = 0; // Reset timer kering jika masih terdeteksi air hujan
+      // Pengaman Darurat: Jika mendadak HUJAN, jemuran otomatis ditarik masuk ke kanopi
       if (!jemuranDiDalam) {
+        manualHold = false;
         gerakkanJemuran(true, isBadai ? "Auto Badai" : "Auto Hujan");
+        manualHold = true; // Setelah aman di kanopi, kunci posisi agar tidak keluar sendiri
       }
     } 
-    else if (jemuranDiDalam) {
-      // Sensor kering sempurna (> 3000): hitung kestabilan cuaca 20 detik sebelum didorong keluar
+    else if (jemuranDiDalam && AUTO_KELUAR_SAAT_KERING && !manualHold) {
+      // HANYA dorong keluar otomatis jika opsi AUTO_KELUAR_SAAT_KERING diaktifkan (true) dan TIDAK sedang di-hold manual
       if (waktuMulaiKering == 0) {
         waktuMulaiKering = millis();
         Serial.println("Sensor kering terbukti. Menunggu 20 detik kestabilan cuaca sebelum keluar...");
@@ -478,7 +500,7 @@ void loop() {
       }
     } 
     else {
-      // Di luar dan kering: pastikan timer reset
+      // Di luar, atau sedang manual hold, atau AUTO_KELUAR_SAAT_KERING false: pastikan timer reset
       waktuMulaiKering = 0;
     }
 
